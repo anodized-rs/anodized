@@ -183,7 +183,7 @@ fn push_checked<T>(vec: &mut Vec<T>, value: T) { todo!() }
 
 ### Trait Specs
 
-Anodized supports specs on trait methods, which are meant to constrain all implementations.
+Anodized supports specs on trait methods, which automatically constrain all implementations.
 
 Use the following structure:
 
