@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **[anodized] Trait specs support** - `#[spec]` on traits and trait `impl` blocks, with compile-fail checks for unsupported placements (#71).
 - **[anodized-core] Patterns in `captures`** - Destructuring in captures is now supported, e.g. `captures: expr as (a, b)` (#100).
-- **[anodized-fmt] UNSTABLE: New formatter package** - Added a dedicated formatter (CLI and library) for `#[spec]` attributes, including `--check` mode and TOML config support (#92).
+- **[anodized-fmt] Experimental: New formatter package** - Added a dedicated formatter (CLI and library) for `#[spec]` attributes, including `--check` mode and TOML config support (#92).
 - **[anodized-core] `SpecArgs` for permissive parsing** - Added a raw spec representation that can hold partially-valid specs for tooling workflows (#94).
 
 ### Fixed
