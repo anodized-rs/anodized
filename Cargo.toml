@@ -7,7 +7,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.3.0"
+version = "0.4.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/mkovaxx/anodized"
@@ -25,7 +25,7 @@ keywords = [
 ]
 
 [workspace.dependencies]
-anodized-core = { version = "0.3.0", path = "crates/anodized-core" }
+anodized-core = { version = "0.4.0", path = "crates/anodized-core" }
 proc-macro2 = { version = "1.0", features = ["span-locations"] }
 quote = "1.0"
 syn = { version = "2.0", features = ["extra-traits", "full", "visit"] }

@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.0 (2026 Apr 19)
+
+### Breaking Changes
+
+- **[anodized-core] `Condition` became `PreCondition`** - Preconditions are now represented as zero-argument closures.
+- **[anodized-core] `Capture.alias` became `Capture.pat`** - Captures now bind with full Rust patterns, not only identifiers. A pattern must still be irrefutable.
+- **[anodized-core] `Spec` internals changed** - `Spec` now tracks source span and exposes helper methods such as `is_empty` and `spec_err`.
+
+### Added
+
+- **[anodized] Trait specs support** - `#[spec]` on traits and trait `impl` blocks, with compile-fail checks for unsupported placements (#71).
+- **[anodized-core] Patterns in `captures`** - Destructuring in captures is now supported, e.g. `captures: expr as (a, b)` (#100).
+- **[anodized-fmt] Experimental: New formatter package** - Added a dedicated formatter (CLI and library) for `#[spec]` attributes, including `--check` mode and TOML config support (#92).
+- **[anodized-core] `SpecArgs` for permissive parsing** - Added a raw spec representation that can hold partially-valid specs for tooling workflows (#94).
+
+### Fixed
+
+- **[anodized] Preconditions no longer permit early function exit** - Preconditions are wrapped in closures to prevent `return` from escaping the instrumented function (#69).
+- **[anodized] Captures no longer permit early function exit** - Each capture expression is evaluated in a closure to prevent `return` from escaping the instrumented function (#107).
+- **[anodized-core] Improved `captures` diagnostics and parsing behavior** - Simplified parsing and clearer errors for invalid capture forms (#101).
+- **[anodized-fmt] Preserve comments in formatted specs** - Comments inside `#[spec]` attributes are now preserved (with documented skip cases) (#106).
+
+### Changed
+
+- **[workspace] CI now checks formatting and lints** (#105).
+- **[workspace] Minor maintenance and Clippy cleanups** (#99).
+- **[workspace] VS Code rust-analyzer settings updates** - Added setup for selecting spec runtime behavior (#68, #95).
+
+### Documentation
+
+- **[anodized] Documented trait specs feature in README** (#104).
+- **[anodized] Quickstart and Cargo feature docs updates** (#89, #91).
+- **[workspace] Added crates.io typo redirect package/docs** (#67).
+
 ## 0.3.0 (2025 Dec 11)
 
 ### Breaking Changes
