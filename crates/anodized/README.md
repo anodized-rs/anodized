@@ -62,13 +62,14 @@ Anodized aims to become a common layer across runtime checks, fuzzing, and verif
 
 **`#[spec]` Support**
 
-| Program Element        | Status      | Notes                                |
-| ---------------------- | ----------- | ------------------------------------ |
-| plain `fn`             | Available   | Pre- and postconditions, invariants. |
-| `fn` inside an `impl`  | Available   | Pre- and postconditions, invariants. |
-| `trait` and its `fn`s  | In Progress | Enforces all `impl`s to conform.     |
-| `struct`, `enum`       | Planned     | Data invariants.                     |
-| `while`, `loop`, `for` | Planned     | Loop invariants.                     |
+| Program Element        | Status                    | Notes                                |
+| ---------------------- | ------------------------- | ------------------------------------ |
+| plain `fn`             | Available                 | Pre- and postconditions, invariants. |
+| `fn` inside an `impl`  | Available                 | Pre- and postconditions, invariants. |
+| `trait` and its `fn`s  | [Available](#trait-specs) | Enforces all `impl`s to conform.     |
+| `mod`                  | In Progress               | Invariants across multiple entities. |
+| `struct`, `enum`       | Planned                   | Data invariants.                     |
+| `while`, `loop`, `for` | Planned                   | Loop invariants.                     |
 
 **Runtime Behaviors**
 
@@ -179,6 +180,50 @@ use anodized::spec;
 )]
 fn push_checked<T>(vec: &mut Vec<T>, value: T) { todo!() }
 ```
+
+### Trait Specs
+
+Anodized supports specs on trait methods, which automatically constrain all implementations.
+
+Use the following structure:
+
+1. Put `#[spec]` on the trait.
+2. Put method-level `#[spec(...)]` on trait methods that define requirements.
+3. Put `#[spec]` on each corresponding trait `impl`.
+
+```rust, no_run
+use anodized::spec;
+
+#[spec]
+trait MonotonicGenerator {
+    fn current(&self) -> i32;
+
+    #[spec(
+        captures: self.current() as old_val,
+        ensures: self.current() > old_val,
+    )]
+    fn update(&mut self);
+}
+
+struct Counter(i32);
+
+#[spec]
+impl MonotonicGenerator for Counter {
+    fn current(&self) -> i32 {
+        self.0
+    }
+
+    fn update(&mut self) {
+        self.0 += 1;
+    }
+}
+```
+
+Important restrictions:
+
+- The trait-level `#[spec]` is an enabler; specification clauses belong on trait methods, not on the trait itself.
+- Do not put `#[spec]` on methods inside a `#[spec]` trait impl. Method specs are defined at the trait declaration.
+- Names prefixed with `__anodized_` are internal and must not be implemented directly.
 
 ### Runtime Behaviors
 
