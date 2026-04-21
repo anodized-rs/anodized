@@ -1,10 +1,10 @@
-#[allow(private_bounds)]
-pub fn forall<T, P: Predicate<T>>(_predicate: P) -> bool {
+#[allow(private_bounds, unused_variables)]
+pub fn forall<P: Predicate<T>, T>(predicate: P) -> bool {
     unimplemented!("Runtime checks are not supported for quantifiers.")
 }
 
-#[allow(private_bounds)]
-pub fn exists<T, P: Predicate<T>>(_predicate: P) -> bool {
+#[allow(private_bounds, unused_variables)]
+pub fn exists<P: Predicate<T>, T>(predicate: P) -> bool {
     unimplemented!("Runtime checks are not supported for quantifiers.")
 }
 
