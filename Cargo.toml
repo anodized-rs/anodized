@@ -3,6 +3,7 @@ members = [
     "crates/anodized",
     "crates/anodized-core",
     "crates/anodized-fmt",
+    "crates/anodized-logic",
 ]
 resolver = "2"
 

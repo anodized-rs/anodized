@@ -1,0 +1,87 @@
+error[E0277]: the trait bound `bool: quantifiers::Predicate<_>` is not satisfied
+ --> tests/compile_fail/quantifiers.rs:5:20
+  |
+5 |     let _ = exists(1 + 2 == 3);
+  |             ------ ^^^^^^^^^^ the trait `quantifiers::Predicate<_>` is not implemented for `bool`
+  |             |
+  |             required by a bound introduced by this call
+  |
+note: required by a bound in `anodized_logic::quantifiers::exists`
+ --> src/quantifiers.rs
+  |
+  | pub fn exists<P: Predicate<T>, T>(predicate: P) -> bool {
+  |                  ^^^^^^^^^^^^ required by this bound in `exists`
+
+error[E0277]: the trait bound `bool: quantifiers::Predicate<_>` is not satisfied
+ --> tests/compile_fail/quantifiers.rs:8:20
+  |
+8 |     let _ = forall(1 + 2 == 3);
+  |             ------ ^^^^^^^^^^ the trait `quantifiers::Predicate<_>` is not implemented for `bool`
+  |             |
+  |             required by a bound introduced by this call
+  |
+note: required by a bound in `forall`
+ --> src/quantifiers.rs
+  |
+  | pub fn forall<P: Predicate<T>, T>(predicate: P) -> bool {
+  |                  ^^^^^^^^^^^^ required by this bound in `forall`
+
+error[E0277]: the trait bound `{closure@$DIR/tests/compile_fail/quantifiers.rs:11:20: 11:22}: quantifiers::Predicate<_>` is not satisfied
+  --> tests/compile_fail/quantifiers.rs:11:20
+   |
+11 |     let _ = exists(|| 1 + 2 == 3);
+   |             ------ ^^^^^^^^^^^^^ unsatisfied trait bound
+   |             |
+   |             required by a bound introduced by this call
+   |
+   = help: the trait `quantifiers::Predicate<_>` is not implemented for closure `{closure@$DIR/tests/compile_fail/quantifiers.rs:11:20: 11:22}`
+note: required by a bound in `anodized_logic::quantifiers::exists`
+  --> src/quantifiers.rs
+   |
+   | pub fn exists<P: Predicate<T>, T>(predicate: P) -> bool {
+   |                  ^^^^^^^^^^^^ required by this bound in `exists`
+
+error[E0277]: the trait bound `{closure@$DIR/tests/compile_fail/quantifiers.rs:14:20: 14:22}: quantifiers::Predicate<_>` is not satisfied
+  --> tests/compile_fail/quantifiers.rs:14:20
+   |
+14 |     let _ = forall(|| 1 + 2 == 3);
+   |             ------ ^^^^^^^^^^^^^ unsatisfied trait bound
+   |             |
+   |             required by a bound introduced by this call
+   |
+   = help: the trait `quantifiers::Predicate<_>` is not implemented for closure `{closure@$DIR/tests/compile_fail/quantifiers.rs:14:20: 14:22}`
+note: required by a bound in `forall`
+  --> src/quantifiers.rs
+   |
+   | pub fn forall<P: Predicate<T>, T>(predicate: P) -> bool {
+   |                  ^^^^^^^^^^^^ required by this bound in `forall`
+
+error[E0277]: the trait bound `{closure@$DIR/tests/compile_fail/quantifiers.rs:17:20: 17:28}: quantifiers::Predicate<_>` is not satisfied
+  --> tests/compile_fail/quantifiers.rs:17:20
+   |
+17 |     let _ = exists(|i: i32| i + i);
+   |             ------ ^^^^^^^^^^^^^^ unsatisfied trait bound
+   |             |
+   |             required by a bound introduced by this call
+   |
+   = help: the trait `quantifiers::Predicate<_>` is not implemented for closure `{closure@$DIR/tests/compile_fail/quantifiers.rs:17:20: 17:28}`
+note: required by a bound in `anodized_logic::quantifiers::exists`
+  --> src/quantifiers.rs
+   |
+   | pub fn exists<P: Predicate<T>, T>(predicate: P) -> bool {
+   |                  ^^^^^^^^^^^^ required by this bound in `exists`
+
+error[E0277]: the trait bound `{closure@$DIR/tests/compile_fail/quantifiers.rs:20:20: 20:28}: quantifiers::Predicate<_>` is not satisfied
+  --> tests/compile_fail/quantifiers.rs:20:20
+   |
+20 |     let _ = forall(|i: i32| i + i);
+   |             ------ ^^^^^^^^^^^^^^ unsatisfied trait bound
+   |             |
+   |             required by a bound introduced by this call
+   |
+   = help: the trait `quantifiers::Predicate<_>` is not implemented for closure `{closure@$DIR/tests/compile_fail/quantifiers.rs:20:20: 20:28}`
+note: required by a bound in `forall`
+  --> src/quantifiers.rs
+   |
+   | pub fn forall<P: Predicate<T>, T>(predicate: P) -> bool {
+   |                  ^^^^^^^^^^^^ required by this bound in `forall`
