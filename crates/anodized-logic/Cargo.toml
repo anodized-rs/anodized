@@ -1,0 +1,14 @@
+[package]
+name = "anodized-logic"
+description.workspace = true
+
+version.workspace = true
+edition.workspace = true
+readme = "README.md"
+repository.workspace = true
+categories.workspace = true
+keywords.workspace = true
+license.workspace = true
+
+[dev-dependencies]
+trybuild = "1.0"
