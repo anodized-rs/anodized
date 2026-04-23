@@ -9,13 +9,17 @@ pub mod fns;
 pub mod loops;
 pub mod traits;
 
-pub struct Backend {
+pub struct Config {
     pub embed_spec: bool,
     pub emit_print: bool,
     pub emit_panic: bool,
 }
 
-impl Backend {
+impl Config {
+    pub fn emit_anything(&self) -> bool {
+        self.emit_print || self.emit_panic
+    }
+
     pub fn instrument_item_fn(&self, spec: Spec, mut item_fn: ItemFn) -> Result<TokenStream> {
         let mut tokens = TokenStream::new();
 
@@ -81,20 +85,20 @@ impl Backend {
 }
 
 #[cfg(test)]
-impl Backend {
-    pub(crate) const NOTHING: Backend = Backend {
+impl Config {
+    pub(crate) const DEFAULT: Config = Config {
         embed_spec: true,
         emit_print: false,
         emit_panic: false,
     };
 
-    pub(crate) const PRINT: Backend = Backend {
+    pub(crate) const PRINT: Config = Config {
         embed_spec: true,
         emit_print: true,
         emit_panic: false,
     };
 
-    pub(crate) const PANIC: Backend = Backend {
+    pub(crate) const PANIC: Config = Config {
         embed_spec: true,
         emit_print: true,
         emit_panic: true,

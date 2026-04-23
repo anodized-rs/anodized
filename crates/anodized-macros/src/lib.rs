@@ -5,10 +5,10 @@ use syn::{Item, TraitItemFn, parse_macro_input};
 
 use anodized_core::{
     DataSpec, Spec,
-    instrument::{Backend, make_item_error},
+    instrument::{Config, make_item_error},
 };
 
-const BACKEND: Backend = Backend {
+const CONFIG: Config = Config {
     embed_spec: cfg!(not(anodized_discard_specs)),
     emit_print: cfg!(anodized_print),
     emit_panic: cfg!(anodized_panic),
@@ -27,15 +27,15 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
     let result = match item {
         Item::Fn(func) => {
             let spec = parse_macro_input!(args as Spec);
-            BACKEND.instrument_item_fn(spec, func)
+            CONFIG.instrument_item_fn(spec, func)
         }
         Item::Trait(the_trait) => {
             let spec = parse_macro_input!(args as DataSpec);
-            BACKEND.instrument_item_trait(spec, the_trait)
+            CONFIG.instrument_item_trait(spec, the_trait)
         }
         Item::Impl(the_impl) if the_impl.trait_.is_some() => {
             let spec = parse_macro_input!(args as DataSpec);
-            BACKEND.instrument_item_trait_impl(spec, the_impl)
+            CONFIG.instrument_item_trait_impl(spec, the_impl)
         }
         Item::Impl(ref the_impl) if the_impl.trait_.is_none() => {
             Err(make_item_error(&item, "inherent impl"))
@@ -43,7 +43,7 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
         Item::Const(_) => Err(make_item_error(&item, "const")),
         Item::Enum(the_enum) => {
             let spec = parse_macro_input!(args as DataSpec);
-            BACKEND.instrument_item_enum(spec, the_enum)
+            CONFIG.instrument_item_enum(spec, the_enum)
         }
         Item::ExternCrate(_) => Err(make_item_error(&item, "extern crate")),
         Item::ForeignMod(_) => Err(make_item_error(&item, "extern block")),
@@ -52,7 +52,7 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
         Item::Static(_) => Err(make_item_error(&item, "static")),
         Item::Struct(the_struct) => {
             let spec = parse_macro_input!(args as DataSpec);
-            BACKEND.instrument_item_struct(spec, the_struct)
+            CONFIG.instrument_item_struct(spec, the_struct)
         }
         Item::TraitAlias(_) => Err(make_item_error(&item, "trait alias")),
         Item::Type(_) => Err(make_item_error(&item, "type")),

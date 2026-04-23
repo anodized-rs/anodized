@@ -43,17 +43,12 @@ fn embed_spec_item_trait() {
             }
 
             fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
-                Self::__anodized_FUNC(self, PARAM_1, PARAM_2)
-            }
-
-            #[doc(hidden)]
-            fn __anodized_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
                 BODY
             }
         }
     };
 
-    let observed = Backend::NOTHING
+    let observed = Config::DEFAULT
         .instrument_item_trait(trait_spec, item_trait)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -97,14 +92,13 @@ fn embed_spec_item_impl_trait() {
                 let _ = |PAT_1: &RET_TYPE| COND_3;
             }
 
-            #[inline]
-            fn __anodized_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
+            fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
                 BODY
             }
         }
     };
 
-    let observed = Backend::NOTHING
+    let observed = Config::DEFAULT
         .instrument_item_trait_impl(trait_spec, item_impl)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
