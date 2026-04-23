@@ -20,3 +20,4 @@ anodized-macros.workspace = true
 [dev-dependencies]
 pollster = "0.4"
 trybuild = "1.0"
+hax-lib = "0.3.6"

@@ -13,6 +13,7 @@ pub struct Backend {
     pub embed_spec: bool,
     pub emit_print: bool,
     pub emit_panic: bool,
+    pub target_hax: bool,
 }
 
 impl Backend {
@@ -54,6 +55,10 @@ impl Backend {
             spec_ensures_fn.to_tokens(&mut tokens);
         }
 
+        if self.target_hax {
+            Self::build_hax_attrs(&spec, &mut item_fn.attrs);
+        }
+
         // Instrument function body.
         self.instrument_fn(&spec, &item_fn.sig, &mut item_fn.block)?;
         item_fn.to_tokens(&mut tokens);
@@ -86,18 +91,21 @@ impl Backend {
         embed_spec: true,
         emit_print: false,
         emit_panic: false,
+        target_hax: false,
     };
 
     pub(crate) const PRINT: Backend = Backend {
         embed_spec: true,
         emit_print: true,
         emit_panic: false,
+        target_hax: false,
     };
 
     pub(crate) const PANIC: Backend = Backend {
         embed_spec: true,
         emit_print: true,
         emit_panic: true,
+        target_hax: false,
     };
 }
 

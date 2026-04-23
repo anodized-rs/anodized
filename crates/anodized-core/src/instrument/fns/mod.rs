@@ -9,7 +9,8 @@ use crate::{
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
-    Block, Expr, Ident, Pat, PatIdent, ReturnType, Signature, Stmt, parse::Result, parse_quote,
+    Attribute, Block, Expr, Ident, Pat, PatIdent, ReturnType, Signature, Stmt, parse::Result,
+    parse_quote,
 };
 
 impl Backend {
@@ -111,6 +112,22 @@ impl Backend {
                 #(#statements)*
             }
         })
+    }
+
+    pub(crate) fn build_hax_attrs(spec: &Spec, attrs: &mut Vec<Attribute>) {
+        for precond in &spec.requires {
+            let closure = &precond.closure;
+            attrs.push(parse_quote! { #[hax_lib::requires((#closure)())] });
+        }
+        for invariant in &spec.maintains {
+            let closure = &invariant.closure;
+            attrs.push(parse_quote! { #[hax_lib::requires((#closure)())] });
+            attrs.push(parse_quote! { #[hax_lib::ensures(|_| (#closure)())] });
+        }
+        for postcond in &spec.ensures {
+            let closure = &postcond.closure;
+            attrs.push(parse_quote! { #[hax_lib::ensures(#closure)] });
+        }
     }
 
     fn instrument_fn_body(
