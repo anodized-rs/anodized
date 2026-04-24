@@ -123,11 +123,11 @@ impl Backend {
             let closure = &invariant.closure;
             let body = &closure.body;
             attrs.push(parse_quote! { #[hax_lib::requires(#body)] });
-            attrs.push(parse_quote! { #[hax_lib::ensures(|_| #body)] });
+            attrs.push(parse_quote! { #[hax_lib::ensures_ref(|_| #body)] });
         }
         for postcond in &spec.ensures {
             let closure = &postcond.closure;
-            attrs.push(parse_quote! { #[hax_lib::ensures(#closure)] });
+            attrs.push(parse_quote! { #[hax_lib::ensures_ref(#closure)] });
         }
     }
 
