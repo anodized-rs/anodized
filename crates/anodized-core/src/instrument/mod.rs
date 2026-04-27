@@ -6,20 +6,24 @@ pub mod fns;
 pub mod traits;
 
 pub struct Backend {
-    pub build_check: fn(Option<&Meta>, &TokenStream, &str, &TokenStream) -> TokenStream,
+    pub emit_print: bool,
+    pub emit_panic: bool,
 }
 
 impl Backend {
     pub const CHECK_AND_PANIC: Backend = Backend {
-        build_check: build_assert,
+        emit_print: true,
+        emit_panic: true,
     };
 
     pub const CHECK_AND_PRINT: Backend = Backend {
-        build_check: build_eprint,
+        emit_print: true,
+        emit_panic: false,
     };
 
     pub const NO_CHECK: Backend = Backend {
-        build_check: build_inert,
+        emit_print: false,
+        emit_panic: false,
     };
 }
 

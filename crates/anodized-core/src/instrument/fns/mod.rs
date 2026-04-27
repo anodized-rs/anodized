@@ -1,7 +1,10 @@
 #[cfg(test)]
 mod tests;
 
-use crate::{Spec, instrument::Backend};
+use crate::{
+    Spec,
+    instrument::{Backend, build_assert, build_eprint, build_inert},
+};
 
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
@@ -33,7 +36,12 @@ impl Backend {
         is_async: bool,
         return_type: &syn::Type,
     ) -> Result<Block> {
-        let build_check = self.build_check;
+        let build_check = match (self.emit_print, self.emit_panic) {
+            (true, true) => build_assert,
+            (true, false) => build_eprint,
+            (false, true) => build_assert,
+            (false, false) => build_inert,
+        };
 
         // The identifier for the return value binding.
         let output_ident = Pat::Ident(PatIdent {
