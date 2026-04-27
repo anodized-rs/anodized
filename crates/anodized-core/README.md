@@ -72,7 +72,7 @@ cfg_attr = `#[cfg(` , settings , `)]`;
 
 ## Runtime Checks
 
-The `#[spec]` macro transforms the function body by injecting runtime checks whose behavior is controlled by `runtime-*` feature settings. This process, known as instrumentation, follows a clear pattern.
+The `#[spec]` macro transforms the function body by injecting runtime checks whose behavior is controlled by compiler cfg settings in `anodized` (for example `anodized_panic` or `anodized_print`). This process, known as instrumentation, follows a clear pattern.
 
 Given an original function like this:
 
@@ -122,4 +122,4 @@ fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
 }
 ```
 
-When a condition has a `#[cfg(...)]` attribute, the corresponding `check!` is wrapped in an `if cfg!(...)` block. This follows standard Rust `#[cfg]` semantics: the check only runs when the configuration predicate is true. The behavior of the `check!` itself is controlled by the global `runtime-*` feature setting.
+When a condition has a `#[cfg(...)]` attribute, the corresponding `check!` is wrapped in an `if cfg!(...)` block. This follows standard Rust `#[cfg]` semantics: the check only runs when the configuration predicate is true. The behavior of the `check!` itself is controlled by the selected `anodized` cfg setting.

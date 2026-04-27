@@ -45,15 +45,15 @@ jobs:
         run: cargo test -p anodized-core --lib --no-fail-fast
 
   test-anodized:
-    name: Lint and test anodized with runtime behavior `${{ matrix.runtime }}`
+    name: Lint and test anodized with cfg `${{ matrix.cfg }}`
     runs-on: ubuntu-latest
     needs: fmt
     strategy:
       matrix:
         include:
-          - runtime: check-and-panic
-          - runtime: check-and-print
-          - runtime: no-check
+          - cfg: '--config build.rustflags=["--cfg","anodized_panic"]'
+          - cfg: '--config build.rustflags=["--cfg","anodized_print"]'
+          - cfg: ""
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -63,11 +63,11 @@ jobs:
         with:
           components: clippy
 
-      - name: Lint anodized with runtime behavior `${{ matrix.runtime }}`
-        run: cargo clippy -p anodized --all-targets --no-default-features --features "runtime-${{ matrix.runtime }}" -- -D warnings
+      - name: Lint anodized with cfg `${{ matrix.cfg }}`
+        run: cargo ${{ matrix.cfg }} clippy -p anodized --all-targets -- -D warnings
 
-      - name: Integration test anodized with runtime behavior `${{ matrix.runtime }}`
-        run: cargo test -p anodized --tests --no-fail-fast --no-default-features --features "runtime-${{ matrix.runtime }}"
+      - name: Integration test anodized with cfg `${{ matrix.cfg }}`
+        run: cargo ${{ matrix.cfg }} test -p anodized --tests --no-fail-fast
 
   test-anodized-fmt:
     name: Lint and test anodized-fmt

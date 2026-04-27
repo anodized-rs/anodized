@@ -73,14 +73,14 @@ Anodized aims to become a common layer across runtime checks, fuzzing, and verif
 
 **Runtime Behaviors**
 
-| Behavior          | Status    | A `spec` violation...  |
-| ----------------- | --------- | ---------------------- |
-| `check-and-panic` | Available | panics                 |
-| `check-and-print` | Available | prints an error        |
-| `no-check`        | Available | has no runtime effect  |
-| `check-and-log`   | Planned   | writes to a log        |
-| `check-and-trace` | Planned   | emits a trace event    |
-| `check-and-trap`  | Planned   | breaks into a debugger |
+| Behavior               | Status    | A `spec` violation...  |
+| ---------------------- | --------- | ---------------------- |
+| `cfg(anodized_panic)`  | Available | panics                 |
+| `cfg(anodized_print)`  | Available | prints an error        |
+| no cfg selected        | Available | has no runtime effect  |
+| `cfg(anodized_log)`    | Planned   | writes to a log        |
+| `cfg(anodized_trace)`  | Planned   | emits a trace event    |
+| `cfg(anodized_trap)`   | Planned   | breaks into a debugger |
 
 **Analyzer Integrations**
 
@@ -99,10 +99,16 @@ Anodized aims to become a common layer across runtime checks, fuzzing, and verif
 
 ```toml
 [dependencies]
-anodized = { version = "0.4.0", features = ["runtime-check-and-panic"] }
+anodized = { version = "0.4.0" }
 ```
 
-See the [Runtime Behaviors](#runtime-behaviors) section for other runtime features.
+Then compile with your desired runtime cfg:
+
+```bash
+RUSTFLAGS="--cfg anodized_panic" cargo run
+```
+
+See the [Runtime Behaviors](#runtime-behaviors) section for other runtime cfg settings.
 
 **2. Add specifications to your functions.**
 
@@ -143,7 +149,7 @@ Your code is automatically instrumented to check the specifications at runtime. 
 thread 'main' panicked at 'Precondition failed: part <= whole', src/main.rs:17:5
 ```
 
-By default, runtime spec-checking is always active (just like Rust's `assert!` macro). For performance-sensitive code, you can use `#[cfg]` attributes to control when checks run (see the [#[cfg] section](#cfg-configure-runtime-checks) below).
+Runtime checks are active when you compile with `--cfg anodized_panic` or `--cfg anodized_print`. You can additionally use `#[cfg]` attributes on individual conditions to control when checks run (see the [#[cfg] section](#cfg-configure-runtime-checks) below).
 
 **Important:** Even when a condition's runtime check is disabled via a `#[cfg]` build setting, the compiler still validates that condition at compile time for syntax errors, unknown identifiers, type mismatches, etc.
 
@@ -229,24 +235,23 @@ Important restrictions:
 
 Anodized offers multiple runtime behaviors that control how `#[spec]` annotations expand to runtime checks:
 
-- **`check-and-panic`**: Inject an `assert!` check for each `requires`, `maintains`, and `ensures` clause. A failing condition panics with a descriptive message, just like the examples above.
-- **`check-and-print`**: Reports violations with `eprintln!` so execution can continue. Useful for experiments, logging, etc.
-- **`no-check`**: Disable checks altogether. Each check is surrounded with an `if false { ... }`, which lets the compiler optimize the checks away, while keeping the `#[spec]` syntax- and type-checked.
+- **`cfg(anodized_panic)`**: Inject an `assert!` check for each `requires`, `maintains`, and `ensures` clause. A failing condition panics with a descriptive message, just like the examples above.
+- **`cfg(anodized_print)`**: Reports violations with `eprintln!` so execution can continue. Useful for experiments, logging, etc.
+- **No cfg selected**: Disable checks altogether. Each check is surrounded with an `if false { ... }`, which lets the compiler optimize the checks away, while keeping the `#[spec]` syntax- and type-checked.
 
-The runtime setting goes in your `Cargo.toml`, for example:
+You select the runtime behavior via compiler cfg flags, for example:
 
-```toml
-anodized = {
-  version = # version
-  features = ["runtime-check-and-print"]
-}
+```bash
+RUSTFLAGS="--cfg anodized_print" cargo test
 ```
 
-Future runtime behaviors (log, trace, breakpoint, etc.) will use the same feature-based mechanism.
+To disable runtime checks completely, run without either cfg flag.
+
+Future runtime behaviors (log, trace, breakpoint, etc.) will use the same cfg-based mechanism.
 
 ### `#[cfg]`: Configure Runtime Checks
 
-By default, each condition is checked at runtime, just like Rust's `assert!` macro: it's always active in both debug and release builds. You can use the standard `#[cfg]` attribute to select build configurations under which the runtime check is active.
+When `--cfg anodized_panic` or `--cfg anodized_print` is enabled, each condition is checked at runtime, just like Rust's `assert!` macro. You can use the standard `#[cfg]` attribute to select build configurations under which the runtime check is active.
 
 ```rust, no_run
 use anodized::spec;

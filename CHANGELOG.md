@@ -44,12 +44,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Breaking Changes
 
 - **Fixed handling `return` statements in a `fn` body** - Returns no longer bypass runtime checks.
-- **Must explicitly select a `runtime-*` behavior** - See below.
+- **Must explicitly select an `anodized-*` behavior** - See below.
 
 ### Added
 
 - Support for capturing entry-time values via `captures:`.
-- Explicit `runtime-*` behavior settings: `check-and-panic`, `check-and-print`, `no-check`.
+- Explicit behavior settings via cfg: `--cfg anodized_panic`, `--cfg anodized_print`; no-check uses neither cfg.
 
 ## 0.2.1 (2025 Aug 26)
 

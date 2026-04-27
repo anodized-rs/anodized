@@ -25,7 +25,7 @@ fn func(log: &mut Vec<&'static str>) {
     return;
 }
 
-#[cfg(not(feature = "runtime-no-check"))]
+#[cfg(any(anodized_panic, anodized_print))]
 #[test]
 fn execution_order() {
     let mut log = Vec::new();
@@ -73,7 +73,7 @@ fn func_all_conditions_fail(log: &mut Vec<&'static str>) {
     return;
 }
 
-#[cfg(feature = "runtime-check-and-print")]
+#[cfg(anodized_print)]
 #[test]
 fn execution_order_print_only() {
     let mut log = Vec::new();
@@ -121,7 +121,7 @@ async fn async_func(log: &mut Vec<&'static str>) {
     return;
 }
 
-#[cfg(not(feature = "runtime-no-check"))]
+#[cfg(any(anodized_panic, anodized_print))]
 #[test]
 fn async_execution_order() {
     let mut log = Vec::new();

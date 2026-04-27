@@ -1,3 +1,3 @@
 {
-    "rust-analyzer.cargo.features": ["anodized/runtime-check-and-panic"]
+    "rust-analyzer.cargo.cfgs": ["anodized_panic"]
 }
