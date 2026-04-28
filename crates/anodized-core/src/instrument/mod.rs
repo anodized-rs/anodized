@@ -10,23 +10,6 @@ pub struct Backend {
     pub emit_panic: bool,
 }
 
-impl Backend {
-    pub const CHECK_AND_PANIC: Backend = Backend {
-        emit_print: true,
-        emit_panic: true,
-    };
-
-    pub const CHECK_AND_PRINT: Backend = Backend {
-        emit_print: true,
-        emit_panic: false,
-    };
-
-    pub const NO_CHECK: Backend = Backend {
-        emit_print: false,
-        emit_panic: false,
-    };
-}
-
 /// Make an error message to say that some item is unsupported.
 pub fn make_item_error<T: ToTokens>(tokens: &T, item_descr: &str) -> syn::Error {
     let msg = format!(
