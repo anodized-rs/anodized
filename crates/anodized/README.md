@@ -71,7 +71,7 @@ Anodized aims to become a common layer across runtime checks, fuzzing, and verif
 | `struct`, `enum`       | Planned                   | Data invariants.                     |
 | `while`, `loop`, `for` | Planned                   | Loop invariants.                     |
 
-**Backend Settings**
+**Build Configurations**
 
 | `--cfg` setting  | Status    | A `spec` violation...  |
 | ---------------- | --------- | ---------------------- |
@@ -102,13 +102,13 @@ Anodized aims to become a common layer across runtime checks, fuzzing, and verif
 anodized = { version = "0.4.0" }
 ```
 
-Then compile with your desired runtime cfg:
+Then compile with an `anodized_*` build setting:
 
 ```bash
 RUSTFLAGS="--cfg anodized_panic" cargo run
 ```
 
-See the [Backend Settings](#runtime-settings) section for other configuration options.
+See the [Build Configurations](#build-configurations) section for other options.
 
 **2. Add specifications to your functions.**
 
@@ -231,22 +231,22 @@ Important restrictions:
 - Do not put `#[spec]` on methods inside a `#[spec]` trait impl. Method specs are defined at the trait declaration.
 - Names prefixed with `__anodized_` are internal and must not be implemented directly.
 
-### Backend Settings
+### Build Configurations
 
-Anodized uses `cfg` settings to control how the backend expands each `#[spec]` into Rust code.
+Anodized uses `cfg` options to control how each `#[spec]` changes the Rust code.
 
 - **`anodized_print`**: Reports violations with `eprintln!` so execution can continue. Useful for experiments, logging, etc.
-- **`anodized_panic`**: Inject an `assert!` check for each `requires`, `maintains`, and `ensures` clause. A failing condition panics with a descriptive message, just like the examples above.
+- **`anodized_panic`**: Injects an `assert!` check for each `requires`, `maintains`, and `ensures` clause. A failing condition panics with a descriptive message.
 
-You select the runtime behavior via compiler `cfg` flags, for example:
+Select the desired options via compiler `cfg` flags, for example:
 
 ```bash
 RUSTFLAGS="--cfg anodized_print" cargo test
 ```
 
-To disable runtime checks completely, run without any `anodized_*` setting.
+To disable runtime checks completely, run without any `anodized_*` options.
 
-Future backend settings (log, trace, breakpoint, etc.) will use the same `cfg`-based mechanism.
+Future options (log, trace, breakpoint, etc.) will use the same `cfg`-based mechanism.
 
 ### Attribute Support
 
@@ -431,7 +431,7 @@ A core design principle of Anodized is that a condition is written as a **standa
 
 The choice of "specification" (or "spec") over "contract" is deliberate. While Design by Contract has a rich history, the term "contract" is now strongly associated with blockchain. This is particularly true in Rust, which has become a leading language for smart contract development.
 
-This naming collision hurts discoverability. Searching for "Rust contract" yields blockchain results, not correctness tools.
+This naming collision hurts discoverability. Searching for "Rust contract" yields many blockchain results, not just correctness tools.
 
 Using "specification" instead:
 
