@@ -2,13 +2,15 @@
 mod tests;
 
 use crate::{
-    Spec,
-    instrument::{Backend, build_assert, build_eprint, build_inert},
+    Capture, PostCondition, PreCondition, Spec,
+    instrument::{Backend, build_assert, build_eprint},
 };
 
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
-use syn::{Block, Ident, Pat, PatIdent, Signature, parse::Result, parse_quote};
+use syn::{
+    Block, Expr, Ident, Pat, PatIdent, ReturnType, Signature, Stmt, parse::Result, parse_quote,
+};
 
 impl Backend {
     pub fn instrument_fn(&self, spec: Spec, sig: &Signature, body: &mut Block) -> syn::Result<()> {
@@ -29,6 +31,86 @@ impl Backend {
         Ok(())
     }
 
+    pub fn build_spec_fn_sig(prefix: &str, sig: &Signature) -> Signature {
+        Signature {
+            constness: sig.constness,
+            asyncness: sig.asyncness,
+            unsafety: sig.unsafety,
+            abi: sig.abi.clone(),
+            fn_token: sig.fn_token,
+            ident: syn::Ident::new(&format!("{prefix}_{}", sig.ident), sig.ident.span()),
+            generics: sig.generics.clone(),
+            paren_token: sig.paren_token,
+            inputs: sig.inputs.clone(),
+            variadic: sig.variadic.clone(),
+            output: syn::ReturnType::Default,
+        }
+    }
+
+    pub fn build_precondition_fn_body(conditions: &[PreCondition]) -> Block {
+        let statements = conditions.iter().map(|condition| -> Stmt {
+            let closure = &condition.closure;
+            parse_quote! { let _ = #closure; }
+        });
+        parse_quote! {
+            {
+                #(#statements)*
+            }
+        }
+    }
+
+    pub fn build_poscondition_fn_body(
+        captures: &[Capture],
+        conditions: &[PostCondition],
+        return_type: &ReturnType,
+    ) -> Result<Block> {
+        let aliases = captures.iter().map(|capture| &capture.pat);
+        let capture_exprs = captures.iter().map(|capture| -> Expr {
+            let expr = &capture.expr;
+            // Wrap in closure to guard against `return`.
+            parse_quote! { (|| #expr)() }
+        });
+
+        let mut statements = vec![];
+
+        for condition in conditions {
+            let closure = &condition.closure;
+            // TODO: This sort of validation should happen during parsing.
+            let output_binder = match closure.inputs.first() {
+                Some(output_binder) if closure.inputs.len() == 1 => output_binder,
+                _ => {
+                    return Err(syn::Error::new_spanned(
+                        &closure.inputs,
+                        "Postcondition closure must have exactly one parameter.",
+                    ));
+                }
+            };
+            let statement: Stmt = if let Pat::Type(_) = output_binder {
+                // If the output binder has a type annotation, use as-is.
+                parse_quote! { let _ = #closure; }
+            } else {
+                // Otherwise add a type annotation.
+                let body = &closure.body;
+                match &return_type {
+                    ReturnType::Default => {
+                        parse_quote! { let _ = |#output_binder: &()| #body; }
+                    }
+                    ReturnType::Type(_, ty) => {
+                        parse_quote! { let _ = |#output_binder: &#ty| #body; }
+                    }
+                }
+            };
+            statements.push(statement);
+        }
+
+        Ok(parse_quote! {
+            {
+                let (#(#aliases),*) = (#(#capture_exprs),*);
+                #(#statements)*
+            }
+        })
+    }
+
     fn instrument_fn_body(
         &self,
         spec: &Spec,
@@ -40,7 +122,7 @@ impl Backend {
             (true, true) => build_assert,
             (true, false) => build_eprint,
             (false, true) => build_assert,
-            (false, false) => build_inert,
+            (false, false) => return Ok(original_body.clone()),
         };
 
         // The identifier for the return value binding.

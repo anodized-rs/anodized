@@ -25,6 +25,7 @@ fn rename_success() {
     binds: result,
     ensures: *result % 2 == 0,
 )]
+#[allow(unused)]
 fn calculate_odd_result(output: i32) -> i32 {
     if output % 2 == 0 {
         output + 1

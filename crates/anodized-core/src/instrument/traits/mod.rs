@@ -1,5 +1,8 @@
+#[cfg(test)]
+mod tests;
+
 use quote::quote;
-use syn::{FnArg, ImplItem, Pat, TraitItem, parse_quote};
+use syn::{Attribute, FnArg, ImplItem, Pat, TraitItem, TraitItemFn, parse_quote};
 
 use crate::{
     Spec,
@@ -24,6 +27,7 @@ impl Backend {
                 "Unsupported spec element on trait. Try placing it on an item inside the trait",
             ));
         }
+        let _ = move || spec;
 
         let mut new_trait_items = Vec::with_capacity(the_trait.items.len() * 2);
 
@@ -31,7 +35,6 @@ impl Backend {
             match item {
                 TraitItem::Fn(mut func) => {
                     let (spec_attr, other_attrs) = find_spec_attr(func.attrs)?;
-
                     // NOTE: We have no way of knowing which attributes are
                     //   "external" - meant for the interface and belong on the wrapper,
                     //   "internal" - meant for the mangled implementation.
@@ -39,8 +42,41 @@ impl Backend {
                     //   not going to work in every situation.
                     func.attrs = other_attrs.clone();
 
-                    let original_ident = func.sig.ident.clone();
-                    let mangled_ident = mangle_ident(&original_ident);
+                    let fn_spec: Spec = match spec_attr {
+                        Some(spec_attr) => spec_attr.parse_args()?,
+                        None => Spec::empty(),
+                    };
+
+                    let attrs: [Attribute; 2] = [
+                        parse_quote!(#[doc(hidden)]),
+                        parse_quote!(#[allow(warnings)]),
+                    ];
+
+                    // Embed `spec` elements as `__anodized_fn_*` functions.
+                    let spec_requires_fn = TraitItemFn {
+                        attrs: attrs.to_vec(),
+                        sig: Self::build_spec_fn_sig("__anodized_fn_requires", &func.sig),
+                        default: Some(Self::build_precondition_fn_body(&fn_spec.requires)),
+                        semi_token: None,
+                    };
+                    let spec_maintains_fn = TraitItemFn {
+                        attrs: attrs.to_vec(),
+                        sig: Self::build_spec_fn_sig("__anodized_fn_maintains", &func.sig),
+                        default: Some(Self::build_precondition_fn_body(&fn_spec.maintains)),
+                        semi_token: None,
+                    };
+                    let spec_ensures_fn = TraitItemFn {
+                        attrs: attrs.to_vec(),
+                        sig: Self::build_spec_fn_sig("__anodized_fn_ensures", &func.sig),
+                        default: Some(Self::build_poscondition_fn_body(
+                            &fn_spec.captures,
+                            &fn_spec.ensures,
+                            &func.sig.output,
+                        )?),
+                        semi_token: None,
+                    };
+
+                    let mangled_ident = mangle_ident(&func.sig.ident);
 
                     let mut wrapper_fn = func.clone();
                     wrapper_fn.attrs = other_attrs;
@@ -48,10 +84,7 @@ impl Backend {
                     let mut wrapper_body: syn::Block = parse_quote!({
                         Self::#mangled_ident(#(#call_args),*)
                     });
-                    if let Some(spec_attr) = spec_attr {
-                        let spec = spec_attr.parse_args()?;
-                        self.instrument_fn(spec, &wrapper_fn.sig, &mut wrapper_body)?;
-                    }
+                    self.instrument_fn(fn_spec, &wrapper_fn.sig, &mut wrapper_body)?;
                     wrapper_fn.default = Some(wrapper_body);
                     wrapper_fn.semi_token = None;
                     new_trait_items.push(TraitItem::Fn(wrapper_fn));
@@ -61,6 +94,10 @@ impl Backend {
                     mangled_fn.attrs.retain(|attr| !attr.path().is_ident("doc"));
                     mangled_fn.attrs.push(parse_quote!(#[doc(hidden)]));
                     new_trait_items.push(TraitItem::Fn(mangled_fn));
+
+                    new_trait_items.push(TraitItem::Fn(spec_requires_fn));
+                    new_trait_items.push(TraitItem::Fn(spec_maintains_fn));
+                    new_trait_items.push(TraitItem::Fn(spec_ensures_fn));
                 }
                 TraitItem::Const(mut const_item) => {
                     let (spec, attrs) = find_spec_attr(const_item.attrs)?;

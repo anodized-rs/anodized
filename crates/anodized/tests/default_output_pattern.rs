@@ -7,6 +7,7 @@ use anodized::spec;
         (*a, *b) == pair || (*b, *a) == pair,
     ],
 )]
+#[allow(unused)]
 fn sort_pair(pair: (i32, i32)) -> (i32, i32) {
     // Deliberately wrong implementation to break the spec.
     pair

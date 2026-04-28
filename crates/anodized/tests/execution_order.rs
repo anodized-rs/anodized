@@ -20,6 +20,7 @@ use anodized::spec;
         return log.push("ensures2") == (),
     ],
 )]
+#[allow(unused)]
 fn func(log: &mut Vec<&'static str>) {
     log.push("body");
     return;
@@ -68,6 +69,7 @@ fn execution_order() {
         log.push("ensures2") != (),
     ],
 )]
+#[allow(unused)]
 fn func_all_conditions_fail(log: &mut Vec<&'static str>) {
     log.push("body");
     return;
@@ -116,6 +118,7 @@ fn execution_order_print_only() {
         log.push("ensures2") == (),
     ],
 )]
+#[allow(unused)]
 async fn async_func(log: &mut Vec<&'static str>) {
     log.push("body");
     return;

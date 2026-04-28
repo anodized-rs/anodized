@@ -25,6 +25,17 @@ pub struct Spec {
 }
 
 impl Spec {
+    /// Empty spec that contains no elements.
+    pub fn empty() -> Self {
+        Self {
+            requires: vec![],
+            maintains: vec![],
+            captures: vec![],
+            ensures: vec![],
+            span: Span::call_site(),
+        }
+    }
+
     /// Returns `true` if the spec contract is empty (specifies nothing), otherwise returns `false`
     pub fn is_empty(&self) -> bool {
         self.requires.is_empty()

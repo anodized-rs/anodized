@@ -1,7 +1,72 @@
 use crate::test_util::assert_tokens_eq;
 
 use super::*;
-use syn::{Block, Type, parse_quote};
+use proc_macro2::TokenStream;
+use syn::{Block, ItemFn, Type, parse_quote};
+
+#[test]
+fn embed_spec_item_fn() {
+    let fn_spec: Spec = parse_quote! {
+        requires: COND_1,
+        #[cfg(META_1)]
+        requires: [COND_2, COND_3],
+        maintains: [COND_4, COND_5],
+        #[cfg(META_2)]
+        maintains: COND_6,
+        captures: [
+            EXPR_1 as ALIAS_1,
+            EXPR_2 as (ALIAS_2, ALIAS_3),
+        ],
+        binds: PAT_1,
+        ensures: COND_7,
+        #[cfg(META_3)]
+        ensures: [
+            COND_8,
+            |PAT_2: TYPE| COND_9,
+        ],
+    };
+    let item_fn: ItemFn = parse_quote! {
+        fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
+            BODY
+        }
+    };
+
+    let expected: TokenStream = parse_quote! {
+        fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
+            BODY
+        }
+
+        #[doc(hidden)]
+        #[allow(warnings)]
+        fn __anodized_fn_requires_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
+            let _ = | | COND_1;
+            let _ = | | COND_2;
+            let _ = | | COND_3;
+        }
+
+        #[doc(hidden)]
+        #[allow(warnings)]
+        fn __anodized_fn_maintains_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
+            let _ = | | COND_4;
+            let _ = | | COND_5;
+            let _ = | | COND_6;
+        }
+
+        #[doc(hidden)]
+        #[allow(warnings)]
+        fn __anodized_fn_ensures_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
+            let (ALIAS_1, (ALIAS_2, ALIAS_3)) = ((| | EXPR_1)(), (| | EXPR_2)());
+            let _ = |PAT_1: &RET_TYPE| COND_7;
+            let _ = |PAT_1: &RET_TYPE| COND_8;
+            let _ = |PAT_2: TYPE| COND_9;
+        }
+    };
+
+    let observed = Backend::NOTHING
+        .instrument_item_fn(fn_spec, item_fn)
+        .unwrap();
+    assert_tokens_eq(&observed, &expected);
+}
 
 fn make_fn_body() -> Block {
     parse_quote! {
@@ -47,19 +112,10 @@ fn requires_disable_runtime_checks() {
     let ret_type = make_return_type();
     let is_async = false;
 
-    let expected: Block = parse_quote! {
-        {
-            if false {
-                assert!((| | CONDITION_1)(), "Precondition failed: {}", "CONDITION_1");
-            }
-            let (__anodized_output): (#ret_type) = ((|| #body)());
-            __anodized_output
-        }
-    };
-
     let observed = Backend::NOTHING
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
+    let expected: Block = body;
     assert_tokens_eq(&observed, &expected);
 }
 
