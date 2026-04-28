@@ -10,20 +10,21 @@ pub struct Backend {
     pub emit_panic: bool,
 }
 
+#[cfg(test)]
 impl Backend {
-    pub const CHECK_AND_PANIC: Backend = Backend {
-        emit_print: true,
-        emit_panic: true,
-    };
-
-    pub const CHECK_AND_PRINT: Backend = Backend {
-        emit_print: true,
-        emit_panic: false,
-    };
-
-    pub const NO_CHECK: Backend = Backend {
+    pub(crate) const NOTHING: Backend = Backend {
         emit_print: false,
         emit_panic: false,
+    };
+
+    pub(crate) const PRINT: Backend = Backend {
+        emit_print: true,
+        emit_panic: false,
+    };
+
+    pub(crate) const PANIC: Backend = Backend {
+        emit_print: true,
+        emit_panic: true,
     };
 }
 
