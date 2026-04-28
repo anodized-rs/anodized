@@ -24,11 +24,11 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
     let item = parse_macro_input!(input as Item);
 
     let result = match item {
-        Item::Fn(func) => {
+        Item::Fn(mut func) => {
             let spec = parse_macro_input!(args as Spec);
             BACKEND
-                .instrument_fn(spec, func)
-                .map(|tokens| tokens.into_token_stream())
+                .instrument_fn(spec, &func.sig, &mut func.block)
+                .map(|_| func.into_token_stream())
         }
         Item::Trait(the_trait) => {
             let spec = parse_macro_input!(args as Spec);

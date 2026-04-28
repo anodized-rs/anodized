@@ -1,5 +1,5 @@
 use quote::quote;
-use syn::{FnArg, ImplItem, ItemFn, Pat, TraitItem, parse_quote};
+use syn::{FnArg, ImplItem, Pat, TraitItem, parse_quote};
 
 use crate::{
     Spec,
@@ -42,35 +42,25 @@ impl Backend {
                     let original_ident = func.sig.ident.clone();
                     let mangled_ident = mangle_ident(&original_ident);
 
-                    let mut mangled_fn = func.clone();
+                    let mut wrapper_fn = func.clone();
+                    wrapper_fn.attrs = other_attrs;
+                    let call_args = build_call_args(&func.sig.inputs)?;
+                    let mut wrapper_body: syn::Block = parse_quote!({
+                        Self::#mangled_ident(#(#call_args),*)
+                    });
+                    if let Some(spec_attr) = spec_attr {
+                        let spec = spec_attr.parse_args()?;
+                        self.instrument_fn(spec, &wrapper_fn.sig, &mut wrapper_body)?;
+                    }
+                    wrapper_fn.default = Some(wrapper_body);
+                    wrapper_fn.semi_token = None;
+                    new_trait_items.push(TraitItem::Fn(wrapper_fn));
+
+                    let mut mangled_fn = func;
                     mangled_fn.sig.ident = mangled_ident.clone();
                     mangled_fn.attrs.retain(|attr| !attr.path().is_ident("doc"));
                     mangled_fn.attrs.push(parse_quote!(#[doc(hidden)]));
-
-                    let call_args = build_call_args(&func.sig.inputs)?;
-                    let mut wrapper_block: syn::Block = parse_quote!({
-                        Self::#mangled_ident(#(#call_args),*)
-                    });
-
-                    if let Some(spec_attr) = spec_attr {
-                        let spec = spec_attr.parse_args()?;
-                        let wrapper_item = ItemFn {
-                            attrs: Vec::new(),
-                            vis: syn::Visibility::Inherited,
-                            sig: func.sig.clone(),
-                            block: Box::new(wrapper_block),
-                        };
-                        let instrumented = self.instrument_fn(spec, wrapper_item)?;
-                        wrapper_block = *instrumented.block;
-                    }
-
-                    let mut wrapper_fn = func;
-                    wrapper_fn.attrs = other_attrs;
-                    wrapper_fn.default = Some(wrapper_block);
-                    wrapper_fn.semi_token = None;
-
                     new_trait_items.push(TraitItem::Fn(mangled_fn));
-                    new_trait_items.push(TraitItem::Fn(wrapper_fn));
                 }
                 TraitItem::Const(mut const_item) => {
                     let (spec, attrs) = find_spec_attr(const_item.attrs)?;

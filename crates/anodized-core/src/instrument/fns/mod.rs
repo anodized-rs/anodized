@@ -8,25 +8,25 @@ use crate::{
 
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
-use syn::{Block, Ident, ItemFn, Pat, PatIdent, parse::Result, parse_quote};
+use syn::{Block, Ident, Pat, PatIdent, Signature, parse::Result, parse_quote};
 
 impl Backend {
-    pub fn instrument_fn(&self, spec: Spec, mut func: ItemFn) -> syn::Result<ItemFn> {
-        let is_async = func.sig.asyncness.is_some();
+    pub fn instrument_fn(&self, spec: Spec, sig: &Signature, body: &mut Block) -> syn::Result<()> {
+        let is_async = sig.asyncness.is_some();
 
         // Extract the return type from the function signature
-        let return_type = match &func.sig.output {
+        let return_type = match &sig.output {
             syn::ReturnType::Default => syn::parse_quote!(()),
             syn::ReturnType::Type(_, ty) => ty.as_ref().clone(),
         };
 
         // Generate the new, instrumented function body.
-        let new_body = self.instrument_fn_body(&spec, &func.block, is_async, &return_type)?;
+        let new_body = self.instrument_fn_body(&spec, body, is_async, &return_type)?;
 
         // Replace the old function body with the new one.
-        *func.block = new_body;
+        *body = new_body;
 
-        Ok(func)
+        Ok(())
     }
 
     fn instrument_fn_body(
