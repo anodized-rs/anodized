@@ -2,11 +2,11 @@ use crate::test_util::assert_tokens_eq;
 
 use super::*;
 use proc_macro2::TokenStream;
-use syn::{Block, ItemFn, Type, parse_quote};
+use syn::{Block, ItemFn, ItemTrait, Type, parse_quote};
 
 #[test]
 fn embed_spec_item_fn() {
-    let spec: Spec = parse_quote! {
+    let fn_spec: Spec = parse_quote! {
         requires: COND_1,
         #[cfg(META_1)]
         requires: [COND_2, COND_3],
@@ -26,19 +26,19 @@ fn embed_spec_item_fn() {
         ],
     };
     let item_fn: ItemFn = parse_quote! {
-        fn IDENT(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
+        fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
             BODY
         }
     };
 
     let expected: TokenStream = parse_quote! {
-        fn IDENT(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
+        fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
             BODY
         }
 
         #[doc(hidden)]
         #[allow(warnings)]
-        fn __anodized_fn_requires_IDENT(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
+        fn __anodized_fn_requires_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
             let _ = | | COND_1;
             let _ = | | COND_2;
             let _ = | | COND_3;
@@ -46,7 +46,7 @@ fn embed_spec_item_fn() {
 
         #[doc(hidden)]
         #[allow(warnings)]
-        fn __anodized_fn_maintains_IDENT(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
+        fn __anodized_fn_maintains_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
             let _ = | | COND_4;
             let _ = | | COND_5;
             let _ = | | COND_6;
@@ -54,7 +54,7 @@ fn embed_spec_item_fn() {
 
         #[doc(hidden)]
         #[allow(warnings)]
-        fn __anodized_fn_ensures_IDENT(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
+        fn __anodized_fn_ensures_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
             let (ALIAS_1, (ALIAS_2, ALIAS_3)) = ((| | EXPR_1)(), (| | EXPR_2)());
             let _ = |PAT_1: &RET_TYPE| COND_7;
             let _ = |PAT_1: &RET_TYPE| COND_8;
@@ -62,7 +62,64 @@ fn embed_spec_item_fn() {
         }
     };
 
-    let observed = Backend::NOTHING.instrument_item_fn(spec, item_fn).unwrap();
+    let observed = Backend::NOTHING
+        .instrument_item_fn(fn_spec, item_fn)
+        .unwrap();
+    assert_tokens_eq(&observed, &expected);
+}
+
+#[test]
+fn embed_spec_item_trait() {
+    let trait_spec = Spec::empty();
+    let item_trait: ItemTrait = parse_quote! {
+        trait TRAIT {
+            #[spec(
+                requires: COND_1,
+                maintains: COND_2,
+                binds: PAT_1,
+                ensures: COND_3,
+            )]
+            fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
+                BODY
+            }
+        }
+    };
+
+    let expected: TokenStream = parse_quote! {
+        trait TRAIT {
+            fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
+                Self::__anodized_FUNC(self, PARAM_1, PARAM_2)
+            }
+
+            #[doc(hidden)]
+            fn __anodized_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
+                BODY
+            }
+
+            #[doc(hidden)]
+            #[allow(warnings)]
+            fn __anodized_fn_requires_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
+                let _ = | | COND_1;
+            }
+
+            #[doc(hidden)]
+            #[allow(warnings)]
+            fn __anodized_fn_maintains_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
+                let _ = | | COND_2;
+            }
+
+            #[doc(hidden)]
+            #[allow(warnings)]
+            fn __anodized_fn_ensures_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
+                let () = ();
+                let _ = |PAT_1: &RET_TYPE| COND_3;
+            }
+        }
+    };
+
+    let observed = Backend::NOTHING
+        .instrument_item_trait(trait_spec, item_trait)
+        .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
