@@ -13,6 +13,7 @@ impl Validator {
     #[spec(
         maintains: self.is_valid(),
     )]
+    #[allow(unused)]
     fn set_validity(&mut self, new_validity: bool) {
         self.valid = new_validity;
     }

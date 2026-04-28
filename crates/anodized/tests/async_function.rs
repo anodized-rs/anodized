@@ -4,6 +4,7 @@ use anodized::spec;
     requires: x.is_finite(),
     ensures: output + output == x,
 )]
+#[allow(unused)]
 async fn async_half(x: f32) -> f32 {
     todo!()
 }
