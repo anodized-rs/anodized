@@ -235,8 +235,8 @@ Important restrictions:
 
 Anodized uses `cfg` options to control how each `#[spec]` changes the Rust code.
 
-- **`anodized_print`**: Reports violations with `eprintln!` so execution can continue. Useful for experiments, logging, etc.
-- **`anodized_panic`**: Injects an `assert!` check for each `requires`, `maintains`, and `ensures` clause. A failing condition panics with a descriptive message.
+- **`anodized_print`**: Reports each violation with `eprintln!`, so execution can continue. Useful for experiments, logging, etc.
+- **`anodized_panic`**: Checks each condition via an `assert!`, so a violation panics with a descriptive message.
 
 Select the desired options via compiler `cfg` flags, for example:
 
