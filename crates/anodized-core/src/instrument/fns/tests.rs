@@ -47,19 +47,10 @@ fn requires_disable_runtime_checks() {
     let ret_type = make_return_type();
     let is_async = false;
 
-    let expected: Block = parse_quote! {
-        {
-            if false {
-                assert!((| | CONDITION_1)(), "Precondition failed: {}", "CONDITION_1");
-            }
-            let (__anodized_output): (#ret_type) = ((|| #body)());
-            __anodized_output
-        }
-    };
-
     let observed = Backend::NOTHING
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
+    let expected: Block = body;
     assert_tokens_eq(&observed, &expected);
 }
 

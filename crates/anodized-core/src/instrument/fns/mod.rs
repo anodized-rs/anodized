@@ -3,7 +3,7 @@ mod tests;
 
 use crate::{
     Capture, PostCondition, PreCondition, Spec,
-    instrument::{Backend, build_assert, build_eprint, build_inert},
+    instrument::{Backend, build_assert, build_eprint},
 };
 
 use proc_macro2::Span;
@@ -122,7 +122,7 @@ impl Backend {
             (true, true) => build_assert,
             (true, false) => build_eprint,
             (false, true) => build_assert,
-            (false, false) => build_inert,
+            (false, false) => return Ok(original_body.clone()),
         };
 
         // The identifier for the return value binding.
