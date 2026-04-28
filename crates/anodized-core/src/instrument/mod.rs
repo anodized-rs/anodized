@@ -18,7 +18,7 @@ impl Backend {
 
         let attrs: [Attribute; 2] = [
             parse_quote!(#[doc(hidden)]),
-            parse_quote!(#[allow(unused_variables)]),
+            parse_quote!(#[allow(warnings)]),
         ];
 
         // Embed `spec` elements as `__anodized_fn_*` functions.
