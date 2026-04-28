@@ -86,7 +86,7 @@ impl Backend {
                 }
             };
             let statement: Stmt = if let Pat::Type(_) = output_binder {
-                // If the pattern has a type annotation, use as-is.
+                // If the output binder has a type annotation, use as-is.
                 parse_quote! { let _ = #closure; }
             } else {
                 // Otherwise add a type annotation.
