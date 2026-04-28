@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 use quote::quote;
 use syn::{Attribute, FnArg, ImplItem, Pat, TraitItem, TraitItemFn, parse_quote};
 
