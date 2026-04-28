@@ -1,7 +1,6 @@
 #![doc = include_str!("../README.md")]
 
 use proc_macro::TokenStream;
-use quote::ToTokens;
 use syn::{Item, TraitItemFn, parse_macro_input};
 
 use anodized_core::{
@@ -24,23 +23,17 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
     let item = parse_macro_input!(input as Item);
 
     let result = match item {
-        Item::Fn(mut func) => {
+        Item::Fn(func) => {
             let spec = parse_macro_input!(args as Spec);
-            BACKEND
-                .instrument_fn(spec, &func.sig, &mut func.block)
-                .map(|_| func.into_token_stream())
+            BACKEND.instrument_item_fn(spec, func)
         }
         Item::Trait(the_trait) => {
             let spec = parse_macro_input!(args as Spec);
-            BACKEND
-                .instrument_trait(spec, the_trait)
-                .map(|tokens| tokens.into_token_stream())
+            BACKEND.instrument_item_trait(spec, the_trait)
         }
         Item::Impl(the_impl) if the_impl.trait_.is_some() => {
             let spec = parse_macro_input!(args as Spec);
-            BACKEND
-                .instrument_trait_impl(spec, the_impl)
-                .map(|tokens| tokens.into_token_stream())
+            BACKEND.instrument_item_trait_impl(spec, the_impl)
         }
         Item::Impl(ref the_impl) if the_impl.trait_.is_none() => {
             Err(make_item_error(&item, "inherent impl"))

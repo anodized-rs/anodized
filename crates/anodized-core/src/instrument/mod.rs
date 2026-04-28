@@ -1,6 +1,8 @@
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
-use syn::{Attribute, Meta};
+use syn::{Attribute, ItemFn, ItemImpl, ItemTrait, Meta};
+
+use crate::Spec;
 
 pub mod fns;
 pub mod traits;
@@ -8,6 +10,31 @@ pub mod traits;
 pub struct Backend {
     pub emit_print: bool,
     pub emit_panic: bool,
+}
+
+impl Backend {
+    pub fn instrument_item_fn(&self, spec: Spec, mut item_fn: ItemFn) -> syn::Result<TokenStream> {
+        self.instrument_fn(spec, &item_fn.sig, &mut item_fn.block)?;
+        Ok(item_fn.to_token_stream())
+    }
+
+    pub fn instrument_item_trait(
+        &self,
+        spec: Spec,
+        item_trait: ItemTrait,
+    ) -> syn::Result<TokenStream> {
+        let new_trait = self.instrument_trait(spec, item_trait)?;
+        Ok(new_trait.to_token_stream())
+    }
+
+    pub fn instrument_item_trait_impl(
+        &self,
+        spec: Spec,
+        item_impl: ItemImpl,
+    ) -> syn::Result<TokenStream> {
+        let new_trait_impl = self.instrument_trait_impl(spec, item_impl)?;
+        Ok(new_trait_impl.to_token_stream())
+    }
 }
 
 #[cfg(test)]
