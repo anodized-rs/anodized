@@ -1,5 +1,5 @@
 use quote::quote;
-use syn::{FnArg, ImplItem, Pat, TraitItem, parse_quote};
+use syn::{Attribute, FnArg, ImplItem, Pat, TraitItem, TraitItemFn, parse_quote};
 
 use crate::{
     Spec,
@@ -39,8 +39,41 @@ impl Backend {
                     //   not going to work in every situation.
                     func.attrs = other_attrs.clone();
 
-                    let original_ident = func.sig.ident.clone();
-                    let mangled_ident = mangle_ident(&original_ident);
+                    let attrs: [Attribute; 2] = [
+                        parse_quote!(#[doc(hidden)]),
+                        parse_quote!(#[allow(warnings)]),
+                    ];
+
+                    // Embed `spec` elements as `__anodized_fn_*` functions.
+                    let spec_requires_fn = TraitItemFn {
+                        attrs: attrs.to_vec(),
+                        sig: Self::build_spec_fn_sig("__anodized_fn_requires", &func.sig),
+                        default: Some(Self::build_precondition_fn_body(&spec.requires)),
+                        semi_token: None,
+                    };
+                    new_trait_items.push(TraitItem::Fn(spec_requires_fn));
+
+                    let spec_maintains_fn = TraitItemFn {
+                        attrs: attrs.to_vec(),
+                        sig: Self::build_spec_fn_sig("__anodized_fn_maintains", &func.sig),
+                        default: Some(Self::build_precondition_fn_body(&spec.maintains)),
+                        semi_token: None,
+                    };
+                    new_trait_items.push(TraitItem::Fn(spec_maintains_fn));
+
+                    let spec_ensures_fn = TraitItemFn {
+                        attrs: attrs.to_vec(),
+                        sig: Self::build_spec_fn_sig("__anodized_fn_ensures", &func.sig),
+                        default: Some(Self::build_poscondition_fn_body(
+                            &spec.captures,
+                            &spec.ensures,
+                            &func.sig.output,
+                        )?),
+                        semi_token: None,
+                    };
+                    new_trait_items.push(TraitItem::Fn(spec_ensures_fn));
+
+                    let mangled_ident = mangle_ident(&func.sig.ident);
 
                     let mut wrapper_fn = func.clone();
                     wrapper_fn.attrs = other_attrs;
