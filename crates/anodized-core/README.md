@@ -16,8 +16,8 @@ This crate is the interoperability layer for tools connected to the [Anodized](h
 
 - **If you're looking for blockchain smart contracts...**
 
-  > _"These are not the **contracts** you're looking for."_ 🤖  
-  
+  > _"These are not the **contracts** you're looking for."_ 🤖
+
   But don't leave yet! While Anodized is about Design by Contract (not blockchain), it can still help make your smart contracts more robust through formal specifications.
 
 ---
@@ -70,9 +70,9 @@ cfg_attr = `#[cfg(` , settings , `)]`;
 - `pattern` is an irrefutable Rust [`pattern`](https://doc.rust-lang.org/reference/patterns.html); type checking will fail if its type does not match the function's return value.
 - `settings` is the content of the [`cfg`](https://doc.rust-lang.org/reference/conditional-compilation.html) attribute (e.g. `test`, `debug_assertions`).
 
-## Runtime Checks
+## Instrumentation
 
-The `#[spec]` macro transforms the function body by injecting runtime checks whose behavior is controlled by `runtime-*` feature settings. This process, known as instrumentation, follows a clear pattern.
+The `#[spec]` macro transforms the function body by injecting code, determined by compiler `cfg` settings (e.g. `anodized_panic`, `anodized_print`). This process, known as instrumentation, follows a clear pattern.
 
 Given an original function like this:
 
@@ -122,4 +122,4 @@ fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
 }
 ```
 
-When a condition has a `#[cfg(...)]` attribute, the corresponding `check!` is wrapped in an `if cfg!(...)` block. This follows standard Rust `#[cfg]` semantics: the check only runs when the configuration predicate is true. The behavior of the `check!` itself is controlled by the global `runtime-*` feature setting.
+When a condition has a `#[cfg(...)]` attribute, the corresponding `check!` is wrapped in an `if cfg!(...)` block. This follows standard Rust `#[cfg]` semantics: the check only runs when the configuration predicate is true. Details of the injected code are determined by `cfg` settings.

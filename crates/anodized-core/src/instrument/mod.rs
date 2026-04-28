@@ -6,20 +6,25 @@ pub mod fns;
 pub mod traits;
 
 pub struct Backend {
-    pub build_check: fn(Option<&Meta>, &TokenStream, &str, &TokenStream) -> TokenStream,
+    pub emit_print: bool,
+    pub emit_panic: bool,
 }
 
+#[cfg(test)]
 impl Backend {
-    pub const CHECK_AND_PANIC: Backend = Backend {
-        build_check: build_assert,
+    pub(crate) const NOTHING: Backend = Backend {
+        emit_print: false,
+        emit_panic: false,
     };
 
-    pub const CHECK_AND_PRINT: Backend = Backend {
-        build_check: build_eprint,
+    pub(crate) const PRINT: Backend = Backend {
+        emit_print: true,
+        emit_panic: false,
     };
 
-    pub const NO_CHECK: Backend = Backend {
-        build_check: build_inert,
+    pub(crate) const PANIC: Backend = Backend {
+        emit_print: true,
+        emit_panic: true,
     };
 }
 

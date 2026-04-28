@@ -65,7 +65,7 @@ fn should_succeed() {
     assert_eq!(test.mul_by(500), 1000);
 }
 
-#[cfg(feature = "runtime-check-and-panic")]
+#[cfg(anodized_panic)]
 #[test]
 #[should_panic(expected = "Precondition failed: x > 0")]
 fn should_fail_add_to() {
@@ -73,7 +73,7 @@ fn should_fail_add_to() {
     assert_eq!(test.add_to(0), 3);
 }
 
-#[cfg(feature = "runtime-check-and-panic")]
+#[cfg(anodized_panic)]
 #[test]
 #[should_panic(expected = "Postcondition failed: | output | * output > old_val")]
 fn should_fail_negative_mul_by() {

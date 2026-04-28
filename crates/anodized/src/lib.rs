@@ -9,28 +9,9 @@ use anodized_core::{
     instrument::{Backend, make_item_error},
 };
 
-const _: () = {
-    let count: u32 = cfg!(feature = "runtime-check-and-panic") as u32
-        + cfg!(feature = "runtime-check-and-print") as u32
-        + cfg!(feature = "runtime-no-check") as u32;
-    if count > 1 {
-        panic!("anodized: runtime features are mutually exclusive");
-    }
-};
-
-const BACKEND: Backend = if cfg!(feature = "runtime-check-and-panic") {
-    Backend::CHECK_AND_PANIC
-} else if cfg!(feature = "runtime-check-and-print") {
-    Backend::CHECK_AND_PRINT
-} else if cfg!(feature = "runtime-no-check") {
-    Backend::NO_CHECK
-} else {
-    panic!(
-        r#"anodized: a runtime feature must be selected:
-`runtime-check-and-panic`
-`runtime-check-and-print`
-`runtime-no-check`"#
-    )
+const BACKEND: Backend = Backend {
+    emit_print: cfg!(anodized_print),
+    emit_panic: cfg!(anodized_panic),
 };
 
 /// Attaches a specification to a fn, or enables specs inside a trait and its impls.

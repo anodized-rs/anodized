@@ -71,27 +71,27 @@ Anodized aims to become a common layer across runtime checks, fuzzing, and verif
 | `struct`, `enum`       | Planned                   | Data invariants.                     |
 | `while`, `loop`, `for` | Planned                   | Loop invariants.                     |
 
-**Runtime Behaviors**
+**Build Configurations**
 
-| Behavior          | Status    | A `spec` violation...  |
-| ----------------- | --------- | ---------------------- |
-| `check-and-panic` | Available | panics                 |
-| `check-and-print` | Available | prints an error        |
-| `no-check`        | Available | has no runtime effect  |
-| `check-and-log`   | Planned   | writes to a log        |
-| `check-and-trace` | Planned   | emits a trace event    |
-| `check-and-trap`  | Planned   | breaks into a debugger |
+| `--cfg` setting  | Status    | A `spec` violation...  |
+| ---------------- | --------- | ---------------------- |
+| `anodized_print` | Available | prints an error        |
+| `anodized_panic` | Available | causes a panic         |
+| `anodized_log`   | Planned   | writes to a log        |
+| `anodized_trace` | Planned   | emits a trace event    |
+| `anodized_trap`  | Planned   | breaks into a debugger |
 
 **Analyzer Integrations**
 
-| System  | Status  | Notes                 |
-| ------- | ------- | --------------------- |
-| Aeneas  | Planned | Integrate with Charon |
-| Creusot | Planned |                       |
-| Flux    | Planned |                       |
-| Kani    | Planned |                       |
-| Prusti  | Planned |                       |
-| Verus   | Planned | Emit VIR              |
+| System  | Status      | Notes                 |
+| ------- | ----------- | --------------------- |
+| Aeneas  | Planned     | Integrate with Charon |
+| Creusot | Planned     |                       |
+| Flux    | Planned     |                       |
+| Hax     | In Progress | Uses `hax_lib` macros |
+| Kani    | Planned     |                       |
+| Prusti  | Planned     |                       |
+| Verus   | Planned     | Emit VIR              |
 
 ## Quickstart
 
@@ -99,10 +99,16 @@ Anodized aims to become a common layer across runtime checks, fuzzing, and verif
 
 ```toml
 [dependencies]
-anodized = { version = "0.4.0", features = ["runtime-check-and-panic"] }
+anodized = { version = "0.4.0" }
 ```
 
-See the [Runtime Behaviors](#runtime-behaviors) section for other runtime features.
+Then compile with an `anodized_*` build setting:
+
+```bash
+RUSTFLAGS="--cfg anodized_panic" cargo run
+```
+
+See the [Build Configurations](#build-configurations) section for other options.
 
 **2. Add specifications to your functions.**
 
@@ -143,7 +149,7 @@ Your code is automatically instrumented to check the specifications at runtime. 
 thread 'main' panicked at 'Precondition failed: part <= whole', src/main.rs:17:5
 ```
 
-By default, runtime spec-checking is always active (just like Rust's `assert!` macro). For performance-sensitive code, you can use `#[cfg]` attributes to control when checks run (see the [#[cfg] section](#cfg-configure-runtime-checks) below).
+Runtime checks are active when you compile with `--cfg anodized_panic` or `--cfg anodized_print`. You can additionally use `#[cfg]` attributes on individual conditions to control when checks run (see the [#[cfg] section](#cfg-configure-runtime-checks) below).
 
 **Important:** Even when a condition's runtime check is disabled via a `#[cfg]` build setting, the compiler still validates that condition at compile time for syntax errors, unknown identifiers, type mismatches, etc.
 
@@ -225,28 +231,26 @@ Important restrictions:
 - Do not put `#[spec]` on methods inside a `#[spec]` trait impl. Method specs are defined at the trait declaration.
 - Names prefixed with `__anodized_` are internal and must not be implemented directly.
 
-### Runtime Behaviors
+### Build Configurations
 
-Anodized offers multiple runtime behaviors that control how `#[spec]` annotations expand to runtime checks:
+Anodized uses `cfg` options to control how each `#[spec]` changes the Rust code.
 
-- **`check-and-panic`**: Inject an `assert!` check for each `requires`, `maintains`, and `ensures` clause. A failing condition panics with a descriptive message, just like the examples above.
-- **`check-and-print`**: Reports violations with `eprintln!` so execution can continue. Useful for experiments, logging, etc.
-- **`no-check`**: Disable checks altogether. Each check is surrounded with an `if false { ... }`, which lets the compiler optimize the checks away, while keeping the `#[spec]` syntax- and type-checked.
+- **`anodized_print`**: Reports each violation with `eprintln!`, so execution can continue. Useful for experiments, logging, etc.
+- **`anodized_panic`**: Checks each condition via an `assert!`, so a violation panics with a descriptive message.
 
-The runtime setting goes in your `Cargo.toml`, for example:
+Select the desired options via compiler `cfg` flags, for example:
 
-```toml
-anodized = {
-  version = # version
-  features = ["runtime-check-and-print"]
-}
+```bash
+RUSTFLAGS="--cfg anodized_print" cargo test
 ```
 
-Future runtime behaviors (log, trace, breakpoint, etc.) will use the same feature-based mechanism.
+To disable runtime checks completely, run without any `anodized_*` options.
 
-### `#[cfg]`: Configure Runtime Checks
+Future options (log, trace, breakpoint, etc.) will use the same `cfg`-based mechanism.
 
-By default, each condition is checked at runtime, just like Rust's `assert!` macro: it's always active in both debug and release builds. You can use the standard `#[cfg]` attribute to select build configurations under which the runtime check is active.
+### Attribute Support
+
+With `anodized_panic` or `anodized_print`, each condition is checked at runtime. You can use the standard `#[cfg]` attribute to select build configurations under which a condition is checked.
 
 ```rust, no_run
 use anodized::spec;
@@ -263,7 +267,7 @@ use anodized::spec;
 fn perform_complex_operation(input: i32) -> Result<i32, String> { todo!() }
 ```
 
-The `#[cfg]` attribute follows standard Rust semantics: when the configuration predicate is false, the runtime check for the condition is completely omitted. Without a `#[cfg]` attribute, the condition behaves exactly like `assert!`, always checked at runtime.
+The `#[cfg]` attribute follows standard Rust semantics: when the configuration predicate is false, the runtime check for the condition is completely omitted.
 
 **Important:** Anodized guarantees that each condition remains syntactically valid and type-correct regardless of its `#[cfg]` settings. This prevents conditions from becoming invalid between different build configurations, and keeps the entire spec always visible to analysis tools.
 
@@ -427,7 +431,7 @@ A core design principle of Anodized is that a condition is written as a **standa
 
 The choice of "specification" (or "spec") over "contract" is deliberate. While Design by Contract has a rich history, the term "contract" is now strongly associated with blockchain. This is particularly true in Rust, which has become a leading language for smart contract development.
 
-This naming collision hurts discoverability. Searching for "Rust contract" yields blockchain results, not correctness tools.
+This naming collision hurts discoverability. Searching for "Rust contract" yields many blockchain results, not just correctness tools.
 
 Using "specification" instead:
 
