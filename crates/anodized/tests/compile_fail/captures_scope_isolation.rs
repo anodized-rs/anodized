@@ -33,7 +33,7 @@ fn captures_not_in_body(x: i32, y: i32) -> i32 {
     ],
 )]
 fn captures_not_in_requires(x: i32) {
-    // Function body
+    let _ = x;
 }
 
 #[spec(
@@ -46,7 +46,7 @@ fn captures_not_in_requires(x: i32) {
     ],
 )]
 fn captures_not_in_maintains(x: i32) {
-    // Function body
+    let _ = x;
 }
 
 fn main() {}
