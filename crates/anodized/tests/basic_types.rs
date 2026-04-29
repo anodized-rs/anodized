@@ -6,3 +6,6 @@ struct PythagoreanTriple {
     b: u32,
     c: u32,
 }
+
+#[spec(maintains: !self.0.is_empty())]
+struct NonEmptyVec<T>(Vec<T>);

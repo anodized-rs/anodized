@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, ImplItem, ImplItemFn, ItemFn, ItemImpl, ItemStruct, ItemTrait, Meta, Result,
+    Attribute, ImplItem, ImplItemFn, ItemFn, ItemImpl, ItemStruct, ItemTrait, Meta, Result, Type,
     parse_quote,
 };
 
@@ -95,14 +95,16 @@ impl Backend {
         ];
 
         let struct_ident = &item_struct.ident;
+        let generics = &item_struct.generics;
+        let self_type: Type = parse_quote!(#struct_ident #generics);
         let spec_impl = ItemImpl {
             attrs: attrs.to_vec(),
             defaultness: None,
             unsafety: None,
             impl_token: Default::default(),
-            generics: Default::default(),
+            generics: item_struct.generics.clone(),
             trait_: None,
-            self_ty: Box::new(parse_quote!(#struct_ident)),
+            self_ty: Box::new(self_type),
             brace_token: Default::default(),
             items: vec![ImplItem::Fn(spec_maintains_fn)],
         };
