@@ -12,21 +12,30 @@ fn embed_spec_item_struct() {
         ],
     };
     let item_struct: ItemStruct = parse_quote! {
-        struct STRUCT<'LT_1, TYPE_1: BOUND_1> {
+        struct STRUCT<'LT_1, TYPE_1: BOUND_1>
+        where
+            'LT_1: 'LT_2,
+        {
             FIELD_1: &'LT_1 TYPE_2,
             FIELD_2: TYPE_1,
         }
     };
 
     let expected: TokenStream = parse_quote! {
-        struct STRUCT<'LT_1, TYPE_1: BOUND_1> {
+        struct STRUCT<'LT_1, TYPE_1: BOUND_1>
+        where
+            'LT_1: 'LT_2,
+        {
             FIELD_1: &'LT_1 TYPE_2,
             FIELD_2: TYPE_1,
         }
 
         #[doc(hidden)]
         #[allow(warnings)]
-        impl<'LT_1, TYPE_1: BOUND_1> STRUCT<'LT_1, TYPE_1> {
+        impl<'LT_1, TYPE_1: BOUND_1> STRUCT<'LT_1, TYPE_1>
+        where
+            'LT_1: 'LT_2,
+        {
             fn __anodized_struct_maintains(&self) {
                 let _ = | | COND_1;
                 let _ = | | COND_2;
