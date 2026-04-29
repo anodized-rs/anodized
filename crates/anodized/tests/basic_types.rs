@@ -1,6 +1,6 @@
 use anodized::spec;
 
-#[spec(maintains: self.a * self.a + self.b * self.b == self.c * self.c)]
+#[spec(maintains: self.a.pow(2) + self.b.pow(2) == self.c.pow(2))]
 struct PythagoreanTriple {
     a: u32,
     b: u32,
