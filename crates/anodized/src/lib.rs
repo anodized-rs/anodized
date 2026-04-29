@@ -45,7 +45,10 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
         Item::Macro(_) => Err(make_item_error(&item, "macro")),
         Item::Mod(_) => Err(make_item_error(&item, "mod")),
         Item::Static(_) => Err(make_item_error(&item, "static")),
-        Item::Struct(_) => Err(make_item_error(&item, "struct")),
+        Item::Struct(the_struct) => {
+            let spec = parse_macro_input!(args as Spec);
+            BACKEND.instrument_item_struct(spec, the_struct)
+        }
         Item::TraitAlias(_) => Err(make_item_error(&item, "trait alias")),
         Item::Type(_) => Err(make_item_error(&item, "type")),
         Item::Union(_) => Err(make_item_error(&item, "union")),

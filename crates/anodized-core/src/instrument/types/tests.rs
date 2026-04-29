@@ -1,0 +1,41 @@
+use crate::{Spec, instrument::Backend, test_util::assert_tokens_eq};
+
+use proc_macro2::TokenStream;
+use syn::{ItemStruct, parse_quote};
+
+#[test]
+fn embed_spec_item_struct() {
+    let struct_spec: Spec = parse_quote! {
+        maintains: [
+            COND_1,
+            COND_2,
+        ],
+    };
+    let item_struct: ItemStruct = parse_quote! {
+        struct STRUCT {
+            FIELD_1: TYPE_1,
+            FIELD_2: TYPE_2,
+        }
+    };
+
+    let expected: TokenStream = parse_quote! {
+        struct STRUCT {
+            FIELD_1: TYPE_1,
+            FIELD_2: TYPE_2,
+        }
+
+        #[doc(hidden)]
+        #[allow(warnings)]
+        impl STRUCT {
+            fn __anodized_struct_maintains(&self) {
+                let _ = | | COND_1;
+                let _ = | | COND_2;
+            }
+        }
+    };
+
+    let observed = Backend::NOTHING
+        .instrument_item_struct(struct_spec, item_struct)
+        .unwrap();
+    assert_tokens_eq(&observed, &expected);
+}

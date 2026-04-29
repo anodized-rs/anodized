@@ -1,11 +1,15 @@
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
-use syn::{Attribute, ItemFn, ItemImpl, ItemTrait, Meta, Result, parse_quote};
+use syn::{
+    Attribute, ImplItem, ImplItemFn, ItemFn, ItemImpl, ItemStruct, ItemTrait, Meta, Result,
+    parse_quote,
+};
 
 use crate::Spec;
 
 pub mod fns;
 pub mod traits;
+pub mod types;
 
 pub struct Backend {
     pub emit_print: bool,
@@ -56,11 +60,7 @@ impl Backend {
         Ok(tokens)
     }
 
-    pub fn instrument_item_trait(
-        &self,
-        spec: Spec,
-        item_trait: ItemTrait,
-    ) -> syn::Result<TokenStream> {
+    pub fn instrument_item_trait(&self, spec: Spec, item_trait: ItemTrait) -> Result<TokenStream> {
         let new_trait = self.instrument_trait(spec, item_trait)?;
         Ok(new_trait.to_token_stream())
     }
@@ -69,9 +69,48 @@ impl Backend {
         &self,
         spec: Spec,
         item_impl: ItemImpl,
-    ) -> syn::Result<TokenStream> {
+    ) -> Result<TokenStream> {
         let new_trait_impl = self.instrument_trait_impl(spec, item_impl)?;
         Ok(new_trait_impl.to_token_stream())
+    }
+
+    pub fn instrument_item_struct(
+        &self,
+        spec: Spec,
+        item_struct: ItemStruct,
+    ) -> Result<TokenStream> {
+        let mut tokens = TokenStream::new();
+
+        let spec_maintains_fn = ImplItemFn {
+            attrs: vec![],
+            vis: syn::Visibility::Inherited,
+            sig: Self::build_type_spec_fn_sig("__anodized_struct_maintains"),
+            block: Self::build_precondition_fn_body(&spec.maintains),
+            defaultness: None,
+        };
+
+        let attrs: [Attribute; 2] = [
+            parse_quote!(#[doc(hidden)]),
+            parse_quote!(#[allow(warnings)]),
+        ];
+
+        let struct_ident = &item_struct.ident;
+        let spec_impl = ItemImpl {
+            attrs: attrs.to_vec(),
+            defaultness: None,
+            unsafety: None,
+            impl_token: Default::default(),
+            generics: Default::default(),
+            trait_: None,
+            self_ty: Box::new(parse_quote!(#struct_ident)),
+            brace_token: Default::default(),
+            items: vec![ImplItem::Fn(spec_maintains_fn)],
+        };
+
+        item_struct.to_tokens(&mut tokens);
+        spec_impl.to_tokens(&mut tokens);
+
+        Ok(tokens)
     }
 }
 
