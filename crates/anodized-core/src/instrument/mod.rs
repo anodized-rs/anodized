@@ -95,8 +95,8 @@ impl Backend {
         ];
 
         let struct_ident = &item_struct.ident;
-        let generics = &item_struct.generics;
-        let self_type: Type = parse_quote!(#struct_ident #generics);
+        let generic_args = Self::build_generic_args_from_params(&item_struct.generics);
+        let self_type: Type = parse_quote!(#struct_ident #generic_args);
         let spec_impl = ItemImpl {
             attrs: attrs.to_vec(),
             defaultness: None,

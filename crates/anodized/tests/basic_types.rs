@@ -9,3 +9,6 @@ struct PythagoreanTriple {
 
 #[spec(maintains: !self.0.is_empty())]
 struct NonEmptyVec<T>(Vec<T>);
+
+#[spec(maintains: self.0.iter().rev().eq(&self.0))]
+struct PalindromeVec<T: Eq>(Vec<T>);
