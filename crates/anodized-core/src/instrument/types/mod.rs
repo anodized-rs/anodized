@@ -30,6 +30,7 @@ impl Backend {
         params: &Generics,
     ) -> Option<AngleBracketedGenericArguments> {
         let mut args = Punctuated::new();
+
         for pair in params.params.pairs() {
             let arg = Self::build_generic_arg_from_param(pair.value());
             args.push_value(arg);
@@ -37,6 +38,7 @@ impl Backend {
                 args.push_punct(**punct);
             }
         }
+
         Some(AngleBracketedGenericArguments {
             colon2_token: None,
             lt_token: params.lt_token?,
