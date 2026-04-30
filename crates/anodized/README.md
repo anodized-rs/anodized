@@ -67,8 +67,7 @@ Anodized aims to become a common layer across runtime checks, fuzzing, and verif
 | plain `fn`             | Available                 | Pre- and postconditions, invariants. |
 | `fn` inside an `impl`  | Available                 | Pre- and postconditions, invariants. |
 | `trait` and its `fn`s  | [Available](#trait-specs) | Enforces all `impl`s to conform.     |
-| `struct`               | [Available](#data-specs)  | Refinements to constrain instances.  |
-| `enum`, `type`         | In Progress               | Refinements to constrain instances.  |
+| `struct`, `enum`       | [Available](#data-specs)  | Refinements to constrain instances.  |
 | `mod`                  | In Progress               | Invariants across multiple entities. |
 | `while`, `loop`, `for` | Planned                   | Loop invariants.                     |
 
@@ -238,6 +237,8 @@ Anodized supports specs on data types, which meant to constrain all instances.
 
 This capability is equivalent to refinement types.
 
+**On a Struct**
+
 ```rust, no_run
 use anodized::spec;
 
@@ -253,6 +254,24 @@ struct NonEmptyVec<T>(Vec<T>);
 
 #[spec(maintains: self.0.iter().rev().eq(&self.0))]
 struct PalindromeVec<T: Eq>(Vec<T>);
+```
+
+**On an Enum**
+
+```rust, no_run
+use anodized::spec;
+
+#[spec(
+    maintains: match self {
+        Ascending(vec) => vec.is_sorted(),
+        Descending(vec) => vec.iter().rev().is_sorted(),
+    }
+)]
+#[allow(unused)]
+enum MonotonicVec<T: Ord> {
+    Ascending(Vec<T>),
+    Descending(Vec<T>),
+}
 ```
 
 Important restrictions:
