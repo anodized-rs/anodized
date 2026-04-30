@@ -1,12 +1,12 @@
 use syn::{
-    Attribute, Expr, Ident, Meta, Pat, PatIdent,
+    Attribute, Error, Expr, Ident, Meta, Pat, PatIdent,
     parse::{Parse, ParseStream, Result},
     parse_quote,
     spanned::Spanned,
 };
 
 use crate::{
-    Capture, PostCondition, PreCondition, Spec,
+    Capture, DataSpec, PostCondition, PreCondition, Spec,
     annotate::syntax::{CaptureExpr, SpecArgValue},
 };
 
@@ -33,7 +33,7 @@ impl Parse for Spec {
                 Keyword::Maintains => arg.value.parse_preconditions(&arg.attrs, &mut maintains)?,
                 Keyword::Captures => {
                     if !captures.is_empty() {
-                        return Err(syn::Error::new(
+                        return Err(Error::new(
                             arg.keyword_span,
                             "at most one `captures` parameter is allowed; to capture multiple values, use a list: `captures: [expr1, expr2, ...]`",
                         ));
@@ -42,7 +42,7 @@ impl Parse for Spec {
                 }
                 Keyword::Binds => {
                     if binds_pattern.is_some() {
-                        return Err(syn::Error::new(
+                        return Err(Error::new(
                             arg.keyword_span,
                             "multiple `binds` parameters are not allowed",
                         ));
@@ -54,7 +54,7 @@ impl Parse for Spec {
                         .parse_postconditions(&arg.attrs, &binds_pattern, &mut ensures)?
                 }
                 Keyword::Unknown(ident) => {
-                    return Err(syn::Error::new(
+                    return Err(Error::new(
                         arg.keyword_span,
                         format!("unknown spec keyword `{ident}`"),
                     ));
@@ -64,7 +64,7 @@ impl Parse for Spec {
             if let Some(prev_keyword) = prev_keyword
                 && arg.keyword < prev_keyword
             {
-                return Err(syn::Error::new(
+                return Err(Error::new(
                     arg.keyword_span,
                     "parameters are out of order: their order must be `requires`, `maintains`, `captures`, `binds`, `ensures`",
                 ));
@@ -72,11 +72,70 @@ impl Parse for Spec {
             prev_keyword = Some(arg.keyword);
         }
 
-        Ok(Spec {
+        Ok(Self {
             requires,
             maintains,
             captures,
             ensures,
+            span: input.span(),
+        })
+    }
+}
+
+struct MultiError(Option<Error>);
+
+impl MultiError {
+    fn empty() -> Self {
+        Self(None)
+    }
+
+    fn get_combined(self) -> Option<Error> {
+        self.0
+    }
+
+    fn add(&mut self, error: Error) {
+        match &mut self.0 {
+            Some(acc) => acc.combine(error),
+            None => self.0 = Some(error),
+        }
+    }
+}
+
+impl Parse for DataSpec {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let raw_spec = syntax::SpecArgs::parse(input)?;
+
+        let mut maintains: Vec<PreCondition> = vec![];
+        let mut errors = MultiError::empty();
+
+        for arg in raw_spec.args {
+            match &arg.keyword {
+                Keyword::Maintains => {
+                    if let Err(err) = arg.value.parse_preconditions(&arg.attrs, &mut maintains) {
+                        errors.add(err);
+                    }
+                }
+                Keyword::Requires | Keyword::Captures | Keyword::Binds | Keyword::Ensures => {
+                    errors.add(Error::new(
+                        arg.keyword_span,
+                        format!("`{}` parameter is not supported here", &arg.keyword),
+                    ));
+                }
+                Keyword::Unknown(ident) => {
+                    errors.add(Error::new(
+                        arg.keyword_span,
+                        format!("unknown spec keyword `{ident}`"),
+                    ));
+                }
+            }
+        }
+
+        if let Some(combined_error) = errors.get_combined() {
+            return Err(combined_error);
+        }
+
+        Ok(Self {
+            maintains,
             span: input.span(),
         })
     }
@@ -114,7 +173,7 @@ impl SpecArgValue {
     fn parse_captures(self, attrs: &[Attribute], captures: &mut Vec<Capture>) -> Result<()> {
         let cfg_attr = find_cfg_attribute(attrs)?;
         if cfg_attr.is_some() {
-            return Err(syn::Error::new(
+            return Err(Error::new(
                 cfg_attr.span(),
                 "`cfg` attribute is not supported on `captures`",
             ));
@@ -136,7 +195,7 @@ impl SpecArgValue {
     fn parse_binds(self, attrs: &[Attribute], pattern: &mut Option<Pat>) -> Result<()> {
         let cfg_attr = find_cfg_attribute(attrs)?;
         if cfg_attr.is_some() {
-            return Err(syn::Error::new(
+            return Err(Error::new(
                 cfg_attr.span(),
                 "`cfg` attribute is not supported on `binds`",
             ));
@@ -210,21 +269,19 @@ fn interpret_capture_expr_as_capture(capture_expr: CaptureExpr) -> Result<Captur
         }
 
         // Missing <pattern>
-        (Some(_), Some(_), None) => {
-            Err(syn::Error::new_spanned(as_, "expected pattern after `as`"))
-        }
+        (Some(_), Some(_), None) => Err(Error::new_spanned(as_, "expected pattern after `as`")),
 
         // Missing `as` and <pattern>
-        (Some(expr), None, None) => Err(syn::Error::new_spanned(
+        (Some(expr), None, None) => Err(Error::new_spanned(
             expr,
             "complex expression must be bound/descructured: <expression> `as` <pattern>",
         )),
 
         // Missing `as`
-        (Some(_), None, Some(pat)) => Err(syn::Error::new_spanned(pat, "expected `as` <pattern>")),
+        (Some(_), None, Some(pat)) => Err(Error::new_spanned(pat, "expected `as` <pattern>")),
 
         // Missing <expression>
-        (None, _, _) => Err(syn::Error::new(
+        (None, _, _) => Err(Error::new(
             span,
             "expected capture: <expression> `as` <pattern>",
         )),
@@ -240,7 +297,7 @@ fn interpret_expr_as_precondition(expr: Expr) -> Result<syn::ExprClosure> {
             if closure.inputs.is_empty() {
                 Ok(closure)
             } else {
-                Err(syn::Error::new_spanned(
+                Err(Error::new_spanned(
                     closure.or1_token,
                     format!(
                         "precondition closure must have no arguments, found {}",
@@ -276,7 +333,7 @@ fn interpret_expr_as_postcondition(expr: Expr, default_binding: Pat) -> Result<s
             if closure.inputs.len() == 1 {
                 Ok(closure)
             } else {
-                Err(syn::Error::new_spanned(
+                Err(Error::new_spanned(
                     closure.or1_token,
                     format!(
                         "postcondition closure must have exactly one argument, found {}",
@@ -308,14 +365,14 @@ fn find_cfg_attribute(attrs: &[Attribute]) -> Result<Option<&Attribute>> {
     for attr in attrs {
         if attr.path().is_ident("cfg") {
             if cfg_attr.is_some() {
-                return Err(syn::Error::new(
+                return Err(Error::new(
                     attr.span(),
                     "multiple `cfg` attributes are not supported",
                 ));
             }
             cfg_attr = Some(attr);
         } else {
-            return Err(syn::Error::new(
+            return Err(Error::new(
                 attr.span(),
                 "unsupported attribute; only `cfg` is allowed",
             ));

@@ -4,7 +4,7 @@ use proc_macro::TokenStream;
 use syn::{Item, TraitItemFn, parse_macro_input};
 
 use anodized_core::{
-    Spec,
+    DataSpec, Spec,
     instrument::{Backend, make_item_error},
 };
 
@@ -46,7 +46,7 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
         Item::Mod(_) => Err(make_item_error(&item, "mod")),
         Item::Static(_) => Err(make_item_error(&item, "static")),
         Item::Struct(the_struct) => {
-            let spec = parse_macro_input!(args as Spec);
+            let spec = parse_macro_input!(args as DataSpec);
             BACKEND.instrument_item_struct(spec, the_struct)
         }
         Item::TraitAlias(_) => Err(make_item_error(&item, "trait alias")),

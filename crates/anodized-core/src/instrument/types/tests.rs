@@ -1,11 +1,11 @@
-use crate::{Spec, instrument::Backend, test_util::assert_tokens_eq};
+use crate::{DataSpec, instrument::Backend, test_util::assert_tokens_eq};
 
 use proc_macro2::TokenStream;
 use syn::{ItemStruct, parse_quote};
 
 #[test]
 fn embed_spec_item_struct() {
-    let struct_spec: Spec = parse_quote! {
+    let struct_spec: DataSpec = parse_quote! {
         maintains: [
             COND_1,
             COND_2,

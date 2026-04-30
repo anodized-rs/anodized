@@ -5,7 +5,7 @@ use syn::{
     parse_quote,
 };
 
-use crate::Spec;
+use crate::{DataSpec, Spec};
 
 pub mod fns;
 pub mod traits;
@@ -76,7 +76,7 @@ impl Backend {
 
     pub fn instrument_item_struct(
         &self,
-        spec: Spec,
+        spec: DataSpec,
         item_struct: ItemStruct,
     ) -> Result<TokenStream> {
         let mut tokens = TokenStream::new();
