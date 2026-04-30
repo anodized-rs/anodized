@@ -51,10 +51,10 @@ impl Spec {
     }
 }
 
-/// Specifies the intended behavior of a data type: `struct`, `enum`, or `type`.
+/// Specifies the intended behavior of a data type: `struct` or `enum`.
 #[derive(Debug)]
 pub struct DataSpec {
-    /// Invariants: conditions that must hold for each instance of the data type.
+    /// Invariants: conditions that must hold for all instances of the data type.
     pub maintains: Vec<PreCondition>,
     /// The span in the source code, from which this spec was parsed.
     span: Span,
