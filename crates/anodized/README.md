@@ -233,9 +233,7 @@ Important restrictions:
 
 ### Data Specs
 
-Anodized supports specs on data types, which meant to constrain all instances.
-
-This capability is equivalent to refinement types.
+Anodized supports specs on data types, meant to constrain all instances. This capability is equivalent to refinement types.
 
 **On a Struct**
 
