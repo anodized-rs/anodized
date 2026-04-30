@@ -22,6 +22,16 @@ impl Parse for SpecArgs {
     }
 }
 
+impl SpecArgs {
+    /// Check whether the spec arguments are sorted correctly, ignoring unknown keywords.
+    pub fn is_sorted(&self) -> bool {
+        self.args
+            .iter()
+            .filter(|arg| !matches!(&arg.keyword, Keyword::Unknown(_)))
+            .is_sorted_by_key(|arg| &arg.keyword)
+    }
+}
+
 /// A single spec argument.
 pub struct SpecArg {
     pub attrs: Vec<Attribute>,

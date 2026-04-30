@@ -27,11 +27,7 @@ impl Parse for Spec {
         let mut binds_pattern: Option<Pat> = None;
         let mut ensures: Vec<PostCondition> = vec![];
 
-        let is_sorted = raw_spec
-            .args
-            .iter()
-            .filter(|arg| !matches!(&arg.keyword, Keyword::Unknown(_)))
-            .is_sorted_by_key(|arg| &arg.keyword);
+        let is_sorted = raw_spec.is_sorted();
 
         for arg in raw_spec.args {
             match &arg.keyword {
