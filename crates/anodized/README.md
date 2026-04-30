@@ -68,7 +68,8 @@ Anodized aims to become a common layer across runtime checks, fuzzing, and verif
 | `fn` inside an `impl`  | Available                 | Pre- and postconditions, invariants. |
 | `trait` and its `fn`s  | [Available](#trait-specs) | Enforces all `impl`s to conform.     |
 | `mod`                  | In Progress               | Invariants across multiple entities. |
-| `struct`, `enum`       | Planned                   | Data invariants.                     |
+| `struct`               | [Available](#data-specs)  | Refinements to constrain instances.  |
+| `enum`, `type`         | In Progress               | Refinements to constrain instances.  |
 | `while`, `loop`, `for` | Planned                   | Loop invariants.                     |
 
 **Build Configurations**
@@ -230,6 +231,35 @@ Important restrictions:
 - The trait-level `#[spec]` is an enabler; specification clauses belong on trait methods, not on the trait itself.
 - Do not put `#[spec]` on methods inside a `#[spec]` trait impl. Method specs are defined at the trait declaration.
 - Names prefixed with `__anodized_` are internal and must not be implemented directly.
+
+### Data Specs
+
+Anodized supports specs on data types, which meant to constrain all instances.
+
+This capability is equivalent to refinement types.
+
+```rust, no_run
+use anodized::spec;
+
+#[spec(maintains: self.a.pow(2) + self.b.pow(2) == self.c.pow(2))]
+struct PythagoreanTriple {
+    a: u32,
+    b: u32,
+    c: u32,
+}
+
+#[spec(maintains: !self.0.is_empty())]
+struct NonEmptyVec<T>(Vec<T>);
+
+#[spec(maintains: self.0.iter().rev().eq(&self.0))]
+struct PalindromeVec<T: Eq>(Vec<T>);
+```
+
+Important restrictions:
+
+- Runtime checks are **not implemented** yet.
+- The `#[spec]` annotation on a data type only supports the `maintains` parameter.
+- The data type must be a `struct`. Support for `enum` and `type` is coming soon.
 
 ### Build Configurations
 
