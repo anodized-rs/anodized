@@ -1,8 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
-use syn::{
-    Attribute, ItemEnum, ItemFn, ItemImpl, ItemStruct, ItemTrait, Meta, Result, parse_quote,
-};
+use syn::{Attribute, ItemFn, ItemImpl, ItemTrait, Meta, Result, parse_quote};
 
 use crate::{DataSpec, Spec};
 
@@ -75,32 +73,6 @@ impl Backend {
     ) -> Result<TokenStream> {
         let new_trait_impl = self.instrument_trait_impl(spec, item_impl)?;
         Ok(new_trait_impl.to_token_stream())
-    }
-
-    pub fn instrument_item_struct(
-        &self,
-        spec: DataSpec,
-        item_struct: ItemStruct,
-    ) -> Result<TokenStream> {
-        let mut tokens = TokenStream::new();
-
-        let spec_impl =
-            Self::instrument_data_type(spec, &item_struct.ident, &item_struct.generics, false);
-        item_struct.to_tokens(&mut tokens);
-        spec_impl.to_tokens(&mut tokens);
-
-        Ok(tokens)
-    }
-
-    pub fn instrument_item_enum(&self, spec: DataSpec, item_enum: ItemEnum) -> Result<TokenStream> {
-        let mut tokens = TokenStream::new();
-
-        let spec_impl =
-            Self::instrument_data_type(spec, &item_enum.ident, &item_enum.generics, true);
-        item_enum.to_tokens(&mut tokens);
-        spec_impl.to_tokens(&mut tokens);
-
-        Ok(tokens)
     }
 }
 
