@@ -27,7 +27,7 @@ impl SpecArgs {
     pub fn is_sorted(&self) -> bool {
         self.args
             .iter()
-            .filter(|arg| !matches!(&arg.keyword, Keyword::Unknown(_)))
+            .filter(|arg| !matches!(arg.keyword, Keyword::Unknown(_)))
             .is_sorted_by_key(|arg| &arg.keyword)
     }
 }
