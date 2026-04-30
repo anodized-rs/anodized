@@ -68,7 +68,7 @@ fn unknown_keyword() {
 }
 
 #[test]
-#[should_panic(expected = "parameters are shuffled")]
+#[should_panic(expected = "parameters are out of order")]
 fn out_of_order() {
     let _: Spec = parse_quote! {
         ensures: output == x,
@@ -562,7 +562,7 @@ fn captures_with_all_clauses() {
 }
 
 #[test]
-#[should_panic(expected = "parameters are shuffled")]
+#[should_panic(expected = "parameters are out of order")]
 fn captures_out_of_order() {
     let _: Spec = parse_quote! {
         captures: value,

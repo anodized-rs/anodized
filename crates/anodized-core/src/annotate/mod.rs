@@ -80,7 +80,7 @@ impl Parse for Spec {
         if !is_sorted {
             errors.add(Error::new(
                 input.span(),
-                "parameters are shuffled: their order must be `requires`, `maintains`, `captures`, `binds`, `ensures`",
+                "parameters are out of order: the expected order is `requires`, `maintains`, `captures`, `binds`, `ensures`",
             ));
         }
 
