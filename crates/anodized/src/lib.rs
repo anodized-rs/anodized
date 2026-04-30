@@ -29,11 +29,11 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
             BACKEND.instrument_item_fn(spec, func)
         }
         Item::Trait(the_trait) => {
-            let spec = parse_macro_input!(args as Spec);
+            let spec = parse_macro_input!(args as DataSpec);
             BACKEND.instrument_item_trait(spec, the_trait)
         }
         Item::Impl(the_impl) if the_impl.trait_.is_some() => {
-            let spec = parse_macro_input!(args as Spec);
+            let spec = parse_macro_input!(args as DataSpec);
             BACKEND.instrument_item_trait_impl(spec, the_impl)
         }
         Item::Impl(ref the_impl) if the_impl.trait_.is_none() => {

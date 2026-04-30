@@ -59,14 +59,18 @@ impl Backend {
         Ok(tokens)
     }
 
-    pub fn instrument_item_trait(&self, spec: Spec, item_trait: ItemTrait) -> Result<TokenStream> {
+    pub fn instrument_item_trait(
+        &self,
+        spec: DataSpec,
+        item_trait: ItemTrait,
+    ) -> Result<TokenStream> {
         let new_trait = self.instrument_trait(spec, item_trait)?;
         Ok(new_trait.to_token_stream())
     }
 
     pub fn instrument_item_trait_impl(
         &self,
-        spec: Spec,
+        spec: DataSpec,
         item_impl: ItemImpl,
     ) -> Result<TokenStream> {
         let new_trait_impl = self.instrument_trait_impl(spec, item_impl)?;
