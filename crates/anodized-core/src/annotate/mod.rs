@@ -20,56 +20,75 @@ impl Parse for Spec {
     fn parse(input: ParseStream) -> Result<Self> {
         let raw_spec = syntax::SpecArgs::parse(input)?;
 
-        let mut prev_keyword: Option<Keyword> = None;
+        let mut errors = MultiError::empty();
         let mut requires: Vec<PreCondition> = vec![];
         let mut maintains: Vec<PreCondition> = vec![];
         let mut captures: Vec<Capture> = vec![];
         let mut binds_pattern: Option<Pat> = None;
         let mut ensures: Vec<PostCondition> = vec![];
 
+        let is_sorted = raw_spec.args.iter().is_sorted_by_key(|arg| &arg.keyword);
+
         for arg in raw_spec.args {
             match &arg.keyword {
-                Keyword::Requires => arg.value.parse_preconditions(&arg.attrs, &mut requires)?,
-                Keyword::Maintains => arg.value.parse_preconditions(&arg.attrs, &mut maintains)?,
+                Keyword::Requires => {
+                    if let Err(error) = arg.value.parse_preconditions(&arg.attrs, &mut requires) {
+                        errors.add(error);
+                    }
+                }
+                Keyword::Maintains => {
+                    if let Err(error) = arg.value.parse_preconditions(&arg.attrs, &mut maintains) {
+                        errors.add(error);
+                    }
+                }
                 Keyword::Captures => {
                     if !captures.is_empty() {
-                        return Err(Error::new(
+                        errors.add(Error::new(
                             arg.keyword_span,
                             "at most one `captures` parameter is allowed; to capture multiple values, use a list: `captures: [expr1, expr2, ...]`",
                         ));
                     }
-                    arg.value.parse_captures(&arg.attrs, &mut captures)?
+                    if let Err(error) = arg.value.parse_captures(&arg.attrs, &mut captures) {
+                        errors.add(error);
+                    }
                 }
                 Keyword::Binds => {
                     if binds_pattern.is_some() {
-                        return Err(Error::new(
+                        errors.add(Error::new(
                             arg.keyword_span,
                             "multiple `binds` parameters are not allowed",
                         ));
                     }
-                    arg.value.parse_binds(&arg.attrs, &mut binds_pattern)?
+                    if let Err(error) = arg.value.parse_binds(&arg.attrs, &mut binds_pattern) {
+                        errors.add(error);
+                    }
                 }
                 Keyword::Ensures => {
-                    arg.value
-                        .parse_postconditions(&arg.attrs, &binds_pattern, &mut ensures)?
+                    if let Err(error) =
+                        arg.value
+                            .parse_postconditions(&arg.attrs, &binds_pattern, &mut ensures)
+                    {
+                        errors.add(error);
+                    }
                 }
                 Keyword::Unknown(ident) => {
-                    return Err(Error::new(
+                    errors.add(Error::new(
                         arg.keyword_span,
                         format!("unknown spec keyword `{ident}`"),
                     ));
                 }
             }
+        }
 
-            if let Some(prev_keyword) = prev_keyword
-                && arg.keyword < prev_keyword
-            {
-                return Err(Error::new(
-                    arg.keyword_span,
-                    "parameters are out of order: their order must be `requires`, `maintains`, `captures`, `binds`, `ensures`",
-                ));
-            }
-            prev_keyword = Some(arg.keyword);
+        if !is_sorted {
+            errors.add(Error::new(
+                input.span(),
+                "parameters are shuffled: their order must be `requires`, `maintains`, `captures`, `binds`, `ensures`",
+            ));
+        }
+
+        if let Some(combined_error) = errors.get_combined() {
+            return Err(combined_error);
         }
 
         Ok(Self {
@@ -79,25 +98,6 @@ impl Parse for Spec {
             ensures,
             span: input.span(),
         })
-    }
-}
-
-struct MultiError(Option<Error>);
-
-impl MultiError {
-    fn empty() -> Self {
-        Self(None)
-    }
-
-    fn get_combined(self) -> Option<Error> {
-        self.0
-    }
-
-    fn add(&mut self, error: Error) {
-        match &mut self.0 {
-            Some(acc) => acc.combine(error),
-            None => self.0 = Some(error),
-        }
     }
 }
 
@@ -111,8 +111,8 @@ impl Parse for DataSpec {
         for arg in raw_spec.args {
             match &arg.keyword {
                 Keyword::Maintains => {
-                    if let Err(err) = arg.value.parse_preconditions(&arg.attrs, &mut maintains) {
-                        errors.add(err);
+                    if let Err(error) = arg.value.parse_preconditions(&arg.attrs, &mut maintains) {
+                        errors.add(error);
                     }
                 }
                 Keyword::Requires | Keyword::Captures | Keyword::Binds | Keyword::Ensures => {
@@ -380,4 +380,23 @@ fn find_cfg_attribute(attrs: &[Attribute]) -> Result<Option<&Attribute>> {
     }
 
     Ok(cfg_attr)
+}
+
+struct MultiError(Option<Error>);
+
+impl MultiError {
+    fn empty() -> Self {
+        Self(None)
+    }
+
+    fn get_combined(self) -> Option<Error> {
+        self.0
+    }
+
+    fn add(&mut self, error: Error) {
+        match &mut self.0 {
+            Some(acc) => acc.combine(error),
+            None => self.0 = Some(error),
+        }
+    }
 }
