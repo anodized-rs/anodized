@@ -67,9 +67,9 @@ Anodized aims to become a common layer across runtime checks, fuzzing, and verif
 | plain `fn`             | Available                 | Pre- and postconditions, invariants. |
 | `fn` inside an `impl`  | Available                 | Pre- and postconditions, invariants. |
 | `trait` and its `fn`s  | [Available](#trait-specs) | Enforces all `impl`s to conform.     |
-| `mod`                  | In Progress               | Invariants across multiple entities. |
 | `struct`               | [Available](#data-specs)  | Refinements to constrain instances.  |
 | `enum`, `type`         | In Progress               | Refinements to constrain instances.  |
+| `mod`                  | In Progress               | Invariants across multiple entities. |
 | `while`, `loop`, `for` | Planned                   | Loop invariants.                     |
 
 **Build Configurations**
