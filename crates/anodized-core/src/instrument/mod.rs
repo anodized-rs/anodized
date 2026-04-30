@@ -1,8 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, ImplItem, ImplItemFn, ItemFn, ItemImpl, ItemStruct, ItemTrait, Meta, Result, Type,
-    parse_quote,
+    Attribute, ItemEnum, ItemFn, ItemImpl, ItemStruct, ItemTrait, Meta, Result, parse_quote,
 };
 
 use crate::{DataSpec, Spec};
@@ -81,35 +80,20 @@ impl Backend {
     ) -> Result<TokenStream> {
         let mut tokens = TokenStream::new();
 
-        let spec_maintains_fn = ImplItemFn {
-            attrs: vec![],
-            vis: syn::Visibility::Inherited,
-            sig: Self::build_type_spec_fn_sig("__anodized_struct_maintains"),
-            block: Self::build_precondition_fn_body(&spec.maintains),
-            defaultness: None,
-        };
-
-        let attrs: [Attribute; 2] = [
-            parse_quote!(#[doc(hidden)]),
-            parse_quote!(#[allow(warnings)]),
-        ];
-
-        let struct_ident = &item_struct.ident;
-        let generic_args = Self::build_generic_args_from_params(&item_struct.generics);
-        let self_type: Type = parse_quote!(#struct_ident #generic_args);
-        let spec_impl = ItemImpl {
-            attrs: attrs.to_vec(),
-            defaultness: None,
-            unsafety: None,
-            impl_token: Default::default(),
-            generics: item_struct.generics.clone(),
-            trait_: None,
-            self_ty: Box::new(self_type),
-            brace_token: Default::default(),
-            items: vec![ImplItem::Fn(spec_maintains_fn)],
-        };
-
+        let spec_impl =
+            Self::instrument_data_type(spec, &item_struct.ident, &item_struct.generics, false);
         item_struct.to_tokens(&mut tokens);
+        spec_impl.to_tokens(&mut tokens);
+
+        Ok(tokens)
+    }
+
+    pub fn instrument_item_enum(&self, spec: DataSpec, item_enum: ItemEnum) -> Result<TokenStream> {
+        let mut tokens = TokenStream::new();
+
+        let spec_impl =
+            Self::instrument_data_type(spec, &item_enum.ident, &item_enum.generics, true);
+        item_enum.to_tokens(&mut tokens);
         spec_impl.to_tokens(&mut tokens);
 
         Ok(tokens)

@@ -13,8 +13,8 @@ struct NonEmptyVec<T>(Vec<T>);
 #[spec(maintains: self.0.iter().rev().eq(&self.0))]
 struct PalindromeVec<T: Eq>(Vec<T>);
 
-#[spec(maintains:
-    (&self.0).into_iter().rev().eq((&self.0).into_iter())
+#[spec(
+    maintains: (&self.0).into_iter().rev().eq((&self.0).into_iter())
 )]
 struct PalindromeContainer<T: Eq, C>(C)
 where

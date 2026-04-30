@@ -36,7 +36,7 @@ fn embed_spec_item_struct() {
         where
             'LT_1: 'LT_2,
         {
-            fn __anodized_struct_maintains(&self) {
+            fn __anodized_data_maintains(&self) {
                 let _ = | | COND_1;
                 let _ = | | COND_2;
             }

@@ -39,7 +39,10 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
             Err(make_item_error(&item, "inherent impl"))
         }
         Item::Const(_) => Err(make_item_error(&item, "const")),
-        Item::Enum(_) => Err(make_item_error(&item, "enum")),
+        Item::Enum(the_enum) => {
+            let spec = parse_macro_input!(args as DataSpec);
+            BACKEND.instrument_item_enum(spec, the_enum)
+        }
         Item::ExternCrate(_) => Err(make_item_error(&item, "extern crate")),
         Item::ForeignMod(_) => Err(make_item_error(&item, "extern block")),
         Item::Macro(_) => Err(make_item_error(&item, "macro")),

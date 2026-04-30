@@ -3,13 +3,54 @@ mod tests;
 
 use proc_macro2::Span;
 use syn::{
-    AngleBracketedGenericArguments, GenericArgument, GenericParam, Generics, Ident, ReturnType,
-    Signature, parse_quote, punctuated::Punctuated,
+    AngleBracketedGenericArguments, Attribute, GenericArgument, GenericParam, Generics, Ident,
+    ImplItem, ImplItemFn, ItemImpl, ReturnType, Signature, Type, parse_quote,
+    punctuated::Punctuated,
 };
 
-use crate::instrument::Backend;
+use crate::{DataSpec, instrument::Backend};
 
 impl Backend {
+    pub fn instrument_data_type(
+        spec: DataSpec,
+        ident: &Ident,
+        generics: &Generics,
+        is_enum: bool,
+    ) -> ItemImpl {
+        let mut body = Self::build_precondition_fn_body(&spec.maintains);
+        if is_enum {
+            // Bring all variants into scope for convenience.
+            body.stmts.insert(0, parse_quote!(use #ident::*;));
+        }
+
+        let spec_maintains_fn = ImplItemFn {
+            attrs: vec![],
+            vis: syn::Visibility::Inherited,
+            sig: Self::build_type_spec_fn_sig("__anodized_data_maintains"),
+            block: body,
+            defaultness: None,
+        };
+
+        let attrs: [Attribute; 2] = [
+            parse_quote!(#[doc(hidden)]),
+            parse_quote!(#[allow(warnings)]),
+        ];
+
+        let generic_args = Self::build_generic_args_from_params(generics);
+        let self_type: Type = parse_quote!(#ident #generic_args);
+        ItemImpl {
+            attrs: attrs.to_vec(),
+            defaultness: None,
+            unsafety: None,
+            impl_token: Default::default(),
+            generics: generics.clone(),
+            trait_: None,
+            self_ty: Box::new(self_type),
+            brace_token: Default::default(),
+            items: vec![ImplItem::Fn(spec_maintains_fn)],
+        }
+    }
+
     pub fn build_type_spec_fn_sig(name: &str) -> Signature {
         Signature {
             constness: None,
