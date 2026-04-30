@@ -105,8 +105,8 @@ impl Parse for DataSpec {
     fn parse(input: ParseStream) -> Result<Self> {
         let raw_spec = syntax::SpecArgs::parse(input)?;
 
-        let mut maintains: Vec<PreCondition> = vec![];
         let mut errors = MultiError::empty();
+        let mut maintains: Vec<PreCondition> = vec![];
 
         for arg in raw_spec.args {
             match &arg.keyword {
