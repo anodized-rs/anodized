@@ -7,7 +7,7 @@ use syn::{
 
 use crate::{
     Capture, DataSpec, PostCondition, PreCondition, Spec,
-    annotate::syntax::{CaptureExpr, SpecArgValue},
+    annotate::syntax::{CaptureExpr, SpecArg},
 };
 
 pub mod syntax;
@@ -30,14 +30,14 @@ impl Parse for Spec {
         let is_sorted = raw_spec.is_sorted();
 
         for arg in raw_spec.args {
-            match &arg.keyword {
+            match arg.keyword {
                 Keyword::Requires => {
-                    if let Err(error) = arg.value.parse_preconditions(&arg.attrs, &mut requires) {
+                    if let Err(error) = arg.parse_preconditions(&mut requires) {
                         errors.add(error);
                     }
                 }
                 Keyword::Maintains => {
-                    if let Err(error) = arg.value.parse_preconditions(&arg.attrs, &mut maintains) {
+                    if let Err(error) = arg.parse_preconditions(&mut maintains) {
                         errors.add(error);
                     }
                 }
@@ -48,7 +48,7 @@ impl Parse for Spec {
                             "at most one `captures` parameter is allowed; to capture multiple values, use a list: `captures: [expr1, expr2, ...]`",
                         ));
                     }
-                    if let Err(error) = arg.value.parse_captures(&arg.attrs, &mut captures) {
+                    if let Err(error) = arg.parse_captures(&mut captures) {
                         errors.add(error);
                     }
                 }
@@ -59,15 +59,12 @@ impl Parse for Spec {
                             "multiple `binds` parameters are not allowed",
                         ));
                     }
-                    if let Err(error) = arg.value.parse_binds(&arg.attrs, &mut binds_pattern) {
+                    if let Err(error) = arg.parse_binds(&mut binds_pattern) {
                         errors.add(error);
                     }
                 }
                 Keyword::Ensures => {
-                    if let Err(error) =
-                        arg.value
-                            .parse_postconditions(&arg.attrs, &binds_pattern, &mut ensures)
-                    {
+                    if let Err(error) = arg.parse_postconditions(&binds_pattern, &mut ensures) {
                         errors.add(error);
                     }
                 }
@@ -109,9 +106,9 @@ impl Parse for DataSpec {
         let mut maintains: Vec<PreCondition> = vec![];
 
         for arg in raw_spec.args {
-            match &arg.keyword {
+            match arg.keyword {
                 Keyword::Maintains => {
-                    if let Err(error) = arg.value.parse_preconditions(&arg.attrs, &mut maintains) {
+                    if let Err(error) = arg.parse_preconditions(&mut maintains) {
                         errors.add(error);
                     }
                 }
@@ -141,19 +138,15 @@ impl Parse for DataSpec {
     }
 }
 
-impl SpecArgValue {
-    fn parse_preconditions(
-        self,
-        attrs: &[Attribute],
-        preconditions: &mut Vec<PreCondition>,
-    ) -> Result<()> {
-        let cfg_attr = find_cfg_attribute(attrs)?;
+impl SpecArg {
+    fn parse_preconditions(self, preconditions: &mut Vec<PreCondition>) -> Result<()> {
+        let cfg_attr = find_cfg_attribute(&self.attrs)?;
         let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
             Some(attr.parse_args()?)
         } else {
             None
         };
-        let expr = self.try_into_expr()?;
+        let expr = self.value.try_into_expr()?;
         if let Expr::Array(conditions) = expr {
             for expr in conditions.elems {
                 preconditions.push(PreCondition {
@@ -170,15 +163,15 @@ impl SpecArgValue {
         Ok(())
     }
 
-    fn parse_captures(self, attrs: &[Attribute], captures: &mut Vec<Capture>) -> Result<()> {
-        let cfg_attr = find_cfg_attribute(attrs)?;
+    fn parse_captures(self, captures: &mut Vec<Capture>) -> Result<()> {
+        let cfg_attr = find_cfg_attribute(&self.attrs)?;
         if cfg_attr.is_some() {
             return Err(Error::new(
                 cfg_attr.span(),
                 "`cfg` attribute is not supported on `captures`",
             ));
         }
-        let capture_list = self.try_into_captures()?;
+        let capture_list = self.value.try_into_captures()?;
         match capture_list {
             Captures::One(capture_expr) => {
                 captures.push(interpret_capture_expr_as_capture(*capture_expr.clone())?);
@@ -192,32 +185,31 @@ impl SpecArgValue {
         Ok(())
     }
 
-    fn parse_binds(self, attrs: &[Attribute], pattern: &mut Option<Pat>) -> Result<()> {
-        let cfg_attr = find_cfg_attribute(attrs)?;
+    fn parse_binds(self, pattern: &mut Option<Pat>) -> Result<()> {
+        let cfg_attr = find_cfg_attribute(&self.attrs)?;
         if cfg_attr.is_some() {
             return Err(Error::new(
                 cfg_attr.span(),
                 "`cfg` attribute is not supported on `binds`",
             ));
         }
-        let binds_pattern = self.try_into_pat()?;
+        let binds_pattern = self.value.try_into_pat()?;
         *pattern = Some(binds_pattern);
         Ok(())
     }
 
     fn parse_postconditions(
         self,
-        attrs: &[Attribute],
         binds_pattern: &Option<Pat>,
         postconditions: &mut Vec<PostCondition>,
     ) -> Result<()> {
-        let cfg_attr = find_cfg_attribute(attrs)?;
+        let cfg_attr = find_cfg_attribute(&self.attrs)?;
         let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
             Some(attr.parse_args()?)
         } else {
             None
         };
-        let expr = self.try_into_expr()?;
+        let expr = self.value.try_into_expr()?;
         let default_pattern = binds_pattern.clone().unwrap_or(parse_quote! { output });
         if let Expr::Array(conditions) = expr {
             for expr in conditions.elems {
