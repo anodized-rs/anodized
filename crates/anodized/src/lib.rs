@@ -13,10 +13,11 @@ const BACKEND: Backend = Backend {
     emit_panic: cfg!(anodized_panic),
 };
 
-/// Attaches a specification to a fn, or enables specs inside a trait and its impls.
+/// Attaches a specification to supported program elements.
 ///
-/// This macro parses spec elements and transforms the item's code to provide
-/// compile-time syntax validation, and depending on settings, runtime checks.
+/// This macro parses the spec and transforms the item's code to provide the following features:
+/// - compile-time validation: the spec's syntax, scope, and types
+/// - runtime checks: for supported items, configured by `cfg` settings
 #[proc_macro_attribute]
 pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
     // Parse the item to which the attribute is attached.
