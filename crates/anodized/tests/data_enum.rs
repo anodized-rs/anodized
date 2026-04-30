@@ -6,6 +6,7 @@ use anodized::spec;
         Descending(vec) => vec.iter().rev().is_sorted(),
     }
 )]
+#[allow(unused)]
 enum MonotonicVec<T: Ord> {
     Ascending(Vec<T>),
     Descending(Vec<T>),
