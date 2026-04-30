@@ -20,3 +20,19 @@ struct PalindromeContainer<T: Eq, C>(C)
 where
     for<'a> &'a C: IntoIterator<Item = &'a T>,
     for<'a> <&'a C as IntoIterator>::IntoIter: DoubleEndedIterator;
+
+#[spec(
+    maintains: [
+        self.size <= BUFFER_SIZE,
+        str::from_utf8(&self.buffer[0..self.size]).is_ok(),
+    ]
+)]
+struct SliceBackedString<const BUFFER_SIZE: usize = 1024> {
+    size: usize,
+    buffer: [u8; BUFFER_SIZE],
+}
+
+#[spec(
+    maintains: std::mem::size_of::<T>() * DIM * 8 == SIMD_BITS
+)]
+struct SimdVector<const DIM: usize, T = f32, const SIMD_BITS: usize = 128>([T; DIM]);

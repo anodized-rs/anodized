@@ -12,27 +12,29 @@ fn embed_spec_item_struct() {
         ],
     };
     let item_struct: ItemStruct = parse_quote! {
-        struct STRUCT<'LT_1, TYPE_1: BOUND_1>
+        struct STRUCT<'LT_1, TYPE_1: BOUND_1 = DEFAULT_1, const CONST_1: TYPE_2 = DEFAULT_2>
         where
             'LT_1: 'LT_2,
         {
-            FIELD_1: &'LT_1 TYPE_2,
+            FIELD_1: &'LT_1 TYPE_3,
             FIELD_2: TYPE_1,
+            FIELD_3: [TYPE_4; CONST_1],
         }
     };
 
     let expected: TokenStream = parse_quote! {
-        struct STRUCT<'LT_1, TYPE_1: BOUND_1>
+        struct STRUCT<'LT_1, TYPE_1: BOUND_1 = DEFAULT_1, const CONST_1: TYPE_2 = DEFAULT_2>
         where
             'LT_1: 'LT_2,
         {
-            FIELD_1: &'LT_1 TYPE_2,
+            FIELD_1: &'LT_1 TYPE_3,
             FIELD_2: TYPE_1,
+            FIELD_3: [TYPE_4; CONST_1],
         }
 
         #[doc(hidden)]
         #[allow(warnings)]
-        impl<'LT_1, TYPE_1: BOUND_1> STRUCT<'LT_1, TYPE_1>
+        impl<'LT_1, TYPE_1: BOUND_1, const CONST_1: TYPE_2> STRUCT<'LT_1, TYPE_1, CONST_1>
         where
             'LT_1: 'LT_2,
         {
@@ -58,29 +60,31 @@ fn embed_spec_item_enum() {
         ],
     };
     let item_enum: ItemEnum = parse_quote! {
-        enum ENUM<'LT_1, TYPE_1: BOUND_1>
+        enum ENUM<'LT_1, TYPE_1: BOUND_1 = DEFAULT_1, const CONST_1: TYPE_2 = DEFAULT_2>
         where
             'LT_1: 'LT_2,
         {
             VARIANT_1(&'LT_1 TYPE_2),
             VARIANT_2 { FIELD_2: TYPE_1 },
             VARIANT_3,
+            VARIANT_4([TYPE_4; CONST_1]),
         }
     };
 
     let expected: TokenStream = parse_quote! {
-        enum ENUM<'LT_1, TYPE_1: BOUND_1>
+        enum ENUM<'LT_1, TYPE_1: BOUND_1 = DEFAULT_1, const CONST_1: TYPE_2 = DEFAULT_2>
         where
             'LT_1: 'LT_2,
         {
             VARIANT_1(&'LT_1 TYPE_2),
             VARIANT_2 { FIELD_2: TYPE_1 },
             VARIANT_3,
+            VARIANT_4([TYPE_4; CONST_1]),
         }
 
         #[doc(hidden)]
         #[allow(warnings)]
-        impl<'LT_1, TYPE_1: BOUND_1> ENUM<'LT_1, TYPE_1>
+        impl<'LT_1, TYPE_1: BOUND_1, const CONST_1: TYPE_2> ENUM<'LT_1, TYPE_1, CONST_1>
         where
             'LT_1: 'LT_2,
         {
