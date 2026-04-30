@@ -11,6 +11,7 @@ mod test_util;
 
 /// Specifies the intended behavior of a function or method: `fn`.
 #[derive(Debug)]
+// TODO: Rename to `FnSpec` to reduce ambiguity.
 pub struct Spec {
     /// Preconditions: conditions that must hold when the function is called.
     pub requires: Vec<PreCondition>,
