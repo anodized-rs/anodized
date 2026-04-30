@@ -275,8 +275,7 @@ enum MonotonicVec<T: Ord> {
 Important restrictions:
 
 - Runtime checks are **not implemented** yet.
-- The `#[spec]` annotation on a data type only supports the `maintains` parameter.
-- The data type must be a `struct`. Support for `enum` and `type` is coming soon.
+- Only the `maintains` spec parameter is supported.
 
 ### Build Configurations
 
