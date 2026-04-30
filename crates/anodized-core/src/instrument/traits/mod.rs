@@ -5,7 +5,7 @@ use quote::quote;
 use syn::{Attribute, FnArg, ImplItem, Pat, TraitItem, TraitItemFn, parse_quote};
 
 use crate::{
-    Spec,
+    DataSpec, Spec,
     instrument::{Backend, find_spec_attr, make_item_error},
 };
 
@@ -18,7 +18,7 @@ impl Backend {
     ///    default impl performs runtime validation and calls the mangled function.
     pub fn instrument_trait(
         &self,
-        spec: Spec,
+        spec: DataSpec,
         mut the_trait: syn::ItemTrait,
     ) -> syn::Result<syn::ItemTrait> {
         // Currently we don't support any spec arguments for traits themselves.
@@ -138,7 +138,7 @@ impl Backend {
     /// `#[spec]` attributes on the impl items themselves are not allowed.
     pub fn instrument_trait_impl(
         &self,
-        spec: Spec,
+        spec: DataSpec,
         mut the_impl: syn::ItemImpl,
     ) -> syn::Result<syn::ItemImpl> {
         let Some((trait_bang, ref _trait_path, _trait_for)) = the_impl.trait_ else {

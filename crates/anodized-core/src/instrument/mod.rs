@@ -2,8 +2,9 @@ use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{Attribute, ItemFn, ItemImpl, ItemTrait, Meta, Result, parse_quote};
 
-use crate::Spec;
+use crate::{DataSpec, Spec};
 
+pub mod data;
 pub mod fns;
 pub mod traits;
 
@@ -58,18 +59,18 @@ impl Backend {
 
     pub fn instrument_item_trait(
         &self,
-        spec: Spec,
+        spec: DataSpec,
         item_trait: ItemTrait,
-    ) -> syn::Result<TokenStream> {
+    ) -> Result<TokenStream> {
         let new_trait = self.instrument_trait(spec, item_trait)?;
         Ok(new_trait.to_token_stream())
     }
 
     pub fn instrument_item_trait_impl(
         &self,
-        spec: Spec,
+        spec: DataSpec,
         item_impl: ItemImpl,
-    ) -> syn::Result<TokenStream> {
+    ) -> Result<TokenStream> {
         let new_trait_impl = self.instrument_trait_impl(spec, item_impl)?;
         Ok(new_trait_impl.to_token_stream())
     }

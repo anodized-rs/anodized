@@ -6,7 +6,7 @@ use syn::{ItemTrait, parse_quote};
 
 #[test]
 fn embed_spec_item_trait() {
-    let trait_spec = Spec::empty();
+    let trait_spec = DataSpec::empty();
     let item_trait: ItemTrait = parse_quote! {
         trait TRAIT {
             #[spec(

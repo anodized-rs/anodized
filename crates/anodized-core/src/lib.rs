@@ -1,7 +1,7 @@
 #![doc = include_str!("../README.md")]
 
 use proc_macro2::Span;
-use syn::{Expr, Meta, Pat};
+use syn::{Error, Expr, ExprClosure, Meta, Pat};
 
 pub mod annotate;
 pub mod instrument;
@@ -9,8 +9,9 @@ pub mod instrument;
 #[cfg(test)]
 mod test_util;
 
-/// Specifies the intended behavior of a function or method.
+/// Specifies the intended behavior of a function or method: `fn`.
 #[derive(Debug)]
+// TODO: Rename to `FnSpec` to reduce ambiguity.
 pub struct Spec {
     /// Preconditions: conditions that must hold when the function is called.
     pub requires: Vec<PreCondition>,
@@ -20,7 +21,7 @@ pub struct Spec {
     pub captures: Vec<Capture>,
     /// Postconditions: conditions that must hold when the function returns.
     pub ensures: Vec<PostCondition>,
-    /// The span in the source code, from which this spec was parsed
+    /// The span in the source code, from which this spec was parsed.
     span: Span,
 }
 
@@ -36,16 +37,46 @@ impl Spec {
         }
     }
 
-    /// Returns `true` if the spec contract is empty (specifies nothing), otherwise returns `false`
+    /// Returns `true` if the spec is empty (specifies nothing), otherwise returns `false`.
     pub fn is_empty(&self) -> bool {
         self.requires.is_empty()
             && self.maintains.is_empty()
             && self.ensures.is_empty()
             && self.captures.is_empty()
     }
-    /// Call to construct an error from the whole spec
-    pub fn spec_err(&self, message: &str) -> syn::Error {
-        syn::Error::new::<&str>(self.span, message)
+
+    /// Construct an error from the whole spec.
+    pub fn spec_err(&self, message: &str) -> Error {
+        Error::new::<&str>(self.span, message)
+    }
+}
+
+/// Specifies the intended behavior of a data type: `struct` or `enum`.
+#[derive(Debug)]
+pub struct DataSpec {
+    /// Invariants: conditions that must hold for all instances of the data type.
+    pub maintains: Vec<PreCondition>,
+    /// The span in the source code, from which this spec was parsed.
+    span: Span,
+}
+
+impl DataSpec {
+    /// Empty spec that contains no elements.
+    pub fn empty() -> Self {
+        Self {
+            maintains: vec![],
+            span: Span::call_site(),
+        }
+    }
+
+    /// Returns `true` if the spec is empty (specifies nothing), otherwise returns `false`.
+    pub fn is_empty(&self) -> bool {
+        self.maintains.is_empty()
+    }
+
+    /// Construct an error from the whole spec.
+    pub fn spec_err(&self, message: &str) -> Error {
+        Error::new::<&str>(self.span, message)
     }
 }
 
@@ -54,7 +85,7 @@ impl Spec {
 pub struct PreCondition {
     /// The closure that validates the precondition,
     /// takes no input, e.g. `|| input.is_valid()`.
-    pub closure: syn::ExprClosure,
+    pub closure: ExprClosure,
     /// **Static analyzers can safely ignore this field.**
     ///
     /// Build configuration filter to decide whether to add runtime checks.
@@ -67,7 +98,7 @@ pub struct PreCondition {
 pub struct PostCondition {
     /// The closure that validates the postcondition, taking the function's
     /// return value by reference, e.g. `|output| *output > 0`.
-    pub closure: syn::ExprClosure,
+    pub closure: ExprClosure,
     /// **Static analyzers can safely ignore this field.**
     ///
     /// Build configuration filter to decide whether to add runtime checks.

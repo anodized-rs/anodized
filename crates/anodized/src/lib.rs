@@ -4,7 +4,7 @@ use proc_macro::TokenStream;
 use syn::{Item, TraitItemFn, parse_macro_input};
 
 use anodized_core::{
-    Spec,
+    DataSpec, Spec,
     instrument::{Backend, make_item_error},
 };
 
@@ -13,10 +13,11 @@ const BACKEND: Backend = Backend {
     emit_panic: cfg!(anodized_panic),
 };
 
-/// Attaches a specification to a fn, or enables specs inside a trait and its impls.
+/// Attaches a specification to supported program elements.
 ///
-/// This macro parses spec elements and transforms the item's code to provide
-/// compile-time syntax validation, and depending on settings, runtime checks.
+/// This macro parses the spec and transforms the item's code to provide the following features:
+/// - compile-time validation: the spec's syntax, scope, and types
+/// - runtime checks: for supported items, configured by `cfg` settings
 #[proc_macro_attribute]
 pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
     // Parse the item to which the attribute is attached.
@@ -28,24 +29,30 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
             BACKEND.instrument_item_fn(spec, func)
         }
         Item::Trait(the_trait) => {
-            let spec = parse_macro_input!(args as Spec);
+            let spec = parse_macro_input!(args as DataSpec);
             BACKEND.instrument_item_trait(spec, the_trait)
         }
         Item::Impl(the_impl) if the_impl.trait_.is_some() => {
-            let spec = parse_macro_input!(args as Spec);
+            let spec = parse_macro_input!(args as DataSpec);
             BACKEND.instrument_item_trait_impl(spec, the_impl)
         }
         Item::Impl(ref the_impl) if the_impl.trait_.is_none() => {
             Err(make_item_error(&item, "inherent impl"))
         }
         Item::Const(_) => Err(make_item_error(&item, "const")),
-        Item::Enum(_) => Err(make_item_error(&item, "enum")),
+        Item::Enum(the_enum) => {
+            let spec = parse_macro_input!(args as DataSpec);
+            BACKEND.instrument_item_enum(spec, the_enum)
+        }
         Item::ExternCrate(_) => Err(make_item_error(&item, "extern crate")),
         Item::ForeignMod(_) => Err(make_item_error(&item, "extern block")),
         Item::Macro(_) => Err(make_item_error(&item, "macro")),
         Item::Mod(_) => Err(make_item_error(&item, "mod")),
         Item::Static(_) => Err(make_item_error(&item, "static")),
-        Item::Struct(_) => Err(make_item_error(&item, "struct")),
+        Item::Struct(the_struct) => {
+            let spec = parse_macro_input!(args as DataSpec);
+            BACKEND.instrument_item_struct(spec, the_struct)
+        }
         Item::TraitAlias(_) => Err(make_item_error(&item, "trait alias")),
         Item::Type(_) => Err(make_item_error(&item, "type")),
         Item::Union(_) => Err(make_item_error(&item, "union")),

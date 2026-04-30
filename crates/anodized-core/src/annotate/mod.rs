@@ -1,11 +1,14 @@
 use syn::{
-    Attribute, Expr, Ident, Meta, Pat, PatIdent,
+    Attribute, Error, Expr, Ident, Meta, Pat, PatIdent,
     parse::{Parse, ParseStream, Result},
     parse_quote,
     spanned::Spanned,
 };
 
-use crate::{Capture, PostCondition, PreCondition, Spec, annotate::syntax::CaptureExpr};
+use crate::{
+    Capture, DataSpec, PostCondition, PreCondition, Spec,
+    annotate::syntax::{CaptureExpr, SpecArg},
+};
 
 pub mod syntax;
 use syntax::{Captures, Keyword};
@@ -17,155 +20,211 @@ impl Parse for Spec {
     fn parse(input: ParseStream) -> Result<Self> {
         let raw_spec = syntax::SpecArgs::parse(input)?;
 
-        let mut prev_keyword: Option<Keyword> = None;
+        let mut errors = MultiError::empty();
         let mut requires: Vec<PreCondition> = vec![];
         let mut maintains: Vec<PreCondition> = vec![];
         let mut captures: Vec<Capture> = vec![];
         let mut binds_pattern: Option<Pat> = None;
         let mut ensures: Vec<PostCondition> = vec![];
 
+        let is_sorted = raw_spec.is_sorted();
+
         for arg in raw_spec.args {
-            match &arg.keyword {
+            match arg.keyword {
                 Keyword::Requires => {
-                    let cfg_attr = find_cfg_attribute(&arg.attrs)?;
-                    let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
-                        Some(attr.parse_args()?)
-                    } else {
-                        None
-                    };
-                    let expr = arg.value.try_into_expr()?;
-                    if let Expr::Array(conditions) = expr {
-                        for expr in conditions.elems {
-                            requires.push(PreCondition {
-                                closure: interpret_expr_as_precondition(expr)?,
-                                cfg: cfg.clone(),
-                            });
-                        }
-                    } else {
-                        requires.push(PreCondition {
-                            closure: interpret_expr_as_precondition(expr)?,
-                            cfg,
-                        });
+                    if let Err(error) = arg.parse_preconditions(&mut requires) {
+                        errors.add(error);
                     }
                 }
                 Keyword::Maintains => {
-                    let cfg_attr = find_cfg_attribute(&arg.attrs)?;
-                    let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
-                        Some(attr.parse_args()?)
-                    } else {
-                        None
-                    };
-                    let expr = arg.value.try_into_expr()?;
-                    if let Expr::Array(conditions) = expr {
-                        for expr in conditions.elems {
-                            maintains.push(PreCondition {
-                                closure: interpret_expr_as_precondition(expr)?,
-                                cfg: cfg.clone(),
-                            });
-                        }
-                    } else {
-                        maintains.push(PreCondition {
-                            closure: interpret_expr_as_precondition(expr)?,
-                            cfg,
-                        });
+                    if let Err(error) = arg.parse_preconditions(&mut maintains) {
+                        errors.add(error);
                     }
                 }
                 Keyword::Captures => {
-                    let cfg_attr = find_cfg_attribute(&arg.attrs)?;
-                    if cfg_attr.is_some() {
-                        return Err(syn::Error::new(
-                            cfg_attr.span(),
-                            "`cfg` attribute is not supported on `captures`",
-                        ));
-                    }
                     if !captures.is_empty() {
-                        return Err(syn::Error::new(
+                        errors.add(Error::new(
                             arg.keyword_span,
                             "at most one `captures` parameter is allowed; to capture multiple values, use a list: `captures: [expr1, expr2, ...]`",
                         ));
                     }
-                    let capture_list = arg.value.try_into_captures()?;
-                    match capture_list {
-                        Captures::One(capture_expr) => {
-                            captures
-                                .push(interpret_capture_expr_as_capture(*capture_expr.clone())?);
-                        }
-                        Captures::Many { elems, .. } => {
-                            for capture_expr in elems {
-                                captures.push(interpret_capture_expr_as_capture(capture_expr)?);
-                            }
-                        }
+                    if let Err(error) = arg.parse_captures(&mut captures) {
+                        errors.add(error);
                     }
                 }
                 Keyword::Binds => {
-                    let cfg_attr = find_cfg_attribute(&arg.attrs)?;
-                    if cfg_attr.is_some() {
-                        return Err(syn::Error::new(
-                            cfg_attr.span(),
-                            "`cfg` attribute is not supported on `binds`",
-                        ));
-                    }
                     if binds_pattern.is_some() {
-                        return Err(syn::Error::new(
+                        errors.add(Error::new(
                             arg.keyword_span,
                             "multiple `binds` parameters are not allowed",
                         ));
                     }
-                    let pattern = arg.value.try_into_pat()?;
-                    binds_pattern = Some(pattern);
+                    if let Err(error) = arg.parse_binds(&mut binds_pattern) {
+                        errors.add(error);
+                    }
                 }
                 Keyword::Ensures => {
-                    let cfg_attr = find_cfg_attribute(&arg.attrs)?;
-                    let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
-                        Some(attr.parse_args()?)
-                    } else {
-                        None
-                    };
-                    let expr = arg.value.try_into_expr()?;
-                    let default_pattern = binds_pattern.clone().unwrap_or(parse_quote! { output });
-                    if let Expr::Array(conditions) = expr {
-                        for expr in conditions.elems {
-                            ensures.push(PostCondition {
-                                closure: interpret_expr_as_postcondition(
-                                    expr,
-                                    default_pattern.clone(),
-                                )?,
-                                cfg: cfg.clone(),
-                            });
-                        }
-                    } else {
-                        ensures.push(PostCondition {
-                            closure: interpret_expr_as_postcondition(expr, default_pattern)?,
-                            cfg,
-                        });
+                    if let Err(error) = arg.parse_postconditions(&binds_pattern, &mut ensures) {
+                        errors.add(error);
                     }
                 }
                 Keyword::Unknown(ident) => {
-                    return Err(syn::Error::new(
+                    errors.add(Error::new(
                         arg.keyword_span,
                         format!("unknown spec keyword `{ident}`"),
                     ));
                 }
             }
-
-            if let Some(prev_keyword) = prev_keyword
-                && arg.keyword < prev_keyword
-            {
-                return Err(syn::Error::new(
-                    arg.keyword_span,
-                    "parameters are out of order: their order must be `requires`, `maintains`, `captures`, `binds`, `ensures`",
-                ));
-            }
-            prev_keyword = Some(arg.keyword);
         }
 
-        Ok(Spec {
+        if !is_sorted {
+            errors.add(Error::new(
+                input.span(),
+                "parameters are out of order: the expected order is `requires`, `maintains`, `captures`, `binds`, `ensures`",
+            ));
+        }
+
+        if let Some(combined_error) = errors.get_combined() {
+            return Err(combined_error);
+        }
+
+        Ok(Self {
             requires,
             maintains,
             captures,
             ensures,
             span: input.span(),
         })
+    }
+}
+
+impl Parse for DataSpec {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let raw_spec = syntax::SpecArgs::parse(input)?;
+
+        let mut errors = MultiError::empty();
+        let mut maintains: Vec<PreCondition> = vec![];
+
+        for arg in raw_spec.args {
+            match arg.keyword {
+                Keyword::Maintains => {
+                    if let Err(error) = arg.parse_preconditions(&mut maintains) {
+                        errors.add(error);
+                    }
+                }
+                Keyword::Requires | Keyword::Captures | Keyword::Binds | Keyword::Ensures => {
+                    errors.add(Error::new(
+                        arg.keyword_span,
+                        format!("`{}` parameter is not supported here", &arg.keyword),
+                    ));
+                }
+                Keyword::Unknown(ident) => {
+                    errors.add(Error::new(
+                        arg.keyword_span,
+                        format!("unknown spec keyword `{ident}`"),
+                    ));
+                }
+            }
+        }
+
+        if let Some(combined_error) = errors.get_combined() {
+            return Err(combined_error);
+        }
+
+        Ok(Self {
+            maintains,
+            span: input.span(),
+        })
+    }
+}
+
+impl SpecArg {
+    fn parse_preconditions(self, preconditions: &mut Vec<PreCondition>) -> Result<()> {
+        let cfg_attr = find_cfg_attribute(&self.attrs)?;
+        let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
+            Some(attr.parse_args()?)
+        } else {
+            None
+        };
+        let expr = self.value.try_into_expr()?;
+        if let Expr::Array(conditions) = expr {
+            for expr in conditions.elems {
+                preconditions.push(PreCondition {
+                    closure: interpret_expr_as_precondition(expr)?,
+                    cfg: cfg.clone(),
+                });
+            }
+        } else {
+            preconditions.push(PreCondition {
+                closure: interpret_expr_as_precondition(expr)?,
+                cfg,
+            });
+        }
+        Ok(())
+    }
+
+    fn parse_captures(self, captures: &mut Vec<Capture>) -> Result<()> {
+        let cfg_attr = find_cfg_attribute(&self.attrs)?;
+        if cfg_attr.is_some() {
+            return Err(Error::new(
+                cfg_attr.span(),
+                "`cfg` attribute is not supported on `captures`",
+            ));
+        }
+        let capture_list = self.value.try_into_captures()?;
+        match capture_list {
+            Captures::One(capture_expr) => {
+                captures.push(interpret_capture_expr_as_capture(*capture_expr.clone())?);
+            }
+            Captures::Many { elems, .. } => {
+                for capture_expr in elems {
+                    captures.push(interpret_capture_expr_as_capture(capture_expr)?);
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn parse_binds(self, pattern: &mut Option<Pat>) -> Result<()> {
+        let cfg_attr = find_cfg_attribute(&self.attrs)?;
+        if cfg_attr.is_some() {
+            return Err(Error::new(
+                cfg_attr.span(),
+                "`cfg` attribute is not supported on `binds`",
+            ));
+        }
+        let binds_pattern = self.value.try_into_pat()?;
+        *pattern = Some(binds_pattern);
+        Ok(())
+    }
+
+    fn parse_postconditions(
+        self,
+        binds_pattern: &Option<Pat>,
+        postconditions: &mut Vec<PostCondition>,
+    ) -> Result<()> {
+        let cfg_attr = find_cfg_attribute(&self.attrs)?;
+        let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
+            Some(attr.parse_args()?)
+        } else {
+            None
+        };
+        let expr = self.value.try_into_expr()?;
+        let default_pattern = binds_pattern.clone().unwrap_or(parse_quote! { output });
+        if let Expr::Array(conditions) = expr {
+            for expr in conditions.elems {
+                postconditions.push(PostCondition {
+                    closure: interpret_expr_as_postcondition(expr, default_pattern.clone())?,
+                    cfg: cfg.clone(),
+                });
+            }
+        } else {
+            postconditions.push(PostCondition {
+                closure: interpret_expr_as_postcondition(expr, default_pattern)?,
+                cfg,
+            });
+        }
+        Ok(())
     }
 }
 
@@ -202,21 +261,19 @@ fn interpret_capture_expr_as_capture(capture_expr: CaptureExpr) -> Result<Captur
         }
 
         // Missing <pattern>
-        (Some(_), Some(_), None) => {
-            Err(syn::Error::new_spanned(as_, "expected pattern after `as`"))
-        }
+        (Some(_), Some(_), None) => Err(Error::new_spanned(as_, "expected pattern after `as`")),
 
         // Missing `as` and <pattern>
-        (Some(expr), None, None) => Err(syn::Error::new_spanned(
+        (Some(expr), None, None) => Err(Error::new_spanned(
             expr,
             "complex expression must be bound/descructured: <expression> `as` <pattern>",
         )),
 
         // Missing `as`
-        (Some(_), None, Some(pat)) => Err(syn::Error::new_spanned(pat, "expected `as` <pattern>")),
+        (Some(_), None, Some(pat)) => Err(Error::new_spanned(pat, "expected `as` <pattern>")),
 
         // Missing <expression>
-        (None, _, _) => Err(syn::Error::new(
+        (None, _, _) => Err(Error::new(
             span,
             "expected capture: <expression> `as` <pattern>",
         )),
@@ -232,7 +289,7 @@ fn interpret_expr_as_precondition(expr: Expr) -> Result<syn::ExprClosure> {
             if closure.inputs.is_empty() {
                 Ok(closure)
             } else {
-                Err(syn::Error::new_spanned(
+                Err(Error::new_spanned(
                     closure.or1_token,
                     format!(
                         "precondition closure must have no arguments, found {}",
@@ -268,7 +325,7 @@ fn interpret_expr_as_postcondition(expr: Expr, default_binding: Pat) -> Result<s
             if closure.inputs.len() == 1 {
                 Ok(closure)
             } else {
-                Err(syn::Error::new_spanned(
+                Err(Error::new_spanned(
                     closure.or1_token,
                     format!(
                         "postcondition closure must have exactly one argument, found {}",
@@ -300,14 +357,14 @@ fn find_cfg_attribute(attrs: &[Attribute]) -> Result<Option<&Attribute>> {
     for attr in attrs {
         if attr.path().is_ident("cfg") {
             if cfg_attr.is_some() {
-                return Err(syn::Error::new(
+                return Err(Error::new(
                     attr.span(),
                     "multiple `cfg` attributes are not supported",
                 ));
             }
             cfg_attr = Some(attr);
         } else {
-            return Err(syn::Error::new(
+            return Err(Error::new(
                 attr.span(),
                 "unsupported attribute; only `cfg` is allowed",
             ));
@@ -315,4 +372,23 @@ fn find_cfg_attribute(attrs: &[Attribute]) -> Result<Option<&Attribute>> {
     }
 
     Ok(cfg_attr)
+}
+
+struct MultiError(Option<Error>);
+
+impl MultiError {
+    fn empty() -> Self {
+        Self(None)
+    }
+
+    fn get_combined(self) -> Option<Error> {
+        self.0
+    }
+
+    fn add(&mut self, error: Error) {
+        match &mut self.0 {
+            Some(acc) => acc.combine(error),
+            None => self.0 = Some(error),
+        }
+    }
 }
