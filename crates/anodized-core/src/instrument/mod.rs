@@ -6,9 +6,9 @@ use syn::{
 
 use crate::{DataSpec, Spec};
 
+pub mod data;
 pub mod fns;
 pub mod traits;
-pub mod types;
 
 pub struct Backend {
     pub emit_print: bool,
