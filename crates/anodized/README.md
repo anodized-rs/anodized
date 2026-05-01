@@ -35,11 +35,11 @@ Anodized is to verification what `serde` is to serialization.
 
 The Rust Team is building [native contract support](https://github.com/rust-lang/rust/issues/128044) into the language. We hope that learnings from Anodized will help their work, and we plan to offer a migration tool so that Anodized users can switch to Rust-native contracts as soon as they're ready.
 
-Rust has many excellent verification tools (Aeneas, Creusot, Flux, Kani, Prusti, Verus, and more), but they all suffer from the following issues that stand in the way of widespread adoption:
+Rust has many excellent verification tools (Aeneas, Creusot, Flux, Hax, Kani, Prusti, Verus, and more). Their wider adoption is limited by the following key issues:
 
-- They change Rust (the language or the toolchain) in non-trivial ways, making them more effort to maintain and use.
-- Keeping the modified components in sync with upstream Rust is a lot of effort that slows down development.
-- They are largely incompatible with one another due to the different changes they each make to Rust.
+- Modifying Rust (the language or the toolchain) make learning and use more difficult.
+- Differences make using a combination of tools difficult and increase switching costs.
+- Keeping modified components in sync with upstream Rust is more work for tool developers.
 
 Anodized aims to help other systems become easier to maintain and use by solving those problems. Developers of verification systems can focus on the analysis itself and avoid duplicating the effort of defining and processing specifications. Users can write their specifications once, and gain access to a wide range of capabilities including runtime checks, fuzzing, static analysis, and more.
 
