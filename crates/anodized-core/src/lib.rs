@@ -85,7 +85,7 @@ impl DataSpec {
 pub struct LoopSpec {
     /// Loop invariants: conditions that must hold both before and after the loop's body runs.
     pub maintains: Vec<PreCondition>,
-    /// An expression that decreases with each run of the loop's body.
+    /// Loop variant: a function that decreases with each run of the loop's body.
     pub decreases: Option<LoopVariant>,
     /// The span in the source code, from which this spec was parsed.
     span: Span,
@@ -114,7 +114,7 @@ impl LoopSpec {
 
 /// A precondition represented by a `bool`-valued expression.
 #[derive(Debug)]
-// TODO: Should be renamed to just `Condition` for clarity.
+// TODO: Rename to `Condition` for clarity.
 pub struct PreCondition {
     /// The closure that validates the precondition,
     /// takes no input, e.g. `|| input.is_valid()`.
@@ -153,4 +153,9 @@ pub struct Capture {
 pub struct LoopVariant {
     /// The expression that defines the variant.
     pub expr: Expr,
+    /// **Static analyzers can safely ignore this field.**
+    ///
+    /// Build configuration filter to decide whether to add runtime checks.
+    /// Passed to a `cfg!()` guard in the instrumented code.
+    pub cfg: Option<Meta>,
 }

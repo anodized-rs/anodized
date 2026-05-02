@@ -1,5 +1,5 @@
 use proc_macro2::TokenStream;
-use syn::{ExprWhile, Result, parse_quote};
+use syn::{ExprWhile, Result};
 
 use crate::{LoopSpec, instrument::Backend};
 
@@ -12,6 +12,8 @@ impl Backend {
         spec: LoopSpec,
         expr_while: &mut ExprWhile,
     ) -> Result<TokenStream> {
+        let _ = spec;
+        let _ = expr_while;
         todo!()
     }
 }
