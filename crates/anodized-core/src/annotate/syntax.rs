@@ -280,6 +280,9 @@ impl Keyword {
         } else if input.peek(kw::ensures) {
             let token: kw::ensures = input.parse()?;
             (Ensures, token.span)
+        } else if input.peek(kw::decreases) {
+            let token: kw::decreases = input.parse()?;
+            (Decreases, token.span)
         } else {
             let ident: Ident = input.parse()?;
             let span = ident.span();

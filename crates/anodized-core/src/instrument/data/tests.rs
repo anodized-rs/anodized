@@ -4,7 +4,7 @@ use proc_macro2::TokenStream;
 use syn::{ItemEnum, ItemStruct, parse_quote};
 
 #[test]
-fn embed_spec_item_struct() {
+fn embed_spec_expr_while() {
     let struct_spec: DataSpec = parse_quote! {
         maintains: [
             COND_1,
