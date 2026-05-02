@@ -8,7 +8,7 @@ use anodized::spec;
         seq[*output..].iter().all(|item| item >= value),
     ],
 )]
-fn find_insert_position<T: Ord>(seq: &[T], value: &T) -> usize {
+pub fn find_insert_position<T: Ord>(seq: &[T], value: &T) -> usize {
     let mut i = 0;
 
     #[spec(
