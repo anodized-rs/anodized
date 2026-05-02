@@ -248,6 +248,7 @@ pub mod kw {
     syn::custom_keyword!(captures);
     syn::custom_keyword!(binds);
     syn::custom_keyword!(ensures);
+    syn::custom_keyword!(decreases);
 }
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
@@ -258,6 +259,7 @@ pub enum Keyword {
     Captures,
     Binds,
     Ensures,
+    Decreases,
 }
 
 impl Keyword {
@@ -294,6 +296,7 @@ impl std::fmt::Display for Keyword {
             Keyword::Captures => write!(f, "captures"),
             Keyword::Binds => write!(f, "binds"),
             Keyword::Ensures => write!(f, "ensures"),
+            Keyword::Decreases => write!(f, "decreases"),
             Keyword::Unknown(ident) => write!(f, "{}", ident),
         }
     }

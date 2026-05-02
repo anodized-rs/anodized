@@ -6,6 +6,7 @@ use crate::{DataSpec, Spec};
 
 pub mod data;
 pub mod fns;
+pub mod loops;
 pub mod traits;
 
 pub struct Backend {

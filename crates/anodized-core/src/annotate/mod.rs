@@ -68,6 +68,12 @@ impl Parse for Spec {
                         errors.add(error);
                     }
                 }
+                Keyword::Decreases => {
+                    errors.add(Error::new(
+                        arg.keyword_span,
+                        format!("`{}` parameter is not supported here", &arg.keyword),
+                    ));
+                }
                 Keyword::Unknown(ident) => {
                     errors.add(Error::new(
                         arg.keyword_span,
@@ -112,7 +118,11 @@ impl Parse for DataSpec {
                         errors.add(error);
                     }
                 }
-                Keyword::Requires | Keyword::Captures | Keyword::Binds | Keyword::Ensures => {
+                Keyword::Requires
+                | Keyword::Captures
+                | Keyword::Binds
+                | Keyword::Ensures
+                | Keyword::Decreases => {
                     errors.add(Error::new(
                         arg.keyword_span,
                         format!("`{}` parameter is not supported here", &arg.keyword),

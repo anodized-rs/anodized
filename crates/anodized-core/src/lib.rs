@@ -80,8 +80,41 @@ impl DataSpec {
     }
 }
 
+/// Specifies the intended behavior of a loop: `while` or `for`.
+#[derive(Debug)]
+pub struct LoopSpec {
+    /// Loop invariants: conditions that must hold both before and after the loop's body runs.
+    pub maintains: Vec<PreCondition>,
+    /// An expression that decreases with each run of the loop's body.
+    pub decreases: Option<LoopVariant>,
+    /// The span in the source code, from which this spec was parsed.
+    span: Span,
+}
+
+impl LoopSpec {
+    /// Empty spec that contains no elements.
+    pub fn empty() -> Self {
+        Self {
+            maintains: vec![],
+            decreases: None,
+            span: Span::call_site(),
+        }
+    }
+
+    /// Returns `true` if the spec is empty (specifies nothing), otherwise returns `false`.
+    pub fn is_empty(&self) -> bool {
+        self.maintains.is_empty() && self.decreases.is_none()
+    }
+
+    /// Construct an error from the whole spec.
+    pub fn spec_err(&self, message: &str) -> Error {
+        Error::new::<&str>(self.span, message)
+    }
+}
+
 /// A precondition represented by a `bool`-valued expression.
 #[derive(Debug)]
+// TODO: Should be renamed to just `Condition` for clarity.
 pub struct PreCondition {
     /// The closure that validates the precondition,
     /// takes no input, e.g. `|| input.is_valid()`.
@@ -113,4 +146,11 @@ pub struct Capture {
     pub expr: Expr,
     /// The pattern to bind/destructure the captured value.
     pub pat: Pat,
+}
+
+/// Decreases with each run of a loop's body.
+#[derive(Debug)]
+pub struct LoopVariant {
+    /// The expression that defines the variant.
+    pub expr: Expr,
 }
