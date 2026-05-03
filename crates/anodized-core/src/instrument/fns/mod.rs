@@ -14,6 +14,8 @@ use syn::{
 
 impl Backend {
     pub fn instrument_fn(&self, spec: Spec, sig: &Signature, body: &mut Block) -> syn::Result<()> {
+        self.instrument_loops_in_fn_body(body)?;
+
         let is_async = sig.asyncness.is_some();
 
         // Extract the return type from the function signature

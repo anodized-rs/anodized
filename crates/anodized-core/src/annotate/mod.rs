@@ -6,7 +6,7 @@ use syn::{
 };
 
 use crate::{
-    Capture, DataSpec, PostCondition, PreCondition, Spec,
+    Capture, DataSpec, LoopSpec, LoopVariant, PostCondition, PreCondition, Spec,
     annotate::syntax::{CaptureExpr, SpecArg},
 };
 
@@ -68,6 +68,12 @@ impl Parse for Spec {
                         errors.add(error);
                     }
                 }
+                Keyword::Decreases => {
+                    errors.add(Error::new(
+                        arg.keyword_span,
+                        format!("`{}` parameter is not supported here", &arg.keyword),
+                    ));
+                }
                 Keyword::Unknown(ident) => {
                     errors.add(Error::new(
                         arg.keyword_span,
@@ -112,7 +118,11 @@ impl Parse for DataSpec {
                         errors.add(error);
                     }
                 }
-                Keyword::Requires | Keyword::Captures | Keyword::Binds | Keyword::Ensures => {
+                Keyword::Requires
+                | Keyword::Captures
+                | Keyword::Binds
+                | Keyword::Ensures
+                | Keyword::Decreases => {
                     errors.add(Error::new(
                         arg.keyword_span,
                         format!("`{}` parameter is not supported here", &arg.keyword),
@@ -133,6 +143,68 @@ impl Parse for DataSpec {
 
         Ok(Self {
             maintains,
+            span: input.span(),
+        })
+    }
+}
+
+impl Parse for LoopSpec {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let raw_spec = syntax::SpecArgs::parse(input)?;
+
+        let is_sorted = raw_spec.is_sorted();
+
+        let mut errors = MultiError::empty();
+        let mut decreases = None;
+        let mut maintains: Vec<PreCondition> = vec![];
+
+        for arg in raw_spec.args {
+            match arg.keyword {
+                Keyword::Maintains => {
+                    if let Err(error) = arg.parse_preconditions(&mut maintains) {
+                        errors.add(error);
+                    }
+                }
+                Keyword::Decreases => {
+                    if decreases.is_some() {
+                        errors.add(Error::new(
+                            arg.keyword_span,
+                            "multiple `decreases` parameters are not allowed",
+                        ));
+                    }
+                    if let Err(error) = arg.parse_decreases(&mut decreases) {
+                        errors.add(error);
+                    }
+                }
+                Keyword::Requires | Keyword::Captures | Keyword::Binds | Keyword::Ensures => {
+                    errors.add(Error::new(
+                        arg.keyword_span,
+                        format!("`{}` parameter is not supported here", &arg.keyword),
+                    ));
+                }
+                Keyword::Unknown(ident) => {
+                    errors.add(Error::new(
+                        arg.keyword_span,
+                        format!("unknown spec keyword `{ident}`"),
+                    ));
+                }
+            }
+        }
+
+        if !is_sorted {
+            errors.add(Error::new(
+                input.span(),
+                "parameters are out of order: the expected order is `maintains`, `decreases`",
+            ));
+        }
+
+        if let Some(combined_error) = errors.get_combined() {
+            return Err(combined_error);
+        }
+
+        Ok(Self {
+            maintains,
+            decreases,
             span: input.span(),
         })
     }
@@ -223,6 +295,23 @@ impl SpecArg {
                 closure: interpret_expr_as_postcondition(expr, default_pattern)?,
                 cfg,
             });
+        }
+        Ok(())
+    }
+
+    fn parse_decreases(self, decreases: &mut Option<LoopVariant>) -> Result<()> {
+        let cfg_attr = find_cfg_attribute(&self.attrs)?;
+        let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
+            Some(attr.parse_args()?)
+        } else {
+            None
+        };
+        let expr_span = self.value.span();
+        let expr = self.value.try_into_expr()?;
+        if let Expr::Array(_) = expr {
+            return Err(Error::new(expr_span, "expected a single expression"));
+        } else {
+            *decreases = Some(LoopVariant { expr, cfg });
         }
         Ok(())
     }
