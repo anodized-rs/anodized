@@ -1,6 +1,27 @@
 use anodized::spec;
 
 #[spec(
+    ensures: [
+        seq.iter().any(|elem| elem == output),
+        seq.iter().all(|elem| elem <= output),
+    ],
+)]
+pub fn find_maximum(seq: &[u8]) -> u8 {
+    let mut max = 0;
+
+    #[spec(
+        maintains: seq[0..i].iter().all(|elem| elem <= &max),
+    )]
+    for i in 0..seq.len() {
+        if seq[i] > max {
+            max = seq[i]
+        }
+    }
+
+    max
+}
+
+#[spec(
     requires: seq.is_sorted(),
     ensures: [
         *output <= seq.len(),
