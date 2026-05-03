@@ -2,7 +2,7 @@
 mod tests;
 
 use syn::{
-    Block, Error, ExprClosure, ExprWhile, ItemFn, Result, Stmt, parse_quote,
+    Block, Error, ExprClosure, ExprForLoop, ExprWhile, ItemFn, Result, Stmt, parse_quote,
     visit_mut::{self, VisitMut},
 };
 
@@ -21,6 +21,15 @@ impl Backend {
     pub fn instrument_expr_while(&self, spec: LoopSpec, mut expr_while: ExprWhile) -> ExprWhile {
         self.instrument_loop_body(spec, &mut expr_while.body.stmts);
         expr_while
+    }
+
+    pub fn instrument_expr_for_loop(
+        &self,
+        spec: LoopSpec,
+        mut expr_for_loop: ExprForLoop,
+    ) -> ExprForLoop {
+        self.instrument_loop_body(spec, &mut expr_for_loop.body.stmts);
+        expr_for_loop
     }
 
     fn instrument_loop_body(&self, spec: LoopSpec, stmts: &mut Vec<Stmt>) {

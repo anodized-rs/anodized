@@ -1,10 +1,10 @@
 use proc_macro2::TokenStream;
-use syn::{ExprWhile, parse_quote};
+use syn::{ExprForLoop, ExprWhile, parse_quote};
 
 use crate::{LoopSpec, instrument::Backend, test_util::assert_tokens_eq};
 
 #[test]
-fn embed_spec_item_struct() {
+fn embed_spec_expr_while() {
     let while_spec: LoopSpec = parse_quote! {
         maintains: [
             INVAR_1,
@@ -32,6 +32,36 @@ fn embed_spec_item_struct() {
     };
 
     let observed = Backend::NOTHING.instrument_expr_while(while_spec, expr_while);
+
+    assert_tokens_eq(&observed, &expected);
+}
+
+#[test]
+fn embed_spec_expr_for() {
+    let for_spec: LoopSpec = parse_quote! {
+        maintains: [
+            INVAR_1,
+            INVAR_2,
+        ],
+    };
+    let expr_for_loop: ExprForLoop = parse_quote! {
+        for FOR_VAR in FOR_EXPR {
+            LOOP_BODY
+        }
+    };
+
+    let expected: TokenStream = parse_quote! {
+        for FOR_VAR in FOR_EXPR {
+            let __anodized_loop_maintains = {
+                let _ = | | INVAR_1;
+                let _ = | | INVAR_2;
+            };
+            let __anodized_loop_decreases = {};
+            LOOP_BODY
+        }
+    };
+
+    let observed = Backend::NOTHING.instrument_expr_for_loop(for_spec, expr_for_loop);
 
     assert_tokens_eq(&observed, &expected);
 }
