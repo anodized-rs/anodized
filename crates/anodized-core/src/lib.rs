@@ -85,7 +85,7 @@ impl DataSpec {
 pub struct LoopSpec {
     /// Loop invariants: conditions that must hold both before and after the loop's body runs.
     pub maintains: Vec<PreCondition>,
-    /// Loop variant: a function that decreases with each run of the loop's body.
+    /// Loop variant: an expression that decreases with each run of the loop's body.
     pub decreases: Option<LoopVariant>,
     /// The span in the source code, from which this spec was parsed.
     span: Span,
