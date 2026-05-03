@@ -62,14 +62,14 @@ Anodized aims to become a common layer across runtime checks, fuzzing, and verif
 
 **`#[spec]` Support**
 
-| Program Element        | Status                    | Notes                                |
-| ---------------------- | ------------------------- | ------------------------------------ |
-| free-standing `fn`     | Available                 | Pre- and postconditions, invariants. |
-| `fn` inside an `impl`  | Available                 | Pre- and postconditions, invariants. |
-| `fn` inside a `trait`  | [Available](#trait-specs) | Enforces each `impl` to conform.     |
-| `struct` and `enum`    | [Available](#data-specs)  | Refinements to constrain instances.  |
-| `mod`                  | In Progress               | Invariants across multiple entities. |
-| `while`, `loop`, `for` | Planned                   | Loop invariants.                     |
+| Program Element       | Status                    | Notes                                |
+| --------------------- | ------------------------- | ------------------------------------ |
+| free-standing `fn`    | Available                 | Pre- and postconditions, invariants. |
+| `fn` inside an `impl` | Available                 | Pre- and postconditions, invariants. |
+| `fn` inside a `trait` | [Available](#trait-specs) | Enforces each `impl` to conform.     |
+| `for` and `while`     | [Available](#loop-specs)  | Loop invariants and variant (bound). |
+| `struct` and `enum`   | [Available](#data-specs)  | Refinements to constrain instances.  |
+| `mod`                 | In Progress               | Invariants across multiple entities. |
 
 **Build Configurations**
 
@@ -110,9 +110,9 @@ RUSTFLAGS="--cfg anodized_panic" cargo run
 
 See the [Build Configurations](#build-configurations) section for other options.
 
-**2. Add specifications to your functions.**
+**2. Add specifications to your code.**
 
-Use the `#[spec]` attribute to define preconditions (`requires`), postconditions (`ensures`), and invariants (`maintains`). Each _condition_ is a standard Rust expression that evaluates to `bool`. In postconditions, the function's return value is available as `output`.
+Use the `#[spec]` attribute to attach preconditions and postconditions to functions, invariants to loops, and refinements to data types. Each _condition_ is a standard Rust expression that evaluates to `bool`.
 
 ```rust,no_run
 use anodized::spec;
@@ -186,6 +186,74 @@ use anodized::spec;
 )]
 fn push_checked<T>(vec: &mut Vec<T>, value: T) { todo!() }
 ```
+
+### Loop Specs
+
+Anodized supports specs on loops to ensure correctness and bounded execution.
+
+Loop specs support the following elements:
+
+- `maintains`: Loop invariants that must hold both before and after each iteration.
+- `decreases`: A loop variant expression that shows strict progress toward termination.
+
+**On a `for` Loop**
+
+```rust, no_run
+use anodized::spec;
+
+#[spec(
+    ensures: [
+        seq.iter().any(|elem| elem == output),
+        seq.iter().all(|elem| elem <= output),
+    ],
+)]
+fn find_maximum(seq: &[u8]) -> u8 {
+    let mut max = 0;
+
+    #[spec(
+        maintains: seq[0..i].iter().all(|elem| elem <= &max),
+    )]
+    for i in 0..seq.len() {
+        if seq[i] > max {
+            max = seq[i]
+        }
+    }
+
+    max
+}
+```
+
+**On a `while` Loop**
+
+```rust, no_run
+use anodized::spec;
+
+#[spec(
+    requires: seq.is_sorted(),
+    ensures: [
+        *output <= seq.len(),
+        seq[0..*output].iter().all(|item| item < value),
+        seq[*output..].iter().all(|item| item >= value),
+    ],
+)]
+fn find_insert_position<T: Ord>(seq: &[T], value: &T) -> usize {
+    let mut i = 0;
+
+    #[spec(
+        maintains: seq[0..i].iter().all(|item| item < value),
+        decreases: seq.len() - i,
+    )]
+    while i < seq.len() && seq[i] < *value {
+        i += 1;
+    }
+
+    i
+}
+```
+
+Important restrictions:
+
+- Runtime checking loop specs is **planned but not yet implemented**.
 
 ### Trait Specs
 
