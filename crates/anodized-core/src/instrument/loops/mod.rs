@@ -18,18 +18,12 @@ impl Backend {
         visitor.finish()
     }
 
-    pub fn instrument_expr_while(&self, spec: LoopSpec, mut expr_while: ExprWhile) -> ExprWhile {
+    pub fn instrument_expr_while(&self, spec: LoopSpec, expr_while: &mut ExprWhile) {
         self.instrument_loop_body(spec, &mut expr_while.body.stmts);
-        expr_while
     }
 
-    pub fn instrument_expr_for_loop(
-        &self,
-        spec: LoopSpec,
-        mut expr_for_loop: ExprForLoop,
-    ) -> ExprForLoop {
+    pub fn instrument_expr_for_loop(&self, spec: LoopSpec, expr_for_loop: &mut ExprForLoop) {
         self.instrument_loop_body(spec, &mut expr_for_loop.body.stmts);
-        expr_for_loop
     }
 
     fn instrument_loop_body(&self, spec: LoopSpec, stmts: &mut Vec<Stmt>) {
@@ -108,6 +102,29 @@ impl VisitMut for LoopSpecVisitor<'_> {
             Ok(spec) => self
                 .backend
                 .instrument_loop_body(spec, &mut expr_while.body.stmts),
+            Err(error) => self.add_error(error),
+        }
+    }
+
+    fn visit_expr_for_loop_mut(&mut self, expr_for_loop: &mut ExprForLoop) {
+        let attrs = std::mem::take(&mut expr_for_loop.attrs);
+        let (spec_attr, other_attrs) = match find_spec_attr(attrs) {
+            Ok(result) => result,
+            Err(error) => {
+                self.add_error(error);
+                return;
+            }
+        };
+        expr_for_loop.attrs = other_attrs;
+
+        visit_mut::visit_expr_for_loop_mut(self, expr_for_loop);
+
+        let Some(spec_attr) = spec_attr else {
+            return;
+        };
+
+        match spec_attr.parse_args::<LoopSpec>() {
+            Ok(spec) => self.backend.instrument_expr_for_loop(spec, expr_for_loop),
             Err(error) => self.add_error(error),
         }
     }
