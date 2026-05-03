@@ -189,7 +189,7 @@ fn push_checked<T>(vec: &mut Vec<T>, value: T) { todo!() }
 
 ### Loop Specs
 
-Anodized supports specs on loops to ensure correctness and bounded execution.
+Anodized supports specs on loops to ensure correctness and bounded iteration.
 
 Loop specs support the following elements:
 
