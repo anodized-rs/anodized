@@ -253,6 +253,7 @@ fn find_insert_position<T: Ord>(seq: &[T], value: &T) -> usize {
 
 Important restrictions:
 
+- The **containing function** must have a `#[spec]` attribute.
 - Runtime checking loop specs is **planned but not yet implemented**.
 
 ### Trait Specs
