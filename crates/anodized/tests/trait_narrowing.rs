@@ -5,79 +5,107 @@ use anodized::spec;
 //////////////////////////
 
 #[spec]
-trait Counter {
+trait MinFinder {
     #[spec(
-        requires: x >= 0,
-        ensures: *output >= x,
+        requires: [
+            input.len() > 0,
+        ],
+        ensures: [
+            input.iter().all(|item| output <= item),
+            input.iter().any(|item| output == item) || input.len() == 0,
+        ],
     )]
-    fn bump(&self, x: i32) -> i32;
+    fn find_min(input: &[f32]) -> f32;
 }
 
-struct ValidNarrowing;
+pub struct ValidNarrowing;
 
 #[spec]
-impl Counter for ValidNarrowing {
+impl MinFinder for ValidNarrowing {
     #[spec(
-        // Weaker than trait precondition: accepts a superset.
-        requires: x >= -10,
-        // Stronger than trait postcondition.
-        ensures: *output > x,
+        // Weaker than trait precondition: allows `input` to be empty.
+        requires: [
+            input.len() >= 0,
+        ],
+        // Stronger than trait postcondition: clarifies what to output when `input` is empty.
+        ensures: [
+            input.iter().all(|item| output <= item),
+            input.iter().any(|item| output == item)
+                || (input.len() == 0 && *output == f32::INFINITY),
+        ],
     )]
-    fn bump(&self, x: i32) -> i32 {
-        x + 1
+    #[warn(unused_comparisons)]
+    fn find_min(input: &[f32]) -> f32 {
+        let mut min = f32::INFINITY;
+        for item in input.iter().copied() {
+            if item < min {
+                min = item;
+            }
+        }
+        min
     }
 }
 
-struct StrongerImplPre;
+pub struct StrongerImplPre;
 
 #[spec]
-impl Counter for StrongerImplPre {
+impl MinFinder for StrongerImplPre {
     #[spec(
-        // Stronger than trait precondition: this is not a valid narrowing.
-        requires: x > 0,
-        ensures: *output >= x,
+        // INVALID - Stronger than trait precondition: requires sorted `input`.
+        requires: [
+            input.is_sorted(),
+        ],
+        ensures: [
+            input.iter().all(|item| output <= item),
+            input.iter().any(|item| output == item) || input.len() == 0,
+        ],
     )]
-    fn bump(&self, x: i32) -> i32 {
-        x
+    fn find_min(input: &[f32]) -> f32 {
+        input[0]
     }
 }
 
-struct WeakerImplPost;
+pub struct WeakerImplPost;
 
 #[spec]
-impl Counter for WeakerImplPost {
+impl MinFinder for WeakerImplPost {
     #[spec(
-        // This postcondition is weaker than the trait postcondition.
-        ensures: true,
+        requires: [
+            input.len() > 0,
+        ],
+        // INVALID - Weaker than trait postcondition: `input` may be ignored completely.
+        ensures: [
+            input.iter().all(|item| output <= item),
+        ],
     )]
-    fn bump(&self, x: i32) -> i32 {
-        x - 1
+    fn find_min(input: &[f32]) -> f32 {
+        let _ = input;
+        f32::NEG_INFINITY
     }
 }
+
+const TEST_INPUT: [f32; 3] = [5.0, -42.0, 3.14];
 
 #[test]
 fn runtime_allows_valid_narrowing() {
-    let c = ValidNarrowing;
-    assert_eq!(c.bump(0), 1);
-    assert_eq!(c.bump(10), 11);
+    assert_eq!(ValidNarrowing::find_min(&TEST_INPUT), -42.0);
 }
 
 #[cfg(anodized_panic)]
 #[test]
-#[should_panic(expected = "Precondition failed: x > 0")]
+#[should_panic(expected = "Precondition failed: input.is_sorted()")]
 fn runtime_rejects_stronger_impl_precondition() {
-    let c = StrongerImplPre;
-    // Satisfies trait precondition (`x >= 0`) but violates impl precondition (`x > 0`).
-    let _ = c.bump(0);
+    // NOTE: The trait's runtime checks are active even when the concrete type is statically known.
+    assert_eq!(StrongerImplPre::find_min(&TEST_INPUT), -42.0);
 }
 
 #[cfg(anodized_panic)]
 #[test]
-#[should_panic(expected = "Postcondition failed: | output | * output >= x")]
+#[should_panic(expected = "\
+Postcondition failed: | output | input.iter().any(| item | output == item) || input.len() == 0")]
 fn runtime_rejects_weaker_impl_postcondition() {
-    let c = WeakerImplPost;
-    // Impl postcondition (`true`) passes, but trait postcondition fails.
-    let _ = c.bump(5);
+    // NOTE: The trait's runtime checks are active even when the concrete type is statically known.
+    assert_eq!(WeakerImplPost::find_min(&TEST_INPUT), -42.0);
 }
 
 /////////////////////////////////////////////////////
@@ -101,7 +129,7 @@ trait Matrix<T> {
     fn mul<Input: Matrix<T>, Output: Matrix<T>>(&self, input: &Input) -> Output;
 }
 
-struct DiagonalMatrix<T>(Vec<T>);
+pub struct DiagonalMatrix<T>(Vec<T>);
 
 #[spec]
 impl<T> Matrix<T> for DiagonalMatrix<T> {
