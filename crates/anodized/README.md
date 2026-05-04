@@ -265,6 +265,7 @@ Use the following structure:
 1. Put `#[spec]` on the trait.
 2. Put method-level `#[spec(...)]` on trait methods that define requirements.
 3. Put `#[spec]` on each corresponding trait `impl`.
+4. (Optional) Put a `#[spec(...)]` attribute on impl `fn`s to narrow the trait's spec.
 
 ```rust, no_run
 use anodized::spec;
@@ -296,8 +297,9 @@ impl MonotonicGenerator for Counter {
 
 Important restrictions:
 
-- The trait-level `#[spec]` is an enabler; specification clauses belong on trait methods, not on the trait itself.
-- Do not put `#[spec]` on methods inside a `#[spec]` trait impl. Method specs are defined at the trait declaration.
+- The trait-level (or impl-level) `#[spec]` is an enabler; specification clauses belong on `fn`s, not on the trait (or impl) itself.
+- Only a `fn` item may have a spec, other trait items (`const`, `type`, etc.) are not supported.
+- A spec on an impl `fn` must **narrow** (as opposed to widen) the spec of the trait `fn`.
 - Names prefixed with `__anodized_` are internal and must not be implemented directly.
 
 ### Data Specs
