@@ -157,7 +157,7 @@ impl Backend {
             return Err(spec.spec_err("Unsupported spec element on trait impl."));
         }
 
-        let mut new_items = Vec::with_capacity(the_impl.items.len());
+        let mut new_items = Vec::with_capacity(the_impl.items.len() * 4);
 
         for item in the_impl.items.into_iter() {
             match item {
