@@ -83,7 +83,7 @@ impl MinFinder for WeakerImplPost {
     }
 }
 
-const TEST_INPUT: [f32; 3] = [5.0, -42.0, 3.14];
+const TEST_INPUT: [f32; 3] = [5.0, -42.0, std::f32::consts::PI];
 
 #[test]
 fn runtime_allows_valid_narrowing() {
