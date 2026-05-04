@@ -1,5 +1,89 @@
 use anodized::spec;
 
+//////////////////////////
+// Test runtime checks. //
+//////////////////////////
+
+#[spec]
+trait Counter {
+    #[spec(
+        requires: x >= 0,
+        ensures: *output >= x,
+    )]
+    fn bump(&self, x: i32) -> i32;
+}
+
+struct ValidNarrowing;
+
+#[spec]
+impl Counter for ValidNarrowing {
+    #[spec(
+        // Weaker than trait precondition: accepts a superset.
+        requires: x >= -10,
+        // Stronger than trait postcondition.
+        ensures: *output > x,
+    )]
+    fn bump(&self, x: i32) -> i32 {
+        x + 1
+    }
+}
+
+struct StrongerImplPre;
+
+#[spec]
+impl Counter for StrongerImplPre {
+    #[spec(
+        // Stronger than trait precondition: this is not a valid narrowing.
+        requires: x > 0,
+        ensures: *output >= x,
+    )]
+    fn bump(&self, x: i32) -> i32 {
+        x
+    }
+}
+
+struct WeakerImplPost;
+
+#[spec]
+impl Counter for WeakerImplPost {
+    #[spec(
+        // This postcondition is weaker than the trait postcondition.
+        ensures: true,
+    )]
+    fn bump(&self, x: i32) -> i32 {
+        x - 1
+    }
+}
+
+#[test]
+fn runtime_allows_valid_narrowing() {
+    let c = ValidNarrowing;
+    assert_eq!(c.bump(0), 1);
+    assert_eq!(c.bump(10), 11);
+}
+
+#[cfg(anodized_panic)]
+#[test]
+#[should_panic(expected = "Precondition failed: x > 0")]
+fn runtime_rejects_stronger_impl_precondition() {
+    let c = StrongerImplPre;
+    // Satisfies trait precondition (`x >= 0`) but violates impl precondition (`x > 0`).
+    let _ = c.bump(0);
+}
+
+#[cfg(anodized_panic)]
+#[test]
+#[should_panic(expected = "Postcondition failed: | output | * output >= x")]
+fn runtime_rejects_weaker_impl_postcondition() {
+    let c = WeakerImplPost;
+    // Impl postcondition (`true`) passes, but trait postcondition fails.
+    let _ = c.bump(5);
+}
+
+/////////////////////////////////////////////////////
+// Test only instrumentation on more complex code. //
+/////////////////////////////////////////////////////
+
 #[spec]
 trait Matrix<T> {
     fn count_rows(&self) -> usize;
