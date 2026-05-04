@@ -299,7 +299,7 @@ Important restrictions:
 
 - The trait-level (or impl-level) `#[spec]` is an enabler; specification clauses belong on `fn`s, not on the trait (or impl) itself.
 - Only a `fn` item may have a spec, other trait items (`const`, `type`, etc.) are not supported.
-- A spec on an impl `fn` must **narrow** the spec of the trait `fn`. This is a consequence of the [Liskov substitution principle](https://en.wikipedia.org/wiki/Liskov_substitution_principle):
+- A spec on an impl `fn` must **narrow** the spec of the trait `fn`. This is a consequence of the [Liskov substitution principle](https://en.wikipedia.org/wiki/Liskov_substitution_principle).
   - Runtime checks enforce narrowing.
   - Static analyzers **must validate** narrowing as part of verification.
 - Names prefixed with `__anodized_` are internal and must not be implemented directly.
