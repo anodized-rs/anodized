@@ -265,7 +265,7 @@ Use the following structure:
 1. Put `#[spec]` on the trait.
 2. Put method-level `#[spec(...)]` on trait methods that define requirements.
 3. Put `#[spec]` on each corresponding trait `impl`.
-4. (Optional) Put a `#[spec(...)]` attribute on impl `fn`s to narrow the trait's spec.
+4. (Optional) Put `#[spec(...)]` on impl `fn`s to narrow the trait's spec.
 
 ```rust, no_run
 use anodized::spec;
