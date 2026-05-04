@@ -24,9 +24,7 @@ pub struct ValidNarrowing;
 impl MinFinder for ValidNarrowing {
     #[spec(
         // Weaker than trait precondition: allows `input` to be empty.
-        requires: [
-            input.len() >= 0,
-        ],
+        requires: [],
         // Stronger than trait postcondition: clarifies what to output when `input` is empty.
         ensures: [
             input.iter().all(|item| output <= item),
@@ -53,6 +51,7 @@ impl MinFinder for StrongerImplPre {
     #[spec(
         // INVALID - Stronger than trait precondition: requires sorted `input`.
         requires: [
+            input.len() > 0,
             input.is_sorted(),
         ],
         ensures: [
@@ -88,6 +87,7 @@ const TEST_INPUT: [f32; 3] = [5.0, -42.0, 3.14];
 
 #[test]
 fn runtime_allows_valid_narrowing() {
+    // NOTE: The trait's runtime checks are active even when the concrete type is statically known.
     assert_eq!(ValidNarrowing::find_min(&TEST_INPUT), -42.0);
 }
 
@@ -108,9 +108,9 @@ fn runtime_rejects_weaker_impl_postcondition() {
     assert_eq!(WeakerImplPost::find_min(&TEST_INPUT), -42.0);
 }
 
-/////////////////////////////////////////////////////
-// Test only instrumentation on more complex code. //
-/////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
+// Smoke-test instrumentation on more complex code. //
+//////////////////////////////////////////////////////
 
 #[spec]
 trait Matrix<T> {
