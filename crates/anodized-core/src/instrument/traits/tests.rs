@@ -78,7 +78,7 @@ fn embed_spec_item_impl_trait() {
 
     let expected: TokenStream = parse_quote! {
         impl TRAIT for IMPL_TYPE {
-            #[doc(hidden)]
+            #[inline]
             fn __anodized_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
                 BODY
             }
