@@ -14,7 +14,7 @@ trait Matrix<T> {
             output.count_cols() == input.count_cols(),
         ],
     )]
-    fn mul<Input: Matrix<T>, Output: Matrix<T>>(&self, input: Input) -> Output;
+    fn mul<Input: Matrix<T>, Output: Matrix<T>>(&self, input: &Input) -> Output;
 }
 
 struct DiagonalMatrix<T>(Vec<T>);
@@ -40,7 +40,7 @@ impl<T> Matrix<T> for DiagonalMatrix<T> {
             output.count_cols() == input.count_cols(),
         ],
     )]
-    fn mul<Input: Matrix<T>, Output: Matrix<T>>(&self, input: Input) -> Output {
+    fn mul<Input: Matrix<T>, Output: Matrix<T>>(&self, input: &Input) -> Output {
         let _ = input;
         todo!()
     }
