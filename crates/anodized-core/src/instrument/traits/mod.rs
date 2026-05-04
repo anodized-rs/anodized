@@ -2,7 +2,9 @@
 mod tests;
 
 use quote::quote;
-use syn::{Attribute, FnArg, ImplItem, Pat, TraitItem, TraitItemFn, parse_quote};
+use syn::{
+    Attribute, FnArg, ImplItem, ImplItemFn, Pat, TraitItem, TraitItemFn, Visibility, parse_quote,
+};
 
 use crate::{
     DataSpec, Spec,
@@ -29,7 +31,7 @@ impl Backend {
         }
         let _ = move || spec;
 
-        let mut new_trait_items = Vec::with_capacity(the_trait.items.len() * 2);
+        let mut new_trait_items = Vec::with_capacity(the_trait.items.len() * 5);
 
         for item in the_trait.items.into_iter() {
             match item {
@@ -133,9 +135,11 @@ impl Backend {
         Ok(the_trait)
     }
 
-    /// Expand impl items by mangling methods for trait impls
+    /// Expand impl items by mangling methods for trait impls.
     ///
-    /// `#[spec]` attributes on the impl items themselves are not allowed.
+    /// The `#[spec]` attribute on an impl `fn` must narrow the `#[spec]` of the trait `fn`:
+    /// - The impl's preconditions must follow from the trait's preconditions.
+    /// - The impl's postconditions must entail the trait's postconditions.
     pub fn instrument_trait_impl(
         &self,
         spec: DataSpec,
@@ -153,25 +157,61 @@ impl Backend {
             return Err(spec.spec_err("Unsupported spec element on trait impl."));
         }
 
-        let mut new_items = Vec::with_capacity(the_impl.items.len());
+        let mut new_items = Vec::with_capacity(the_impl.items.len() * 4);
 
         for item in the_impl.items.into_iter() {
-            let new_item = match item {
+            match item {
                 ImplItem::Fn(mut func) => {
-                    let (spec, mut func_attrs) = find_spec_attr(func.attrs)?;
-                    if let Some(ref spec_attr) = spec {
-                        return Err(make_item_error(&spec_attr, "trait impl fn"));
-                    }
+                    let (spec_attr, mut func_attrs) = find_spec_attr(func.attrs)?;
 
-                    let original_ident = func.sig.ident;
+                    let original_ident = &func.sig.ident;
                     if original_ident.to_string().starts_with("__anodized_") {
                         return Err(syn::Error::new_spanned(
-                            &original_ident,
+                            original_ident,
                             r#"An item with the `__anodized_` prefix is internal. Do not implement it directly.
 Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation."#,
                         ));
                     }
-                    func.sig.ident = mangle_ident(&original_ident);
+
+                    let fn_spec: Spec = match spec_attr {
+                        Some(spec_attr) => spec_attr.parse_args()?,
+                        None => Spec::empty(),
+                    };
+
+                    let attrs: [Attribute; 2] = [
+                        parse_quote!(#[doc(hidden)]),
+                        parse_quote!(#[allow(warnings)]),
+                    ];
+
+                    // Embed `spec` elements as `__anodized_fn_*` functions.
+                    let spec_requires_fn = ImplItemFn {
+                        attrs: attrs.to_vec(),
+                        sig: Self::build_spec_fn_sig("__anodized_fn_requires", &func.sig),
+                        block: Self::build_precondition_fn_body(&fn_spec.requires),
+                        vis: Visibility::Inherited,
+                        defaultness: None,
+                    };
+                    let spec_maintains_fn = ImplItemFn {
+                        attrs: attrs.to_vec(),
+                        sig: Self::build_spec_fn_sig("__anodized_fn_maintains", &func.sig),
+                        block: Self::build_precondition_fn_body(&fn_spec.maintains),
+                        vis: Visibility::Inherited,
+                        defaultness: None,
+                    };
+                    let spec_ensures_fn = ImplItemFn {
+                        attrs: attrs.to_vec(),
+                        sig: Self::build_spec_fn_sig("__anodized_fn_ensures", &func.sig),
+                        block: Self::build_poscondition_fn_body(
+                            &fn_spec.captures,
+                            &fn_spec.ensures,
+                            &func.sig.output,
+                        )?,
+                        vis: Visibility::Inherited,
+                        defaultness: None,
+                    };
+
+                    func.sig.ident = mangle_ident(original_ident);
+                    self.instrument_fn(fn_spec, &func.sig, &mut func.block)?;
 
                     // Add a default `#[inline]` attribute unless one is already there.
                     // The caller can supress this with `#[inline(never)]`
@@ -180,7 +220,10 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                     }
 
                     func.attrs = func_attrs;
-                    ImplItem::Fn(func)
+                    new_items.push(ImplItem::Fn(func));
+                    new_items.push(ImplItem::Fn(spec_requires_fn));
+                    new_items.push(ImplItem::Fn(spec_maintains_fn));
+                    new_items.push(ImplItem::Fn(spec_ensures_fn));
                 }
                 ImplItem::Const(mut const_item) => {
                     let (spec, attrs) = find_spec_attr(const_item.attrs)?;
@@ -188,7 +231,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         return Err(make_item_error(&spec_attr, "trait impl const"));
                     }
                     const_item.attrs = attrs;
-                    ImplItem::Const(const_item)
+                    new_items.push(ImplItem::Const(const_item));
                 }
                 ImplItem::Type(mut type_item) => {
                     let (spec, attrs) = find_spec_attr(type_item.attrs)?;
@@ -196,7 +239,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         return Err(make_item_error(&spec_attr, "trait impl type"));
                     }
                     type_item.attrs = attrs;
-                    ImplItem::Type(type_item)
+                    new_items.push(ImplItem::Type(type_item));
                 }
                 ImplItem::Macro(mut macro_item) => {
                     let (spec, attrs) = find_spec_attr(macro_item.attrs)?;
@@ -204,13 +247,13 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         return Err(make_item_error(&spec_attr, "trait impl macro"));
                     }
                     macro_item.attrs = attrs;
-                    ImplItem::Macro(macro_item)
+                    new_items.push(ImplItem::Macro(macro_item));
                 }
-                ImplItem::Verbatim(token_stream) => ImplItem::Verbatim(token_stream),
+                ImplItem::Verbatim(token_stream) => {
+                    new_items.push(ImplItem::Verbatim(token_stream))
+                }
                 _ => unimplemented!(),
             };
-
-            new_items.push(new_item);
         }
 
         the_impl.items = new_items;
