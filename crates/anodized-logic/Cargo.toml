@@ -10,5 +10,8 @@ categories.workspace = true
 keywords.workspace = true
 license.workspace = true
 
+[dependencies]
+ibig = "0.3.6"
+
 [dev-dependencies]
 trybuild = "1.0"
