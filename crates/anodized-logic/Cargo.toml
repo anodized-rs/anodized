@@ -11,7 +11,7 @@ keywords.workspace = true
 license.workspace = true
 
 [dependencies]
-ibig = "0.3.6"
+num-bigint = "0.4.6"
 
 [dev-dependencies]
 trybuild = "1.0"
