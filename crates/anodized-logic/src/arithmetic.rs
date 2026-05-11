@@ -1,9 +1,16 @@
 use ibig::IBig;
 
 #[allow(non_camel_case_types)]
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 #[repr(transparent)]
 pub struct int(IBig);
+
+impl From<IBig> for int {
+    #[inline]
+    fn from(val: IBig) -> Self {
+        int(val)
+    }
+}
 
 impl ::core::ops::Add<int> for int {
     type Output = int;
@@ -53,6 +60,17 @@ impl ::core::ops::Rem<int> for int {
 pub trait Integral {}
 
 pub use crate::impl_integral;
+pub use crate::int;
+
+#[macro_export]
+macro_rules! int {
+    ($val:literal) => {
+        $crate::arithmetic::int::from(::ibig::ibig!($val))
+    };
+    ($val:expr) => {
+        $crate::arithmetic::int::from(&$val)
+    };
+}
 
 /// Implements `From<&T> for int` by delegating to `IBig`'s own `From` impl.
 ///
