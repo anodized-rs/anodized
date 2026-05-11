@@ -8,5 +8,5 @@ pub fn collatz(mut n: int) -> int {
 }
 
 fn f(n: int) -> int {
-    if n % 2 == 0 { n / 2 } else { 3 * n + 1 }
+    if &n % 2 == 0 { n / 2 } else { 3 * n + 1 }
 }
