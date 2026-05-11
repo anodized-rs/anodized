@@ -1,8 +1,8 @@
 use ibig::IBig;
 
 #[allow(non_camel_case_types)]
-#[repr(transparent)]
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[repr(transparent)]
 pub struct int(IBig);
 
 impl ::core::ops::Add<int> for int {
@@ -92,7 +92,7 @@ impl_from_integral!(usize);
 
 /// Implements the `Integral` marker trait and all arithmetic interop with `int` for a given type.
 ///
-/// The type must implement `From<T> for int`.
+/// The type must implement `From<&T> for int`.
 #[macro_export]
 macro_rules! impl_integral {
     ($t:ty) => {
@@ -107,7 +107,7 @@ macro_rules! impl_integral {
 
             #[inline]
             fn add(self, rhs: $crate::arithmetic::int) -> $crate::arithmetic::int {
-                <$crate::arithmetic::int as ::core::convert::From<$t>>::from(self) + rhs
+                <$crate::arithmetic::int as ::core::convert::From<&$t>>::from(&self) + rhs
             }
         }
 
@@ -116,7 +116,7 @@ macro_rules! impl_integral {
 
             #[inline]
             fn sub(self, rhs: $crate::arithmetic::int) -> $crate::arithmetic::int {
-                <$crate::arithmetic::int as ::core::convert::From<$t>>::from(self) - rhs
+                <$crate::arithmetic::int as ::core::convert::From<&$t>>::from(&self) - rhs
             }
         }
 
@@ -125,7 +125,7 @@ macro_rules! impl_integral {
 
             #[inline]
             fn mul(self, rhs: $crate::arithmetic::int) -> $crate::arithmetic::int {
-                <$crate::arithmetic::int as ::core::convert::From<$t>>::from(self) * rhs
+                <$crate::arithmetic::int as ::core::convert::From<&$t>>::from(&self) * rhs
             }
         }
 
@@ -134,7 +134,7 @@ macro_rules! impl_integral {
 
             #[inline]
             fn div(self, rhs: $crate::arithmetic::int) -> $crate::arithmetic::int {
-                <$crate::arithmetic::int as ::core::convert::From<$t>>::from(self) / rhs
+                <$crate::arithmetic::int as ::core::convert::From<&$t>>::from(&self) / rhs
             }
         }
 
@@ -143,7 +143,7 @@ macro_rules! impl_integral {
 
             #[inline]
             fn rem(self, rhs: $crate::arithmetic::int) -> $crate::arithmetic::int {
-                <$crate::arithmetic::int as ::core::convert::From<$t>>::from(self) % rhs
+                <$crate::arithmetic::int as ::core::convert::From<&$t>>::from(&self) % rhs
             }
         }
 
@@ -156,7 +156,7 @@ macro_rules! impl_integral {
 
             #[inline]
             fn add(self, rhs: $t) -> $crate::arithmetic::int {
-                self + <$crate::arithmetic::int as ::core::convert::From<$t>>::from(rhs)
+                self + <$crate::arithmetic::int as ::core::convert::From<&$t>>::from(&rhs)
             }
         }
 
@@ -165,7 +165,7 @@ macro_rules! impl_integral {
 
             #[inline]
             fn sub(self, rhs: $t) -> $crate::arithmetic::int {
-                self - <$crate::arithmetic::int as ::core::convert::From<$t>>::from(rhs)
+                self - <$crate::arithmetic::int as ::core::convert::From<&$t>>::from(&rhs)
             }
         }
 
@@ -174,7 +174,7 @@ macro_rules! impl_integral {
 
             #[inline]
             fn mul(self, rhs: $t) -> $crate::arithmetic::int {
-                self * <$crate::arithmetic::int as ::core::convert::From<$t>>::from(rhs)
+                self * <$crate::arithmetic::int as ::core::convert::From<&$t>>::from(&rhs)
             }
         }
 
@@ -183,7 +183,7 @@ macro_rules! impl_integral {
 
             #[inline]
             fn div(self, rhs: $t) -> $crate::arithmetic::int {
-                self / <$crate::arithmetic::int as ::core::convert::From<$t>>::from(rhs)
+                self / <$crate::arithmetic::int as ::core::convert::From<&$t>>::from(&rhs)
             }
         }
 
@@ -192,7 +192,7 @@ macro_rules! impl_integral {
 
             #[inline]
             fn rem(self, rhs: $t) -> $crate::arithmetic::int {
-                self % <$crate::arithmetic::int as ::core::convert::From<$t>>::from(rhs)
+                self % <$crate::arithmetic::int as ::core::convert::From<&$t>>::from(&rhs)
             }
         }
 
@@ -291,6 +291,43 @@ macro_rules! impl_integral {
         }
 
         // ------------------------------------------------------------
+        // Comparison: T with int (both directions)
+        // ------------------------------------------------------------
+
+        impl ::core::cmp::PartialEq<$crate::arithmetic::int> for $t {
+            #[inline]
+            fn eq(&self, other: &$crate::arithmetic::int) -> bool {
+                <$crate::arithmetic::int as ::core::convert::From<&$t>>::from(self) == other.clone()
+            }
+        }
+
+        impl ::core::cmp::PartialEq<$t> for $crate::arithmetic::int {
+            #[inline]
+            fn eq(&self, other: &$t) -> bool {
+                self == &<$crate::arithmetic::int as ::core::convert::From<&$t>>::from(other)
+            }
+        }
+
+        impl ::core::cmp::PartialOrd<$crate::arithmetic::int> for $t {
+            #[inline]
+            fn partial_cmp(
+                &self,
+                other: &$crate::arithmetic::int,
+            ) -> Option<::core::cmp::Ordering> {
+                let lhs = <$crate::arithmetic::int as ::core::convert::From<&$t>>::from(self);
+                lhs.partial_cmp(other)
+            }
+        }
+
+        impl ::core::cmp::PartialOrd<$t> for $crate::arithmetic::int {
+            #[inline]
+            fn partial_cmp(&self, other: &$t) -> Option<::core::cmp::Ordering> {
+                let rhs = <$crate::arithmetic::int as ::core::convert::From<&$t>>::from(other);
+                self.partial_cmp(&rhs)
+            }
+        }
+
+        // ------------------------------------------------------------
         // Compound assignment: int <assign_op> T
         // ------------------------------------------------------------
 
@@ -331,43 +368,6 @@ macro_rules! impl_integral {
     };
 }
 
-macro_rules! impl_integral_cmp_copy {
-    ($t:ty) => {
-        impl ::core::cmp::PartialEq<$crate::arithmetic::int> for $t {
-            #[inline]
-            fn eq(&self, other: &$crate::arithmetic::int) -> bool {
-                <$crate::arithmetic::int as ::core::convert::From<$t>>::from(*self) == other.clone()
-            }
-        }
-
-        impl ::core::cmp::PartialEq<$t> for $crate::arithmetic::int {
-            #[inline]
-            fn eq(&self, other: &$t) -> bool {
-                self == &<$crate::arithmetic::int as ::core::convert::From<$t>>::from(*other)
-            }
-        }
-
-        impl ::core::cmp::PartialOrd<$crate::arithmetic::int> for $t {
-            #[inline]
-            fn partial_cmp(
-                &self,
-                other: &$crate::arithmetic::int,
-            ) -> Option<::core::cmp::Ordering> {
-                let lhs = <$crate::arithmetic::int as ::core::convert::From<$t>>::from(*self);
-                lhs.partial_cmp(other)
-            }
-        }
-
-        impl ::core::cmp::PartialOrd<$t> for $crate::arithmetic::int {
-            #[inline]
-            fn partial_cmp(&self, other: &$t) -> Option<::core::cmp::Ordering> {
-                let rhs = <$crate::arithmetic::int as ::core::convert::From<$t>>::from(*other);
-                self.partial_cmp(&rhs)
-            }
-        }
-    };
-}
-
 impl_integral!(i8);
 impl_integral!(i16);
 impl_integral!(i32);
@@ -381,17 +381,3 @@ impl_integral!(u32);
 impl_integral!(u64);
 impl_integral!(u128);
 impl_integral!(usize);
-
-impl_integral_cmp_copy!(i8);
-impl_integral_cmp_copy!(i16);
-impl_integral_cmp_copy!(i32);
-impl_integral_cmp_copy!(i64);
-impl_integral_cmp_copy!(i128);
-impl_integral_cmp_copy!(isize);
-
-impl_integral_cmp_copy!(u8);
-impl_integral_cmp_copy!(u16);
-impl_integral_cmp_copy!(u32);
-impl_integral_cmp_copy!(u64);
-impl_integral_cmp_copy!(u128);
-impl_integral_cmp_copy!(usize);
