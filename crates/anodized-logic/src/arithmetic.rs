@@ -52,23 +52,9 @@ impl ::core::ops::Rem<int> for int {
 
 pub trait Integral {}
 
-use crate::impl_integral;
+pub use crate::impl_integral;
 
-impl_integral!(i8);
-impl_integral!(i16);
-impl_integral!(i32);
-impl_integral!(i64);
-impl_integral!(i128);
-impl_integral!(isize);
-
-impl_integral!(u8);
-impl_integral!(u16);
-impl_integral!(u32);
-impl_integral!(u64);
-impl_integral!(u128);
-impl_integral!(usize);
-
-/// Implements `From<T> for int` by delegating to `IBig`'s own `From` impl.
+/// Implements `From<&T> for int` by delegating to `IBig`'s own `From` impl.
 ///
 /// This is an internal macro — not exported — since it depends on the concrete
 /// backing type and should not be part of the public API.
@@ -78,6 +64,13 @@ macro_rules! impl_from_integral {
             #[inline]
             fn from(val: $t) -> Self {
                 int(IBig::from(val))
+            }
+        }
+
+        impl From<&$t> for int {
+            #[inline]
+            fn from(val: &$t) -> Self {
+                int(IBig::from(*val))
             }
         }
     };
@@ -298,43 +291,6 @@ macro_rules! impl_integral {
         }
 
         // ------------------------------------------------------------
-        // Comparison: T with int (both directions)
-        // ------------------------------------------------------------
-
-        impl ::core::cmp::PartialEq<$crate::arithmetic::int> for $t {
-            #[inline]
-            fn eq(&self, other: &$crate::arithmetic::int) -> bool {
-                <$crate::arithmetic::int as ::core::convert::From<$t>>::from(*self) == other.clone()
-            }
-        }
-
-        impl ::core::cmp::PartialEq<$t> for $crate::arithmetic::int {
-            #[inline]
-            fn eq(&self, other: &$t) -> bool {
-                self == &<$crate::arithmetic::int as ::core::convert::From<$t>>::from(*other)
-            }
-        }
-
-        impl ::core::cmp::PartialOrd<$crate::arithmetic::int> for $t {
-            #[inline]
-            fn partial_cmp(
-                &self,
-                other: &$crate::arithmetic::int,
-            ) -> Option<::core::cmp::Ordering> {
-                let lhs = <$crate::arithmetic::int as ::core::convert::From<$t>>::from(*self);
-                lhs.partial_cmp(other)
-            }
-        }
-
-        impl ::core::cmp::PartialOrd<$t> for $crate::arithmetic::int {
-            #[inline]
-            fn partial_cmp(&self, other: &$t) -> Option<::core::cmp::Ordering> {
-                let rhs = <$crate::arithmetic::int as ::core::convert::From<$t>>::from(*other);
-                self.partial_cmp(&rhs)
-            }
-        }
-
-        // ------------------------------------------------------------
         // Compound assignment: int <assign_op> T
         // ------------------------------------------------------------
 
@@ -375,24 +331,67 @@ macro_rules! impl_integral {
     };
 }
 
-/// Implements `From<T> for int` by delegating to `IBig`'s own `From` impl.
-///
-/// This is an internal macro — not exported — since it depends on the concrete
-/// backing type and should not be part of the public API.
-///
-/// # Example (crate-internal)
-///
-/// ```rust,ignore
-/// impl_from_integral!(i8);
-/// impl_from_integral!(i16);
-/// ```
-macro_rules! impl_from_integral {
+macro_rules! impl_integral_cmp_copy {
     ($t:ty) => {
-        impl From<$t> for int {
+        impl ::core::cmp::PartialEq<$crate::arithmetic::int> for $t {
             #[inline]
-            fn from(val: $t) -> Self {
-                int(IBig::from(val))
+            fn eq(&self, other: &$crate::arithmetic::int) -> bool {
+                <$crate::arithmetic::int as ::core::convert::From<$t>>::from(*self) == other.clone()
+            }
+        }
+
+        impl ::core::cmp::PartialEq<$t> for $crate::arithmetic::int {
+            #[inline]
+            fn eq(&self, other: &$t) -> bool {
+                self == &<$crate::arithmetic::int as ::core::convert::From<$t>>::from(*other)
+            }
+        }
+
+        impl ::core::cmp::PartialOrd<$crate::arithmetic::int> for $t {
+            #[inline]
+            fn partial_cmp(
+                &self,
+                other: &$crate::arithmetic::int,
+            ) -> Option<::core::cmp::Ordering> {
+                let lhs = <$crate::arithmetic::int as ::core::convert::From<$t>>::from(*self);
+                lhs.partial_cmp(other)
+            }
+        }
+
+        impl ::core::cmp::PartialOrd<$t> for $crate::arithmetic::int {
+            #[inline]
+            fn partial_cmp(&self, other: &$t) -> Option<::core::cmp::Ordering> {
+                let rhs = <$crate::arithmetic::int as ::core::convert::From<$t>>::from(*other);
+                self.partial_cmp(&rhs)
             }
         }
     };
 }
+
+impl_integral!(i8);
+impl_integral!(i16);
+impl_integral!(i32);
+impl_integral!(i64);
+impl_integral!(i128);
+impl_integral!(isize);
+
+impl_integral!(u8);
+impl_integral!(u16);
+impl_integral!(u32);
+impl_integral!(u64);
+impl_integral!(u128);
+impl_integral!(usize);
+
+impl_integral_cmp_copy!(i8);
+impl_integral_cmp_copy!(i16);
+impl_integral_cmp_copy!(i32);
+impl_integral_cmp_copy!(i64);
+impl_integral_cmp_copy!(i128);
+impl_integral_cmp_copy!(isize);
+
+impl_integral_cmp_copy!(u8);
+impl_integral_cmp_copy!(u16);
+impl_integral_cmp_copy!(u32);
+impl_integral_cmp_copy!(u64);
+impl_integral_cmp_copy!(u128);
+impl_integral_cmp_copy!(usize);
