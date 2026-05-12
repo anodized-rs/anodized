@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 use proc_macro::TokenStream;
 use syn::{Item, TraitItemFn, parse_macro_input};
 
