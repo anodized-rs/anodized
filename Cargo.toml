@@ -28,7 +28,9 @@ keywords = [
 
 [workspace.dependencies]
 anodized-core = { version = "0.4.0", path = "crates/anodized-core" }
+anodized-logic = { version = "0.1.0", path = "crates/anodized-logic" }
 anodized-macros = { version = "0.4.0", path = "crates/anodized-macros" }
+num-bigint = "0.4.6"
 proc-macro2 = { version = "1.0", features = ["span-locations"] }
 quote = "1.0"
 syn = { version = "2.0", features = ["extra-traits", "full", "visit", "visit-mut"] }
