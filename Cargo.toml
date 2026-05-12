@@ -4,6 +4,7 @@ members = [
     "crates/anodized-core",
     "crates/anodized-fmt",
     "crates/anodized-logic",
+    "crates/anodized-macros",
 ]
 resolver = "2"
 
@@ -27,6 +28,7 @@ keywords = [
 
 [workspace.dependencies]
 anodized-core = { version = "0.4.0", path = "crates/anodized-core" }
+anodized-macros = { version = "0.4.0", path = "crates/anodized-macros" }
 proc-macro2 = { version = "1.0", features = ["span-locations"] }
 quote = "1.0"
 syn = { version = "2.0", features = ["extra-traits", "full", "visit", "visit-mut"] }
