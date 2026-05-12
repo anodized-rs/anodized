@@ -50,15 +50,15 @@ impl ::core::ops::Rem<int> for int {
     }
 }
 
-pub trait Integral {}
+pub trait Primitive: Copy {}
 
-pub use crate::impl_integral;
-
-/// Implements `From<&T> for int` by delegating to `IBig`'s own `From` impl.
+/// Implements all integration points for primitive integral types:
+/// - `From<T>` and `From<&T>` for [`int`]
+/// - the [`Primitive`] marker trait
+/// - arithmetic/comparison interop between `T` and [`int`]
 ///
-/// This is an internal macro — not exported — since it depends on the concrete
-/// backing type and should not be part of the public API.
-macro_rules! impl_from_integral {
+/// This macro is intentionally internal and not part of the public API.
+macro_rules! impl_primitive_interop {
     ($t:ty) => {
         impl From<$t> for int {
             #[inline]
@@ -73,30 +73,7 @@ macro_rules! impl_from_integral {
                 int(BigInt::from(*val))
             }
         }
-    };
-}
-
-impl_from_integral!(i8);
-impl_from_integral!(i16);
-impl_from_integral!(i32);
-impl_from_integral!(i64);
-impl_from_integral!(i128);
-impl_from_integral!(isize);
-
-impl_from_integral!(u8);
-impl_from_integral!(u16);
-impl_from_integral!(u32);
-impl_from_integral!(u64);
-impl_from_integral!(u128);
-impl_from_integral!(usize);
-
-/// Implements the `Integral` marker trait and all arithmetic interop with `int` for a given type.
-///
-/// The type must implement `From<&T> for int`.
-#[macro_export]
-macro_rules! impl_integral {
-    ($t:ty) => {
-        impl $crate::arithmetic::Integral for $t {}
+        impl $crate::arithmetic::Primitive for $t {}
 
         // ------------------------------------------------------------
         // Arithmetic: T <op> int
@@ -368,16 +345,16 @@ macro_rules! impl_integral {
     };
 }
 
-impl_integral!(i8);
-impl_integral!(i16);
-impl_integral!(i32);
-impl_integral!(i64);
-impl_integral!(i128);
-impl_integral!(isize);
+impl_primitive_interop!(i8);
+impl_primitive_interop!(i16);
+impl_primitive_interop!(i32);
+impl_primitive_interop!(i64);
+impl_primitive_interop!(i128);
+impl_primitive_interop!(isize);
 
-impl_integral!(u8);
-impl_integral!(u16);
-impl_integral!(u32);
-impl_integral!(u64);
-impl_integral!(u128);
-impl_integral!(usize);
+impl_primitive_interop!(u8);
+impl_primitive_interop!(u16);
+impl_primitive_interop!(u32);
+impl_primitive_interop!(u64);
+impl_primitive_interop!(u128);
+impl_primitive_interop!(usize);
