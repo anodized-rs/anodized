@@ -1,7 +1,7 @@
 [package]
 name = "anodized-logic"
 version = "0.1.0"
-description = "Helps embed non-trivial elements of logic into Rust code"
+description = "Helps Anodized embed non-trivial elements of logic into Rust code"
 
 edition.workspace = true
 readme = "README.md"
@@ -9,6 +9,9 @@ repository.workspace = true
 categories.workspace = true
 keywords.workspace = true
 license.workspace = true
+
+[dependencies]
+num-bigint.workspace = true
 
 [dev-dependencies]
 trybuild = "1.0"
