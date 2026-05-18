@@ -1,0 +1,14 @@
+{
+  "lsp": {
+    "rust-analyzer": {
+      "initialization_options": {
+        "cargo": {
+          "cfgs": ["anodized_panic", "anodized_hax"],
+          "extraEnv": {
+            "RUSTFLAGS": "--cfg anodized_panic --cfg anodized_hax"
+          }
+        }
+      }
+    }
+  }
+}
