@@ -92,6 +92,9 @@ impl Backend {
                     let mut wrapper_body: syn::Block = parse_quote!({
                         Self::#mangled_ident(#(#call_args),*)
                     });
+                    if self.target_hax {
+                        Self::build_hax_attrs(&fn_spec, &mut wrapper_fn.attrs);
+                    }
                     self.instrument_fn(&fn_spec, &wrapper_fn.sig, &mut wrapper_body)?;
                     wrapper_fn.default = Some(wrapper_body);
                     wrapper_fn.semi_token = None;
@@ -219,6 +222,9 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                     }
 
                     func.sig.ident = mangle_ident(original_ident);
+                    if self.target_hax {
+                        Self::build_hax_attrs(&fn_spec, &mut func_attrs);
+                    }
                     self.instrument_fn(&fn_spec, &func.sig, &mut func.block)?;
 
                     // Add a default `#[inline]` attribute unless one is already there.
