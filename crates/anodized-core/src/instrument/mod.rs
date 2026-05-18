@@ -17,6 +17,10 @@ pub struct Backend {
 }
 
 impl Backend {
+    pub fn emit_anything(&self) -> bool {
+        self.emit_print || self.emit_panic
+    }
+
     pub fn instrument_item_fn(&self, spec: Spec, mut item_fn: ItemFn) -> Result<TokenStream> {
         let mut tokens = TokenStream::new();
 
@@ -55,12 +59,15 @@ impl Backend {
             spec_ensures_fn.to_tokens(&mut tokens);
         }
 
-        if self.target_hax {
-            Self::build_hax_attrs(&spec, &mut item_fn.attrs);
+        if self.emit_anything() {
+            // Instrument function body.
+            self.instrument_fn(&spec, &item_fn.sig, &mut item_fn.block)?;
+        } else {
+            if self.target_hax {
+                Self::build_hax_attrs(&spec, &mut item_fn.attrs);
+            }
         }
 
-        // Instrument function body.
-        self.instrument_fn(&spec, &item_fn.sig, &mut item_fn.block)?;
         item_fn.to_tokens(&mut tokens);
 
         Ok(tokens)
@@ -87,7 +94,7 @@ impl Backend {
 
 #[cfg(test)]
 impl Backend {
-    pub(crate) const NOTHING: Backend = Backend {
+    pub(crate) const DEFAULT: Backend = Backend {
         embed_spec: true,
         emit_print: false,
         emit_panic: false,

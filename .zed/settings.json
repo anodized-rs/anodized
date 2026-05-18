@@ -3,9 +3,9 @@
     "rust-analyzer": {
       "initialization_options": {
         "cargo": {
-          "cfgs": ["anodized_panic", "anodized_hax"],
+          "cfgs": ["anodized_hax"],
           "extraEnv": {
-            "RUSTFLAGS": "--cfg anodized_panic --cfg anodized_hax"
+            "RUSTFLAGS": "--cfg anodized_discard_specs --cfg anodized_hax"
           }
         }
       }

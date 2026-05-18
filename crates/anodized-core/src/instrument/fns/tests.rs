@@ -62,7 +62,7 @@ fn embed_spec_item_fn() {
         }
     };
 
-    let observed = Backend::NOTHING
+    let observed = Backend::DEFAULT
         .instrument_item_fn(fn_spec, item_fn)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -112,7 +112,7 @@ fn requires_disable_runtime_checks() {
     let ret_type = make_return_type();
     let is_async = false;
 
-    let observed = Backend::NOTHING
+    let observed = Backend::DEFAULT
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     let expected: Block = body;

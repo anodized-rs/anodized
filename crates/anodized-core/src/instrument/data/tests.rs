@@ -45,7 +45,7 @@ fn embed_spec_item_struct() {
         }
     };
 
-    let observed = Backend::NOTHING
+    let observed = Backend::DEFAULT
         .instrument_item_struct(struct_spec, item_struct)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -96,7 +96,7 @@ fn embed_spec_item_enum() {
         }
     };
 
-    let observed = Backend::NOTHING
+    let observed = Backend::DEFAULT
         .instrument_item_enum(struct_spec, item_enum)
         .unwrap();
     assert_tokens_eq(&observed, &expected);

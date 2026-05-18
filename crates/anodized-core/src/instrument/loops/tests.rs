@@ -31,7 +31,7 @@ fn embed_spec_expr_while() {
         }
     };
 
-    Backend::NOTHING.instrument_expr_while(while_spec, &mut expr_while);
+    Backend::DEFAULT.instrument_expr_while(while_spec, &mut expr_while);
     let observed = expr_while;
 
     assert_tokens_eq(&observed, &expected);
@@ -62,7 +62,7 @@ fn embed_spec_expr_for() {
         }
     };
 
-    Backend::NOTHING.instrument_expr_for_loop(for_spec, &mut expr_for_loop);
+    Backend::DEFAULT.instrument_expr_for_loop(for_spec, &mut expr_for_loop);
     let observed = expr_for_loop;
 
     assert_tokens_eq(&observed, &expected);
