@@ -117,17 +117,17 @@ impl Backend {
     pub(crate) fn build_hax_attrs(spec: &Spec, attrs: &mut Vec<Attribute>) {
         for precond in &spec.requires {
             let body = &precond.closure.body;
-            attrs.push(parse_quote! { #[hax_lib::requires(#body)] });
+            attrs.push(parse_quote! { #[::hax_lib::requires(#body)] });
         }
         for invariant in &spec.maintains {
             let closure = &invariant.closure;
             let body = &closure.body;
-            attrs.push(parse_quote! { #[hax_lib::requires(#body)] });
-            attrs.push(parse_quote! { #[hax_lib::ensures_ref(|_| #body)] });
+            attrs.push(parse_quote! { #[::hax_lib::requires(#body)] });
+            attrs.push(parse_quote! { #[::hax_lib::ensures_ref(|_| #body)] });
         }
         for postcond in &spec.ensures {
             let closure = &postcond.closure;
-            attrs.push(parse_quote! { #[hax_lib::ensures_ref(#closure)] });
+            attrs.push(parse_quote! { #[::hax_lib::ensures_ref(#closure)] });
         }
     }
 

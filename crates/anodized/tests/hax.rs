@@ -1,5 +1,8 @@
-use anodized::spec;
-use hax_lib::{forall, fstar, implies};
+use anodized::{
+    logic::{implies, opaque, quantifiers::forall},
+    spec,
+};
+use hax_lib::fstar;
 
 // Specs on functions
 
@@ -37,12 +40,12 @@ impl T for u8 {
 
 #[spec(
     // TODO: Would also need a spec that max is an element of x
-    ensures: forall(|j: usize| implies(j < x.len(), x[j] <= *output)),
+    ensures: forall(|j: usize| implies!(j < x.len(), x[j] <= *output)),
 )]
 pub fn f_loop(x: &[u8]) -> u8 {
     let mut max = 0;
     #[spec(
-        maintains: forall(|j: usize| implies(j < i, x[j] <= max)),
+        maintains: forall(|j: usize| implies!(j < i, x[j] <= max)),
     )]
     for i in 0..x.len() {
         if x[i] > max {
@@ -56,7 +59,7 @@ pub fn f_loop(x: &[u8]) -> u8 {
 
 #[spec(
     // TODO: Would also need a spec that max is an element of x
-    ensures: forall(|j: usize| implies(j < x.len(), x[j] <= *output),
+    ensures: forall(|j: usize| implies!(j < x.len(), x[j] <= *output),
 ))]
 pub fn f_while(x: &[u8]) -> u8 {
     let mut max = 0;
@@ -64,7 +67,7 @@ pub fn f_while(x: &[u8]) -> u8 {
     #[spec(
         maintains: [
             i <= x.len(),
-            forall(|j: usize| implies(j < i, x[j] <= max)),
+            forall(|j: usize| implies!(j < i, x[j] <= max)),
         ],
         decreases: x.len() - i,
     )]
@@ -80,13 +83,14 @@ pub fn f_while(x: &[u8]) -> u8 {
 // Raw F*
 #[spec(
     #[cfg(hax)]
-    requires: fstar!("x >. mk_u8 0"),
+    requires: opaque!(fstar!("x >. mk_u8 0")),
 )]
 pub fn f_blob(x: u8) {}
 
 // Raw F* with reference
 #[spec(
-    requires: fstar!("${x} >. ${f2()}"),
+    #[cfg(hax)]
+    requires: opaque!(fstar!("${x} >. ${f2()}")),
 )]
 pub fn f_ref(x: u8) {}
 
