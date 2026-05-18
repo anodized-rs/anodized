@@ -1,3 +1,5 @@
+#![allow(unused_variables, unused_imports)]
+
 use anodized::{
     logic::{implies, opaque, quantifiers::forall},
     spec,
