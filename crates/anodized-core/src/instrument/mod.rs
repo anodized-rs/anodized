@@ -19,42 +19,44 @@ impl Backend {
     pub fn instrument_item_fn(&self, spec: Spec, mut item_fn: ItemFn) -> Result<TokenStream> {
         let mut tokens = TokenStream::new();
 
-        let attrs: [Attribute; 2] = [
-            parse_quote!(#[doc(hidden)]),
-            parse_quote!(#[allow(warnings)]),
-        ];
+        if self.embed_spec {
+            let attrs: [Attribute; 2] = [
+                parse_quote!(#[doc(hidden)]),
+                parse_quote!(#[allow(warnings)]),
+            ];
 
-        // Embed `spec` elements as `__anodized_fn_*` functions.
-        let spec_requires_fn = ItemFn {
-            attrs: attrs.to_vec(),
-            vis: syn::Visibility::Inherited,
-            sig: Self::build_spec_fn_sig("__anodized_fn_requires", &item_fn.sig),
-            block: Box::new(Self::build_precondition_fn_body(&spec.requires)),
-        };
-        let spec_maintains_fn = ItemFn {
-            attrs: attrs.to_vec(),
-            vis: syn::Visibility::Inherited,
-            sig: Self::build_spec_fn_sig("__anodized_fn_maintains", &item_fn.sig),
-            block: Box::new(Self::build_precondition_fn_body(&spec.maintains)),
-        };
-        let spec_ensures_fn = ItemFn {
-            attrs: attrs.to_vec(),
-            vis: syn::Visibility::Inherited,
-            sig: Self::build_spec_fn_sig("__anodized_fn_ensures", &item_fn.sig),
-            block: Box::new(Self::build_poscondition_fn_body(
-                &spec.captures,
-                &spec.ensures,
-                &item_fn.sig.output,
-            )?),
-        };
+            // Embed `spec` elements as `__anodized_fn_*` functions.
+            let spec_requires_fn = ItemFn {
+                attrs: attrs.to_vec(),
+                vis: syn::Visibility::Inherited,
+                sig: Self::build_spec_fn_sig("__anodized_fn_requires", &item_fn.sig),
+                block: Box::new(Self::build_precondition_fn_body(&spec.requires)),
+            };
+            let spec_maintains_fn = ItemFn {
+                attrs: attrs.to_vec(),
+                vis: syn::Visibility::Inherited,
+                sig: Self::build_spec_fn_sig("__anodized_fn_maintains", &item_fn.sig),
+                block: Box::new(Self::build_precondition_fn_body(&spec.maintains)),
+            };
+            let spec_ensures_fn = ItemFn {
+                attrs: attrs.to_vec(),
+                vis: syn::Visibility::Inherited,
+                sig: Self::build_spec_fn_sig("__anodized_fn_ensures", &item_fn.sig),
+                block: Box::new(Self::build_poscondition_fn_body(
+                    &spec.captures,
+                    &spec.ensures,
+                    &item_fn.sig.output,
+                )?),
+            };
+
+            spec_requires_fn.to_tokens(&mut tokens);
+            spec_maintains_fn.to_tokens(&mut tokens);
+            spec_ensures_fn.to_tokens(&mut tokens);
+        }
 
         // Instrument function body.
         self.instrument_fn(&spec, &item_fn.sig, &mut item_fn.block)?;
-
         item_fn.to_tokens(&mut tokens);
-        spec_requires_fn.to_tokens(&mut tokens);
-        spec_maintains_fn.to_tokens(&mut tokens);
-        spec_ensures_fn.to_tokens(&mut tokens);
 
         Ok(tokens)
     }

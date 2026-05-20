@@ -27,28 +27,30 @@ impl Backend {
     }
 
     fn instrument_loop_body(&self, spec: LoopSpec, stmts: &mut Vec<Stmt>) {
-        let maintains_block = Self::build_precondition_fn_body(&spec.maintains);
-        stmts.insert(
-            0,
-            parse_quote! {
-                let __anodized_loop_maintains = #maintains_block;
-            },
-        );
+        if self.embed_spec {
+            let maintains_block = Self::build_precondition_fn_body(&spec.maintains);
+            stmts.insert(
+                0,
+                parse_quote! {
+                    let __anodized_loop_maintains = #maintains_block;
+                },
+            );
 
-        let let_decreases: Option<Stmt> = spec.decreases.map(|loop_variant| {
-            let expr = loop_variant.expr;
-            parse_quote! {
-                let _ = || #expr;
-            }
-        });
-        stmts.insert(
-            1,
-            parse_quote! {
-                let __anodized_loop_decreases = {
-                    #let_decreases
-                };
-            },
-        );
+            let let_decreases: Option<Stmt> = spec.decreases.map(|loop_variant| {
+                let expr = loop_variant.expr;
+                parse_quote! {
+                    let _ = || #expr;
+                }
+            });
+            stmts.insert(
+                1,
+                parse_quote! {
+                    let __anodized_loop_decreases = {
+                        #let_decreases
+                    };
+                },
+            );
+        }
     }
 }
 
