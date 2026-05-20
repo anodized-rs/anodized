@@ -1,4 +1,4 @@
-#![allow(unused_variables, unused_imports)]
+#![allow(unused_variables, unused_imports, unused)]
 
 use anodized::{
     logic::{implies, opaque, quantifiers::forall},
@@ -100,6 +100,7 @@ pub fn f_ref(x: u8) {}
 #[spec(
     maintains: self.x > 0,
 )]
-struct S {
+pub struct S {
+    #[allow(unused)]
     x: u8,
 }
