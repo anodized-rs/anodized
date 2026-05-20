@@ -9,6 +9,7 @@ use anodized_core::{
 };
 
 const BACKEND: Backend = Backend {
+    embed_spec: cfg!(not(anodized_discard_specs)),
     emit_print: cfg!(anodized_print),
     emit_panic: cfg!(anodized_panic),
 };

@@ -10,6 +10,7 @@ pub mod loops;
 pub mod traits;
 
 pub struct Backend {
+    pub embed_spec: bool,
     pub emit_print: bool,
     pub emit_panic: bool,
 }
@@ -80,16 +81,19 @@ impl Backend {
 #[cfg(test)]
 impl Backend {
     pub(crate) const NOTHING: Backend = Backend {
+        embed_spec: true,
         emit_print: false,
         emit_panic: false,
     };
 
     pub(crate) const PRINT: Backend = Backend {
+        embed_spec: true,
         emit_print: true,
         emit_panic: false,
     };
 
     pub(crate) const PANIC: Backend = Backend {
+        embed_spec: true,
         emit_print: true,
         emit_panic: true,
     };
