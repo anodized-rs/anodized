@@ -49,7 +49,7 @@ impl Backend {
         };
 
         // Instrument function body.
-        self.instrument_fn(spec, &item_fn.sig, &mut item_fn.block)?;
+        self.instrument_fn(&spec, &item_fn.sig, &mut item_fn.block)?;
 
         item_fn.to_tokens(&mut tokens);
         spec_requires_fn.to_tokens(&mut tokens);
