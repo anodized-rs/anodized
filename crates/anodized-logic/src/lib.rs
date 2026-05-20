@@ -1,4 +1,4 @@
 pub mod arithmetic;
-mod operators;
+pub mod operators;
 pub mod quantifiers;
-mod syntax;
+pub mod syntax;
