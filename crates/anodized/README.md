@@ -81,6 +81,8 @@ Anodized aims to become a common layer across runtime checks, fuzzing, and verif
 | `anodized_trace` | Planned   | emits a trace event    |
 | `anodized_trap`  | Planned   | breaks into a debugger |
 
+There's also `anodized_discard_specs` which disables embedding the specs as Rust constructs. Note that this has *no effect on runtime performance* because the embedded specs are always dead code. However, it *prevents spec validation* by the Rust compiler (for syntax, scope, and types), and may thus decrease compilation speed.
+
 **Analyzer Integrations**
 
 | System  | Status      | Notes                 |
