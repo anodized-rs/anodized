@@ -3,15 +3,16 @@ mod tests;
 
 use quote::quote;
 use syn::{
-    Attribute, FnArg, ImplItem, ImplItemFn, Pat, TraitItem, TraitItemFn, Visibility, parse_quote,
+    Attribute, Block, FnArg, ImplItem, ImplItemFn, Pat, TraitItem, TraitItemFn, Visibility,
+    parse_quote,
 };
 
 use crate::{
     DataSpec, Spec,
-    instrument::{Backend, find_spec_attr, make_item_error},
+    instrument::{Config, find_spec_attr, make_item_error},
 };
 
-impl Backend {
+impl Config {
     /// Expand trait items by mangling each method and adding a wrapper default impl.
     ///
     /// Mangling a function involves the following:
@@ -84,24 +85,30 @@ impl Backend {
                         new_trait_items.push(TraitItem::Fn(spec_ensures_fn));
                     }
 
-                    let mangled_ident = mangle_ident(&func.sig.ident);
+                    if self.emit_anything() {
+                        let mangled_ident = mangle_ident(&func.sig.ident);
 
-                    let mut wrapper_fn = func.clone();
-                    wrapper_fn.attrs = other_attrs;
-                    let call_args = build_call_args(&func.sig.inputs)?;
-                    let mut wrapper_body: syn::Block = parse_quote!({
-                        Self::#mangled_ident(#(#call_args),*)
-                    });
-                    self.instrument_fn(&fn_spec, &wrapper_fn.sig, &mut wrapper_body)?;
-                    wrapper_fn.default = Some(wrapper_body);
-                    wrapper_fn.semi_token = None;
-                    new_trait_items.push(TraitItem::Fn(wrapper_fn));
+                        let mut mangled_fn = func.clone();
+                        mangled_fn.sig.ident = mangled_ident.clone();
+                        mangled_fn.attrs.retain(|attr| !attr.path().is_ident("doc"));
+                        mangled_fn.attrs.push(parse_quote!(#[doc(hidden)]));
+                        new_trait_items.push(TraitItem::Fn(mangled_fn));
 
-                    let mut mangled_fn = func;
-                    mangled_fn.sig.ident = mangled_ident.clone();
-                    mangled_fn.attrs.retain(|attr| !attr.path().is_ident("doc"));
-                    mangled_fn.attrs.push(parse_quote!(#[doc(hidden)]));
-                    new_trait_items.push(TraitItem::Fn(mangled_fn));
+                        let call_args = build_call_args(&func.sig.inputs)?;
+                        let forwarding_body: Block = parse_quote!({
+                            Self::#mangled_ident(#(#call_args),*)
+                        });
+                        func.default = Some(forwarding_body);
+                        func.semi_token = None;
+                    }
+
+                    func.attrs = other_attrs;
+
+                    if let Some(default_body) = &mut func.default {
+                        // NOTE: Needed to handle loop specs in the body of the default impl.
+                        self.instrument_fn(&fn_spec, &func.sig, default_body)?;
+                    }
+                    new_trait_items.push(TraitItem::Fn(func));
                 }
                 TraitItem::Const(mut const_item) => {
                     let (spec, attrs) = find_spec_attr(const_item.attrs)?;
@@ -164,7 +171,8 @@ impl Backend {
         for item in the_impl.items.into_iter() {
             match item {
                 ImplItem::Fn(mut func) => {
-                    let (spec_attr, mut func_attrs) = find_spec_attr(func.attrs)?;
+                    let (spec_attr, func_attrs) = find_spec_attr(func.attrs)?;
+                    func.attrs = func_attrs;
 
                     let original_ident = &func.sig.ident;
                     if original_ident.to_string().starts_with("__anodized_") {
@@ -218,16 +226,17 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         new_items.push(ImplItem::Fn(spec_ensures_fn));
                     }
 
-                    func.sig.ident = mangle_ident(original_ident);
-                    self.instrument_fn(&fn_spec, &func.sig, &mut func.block)?;
+                    if self.emit_anything() {
+                        func.sig.ident = mangle_ident(original_ident);
 
-                    // Add a default `#[inline]` attribute unless one is already there.
-                    // The caller can supress this with `#[inline(never)]`
-                    if !has_inline_attr(&func_attrs) {
-                        func_attrs.push(parse_quote!(#[inline]));
+                        // Add a default `#[inline]` attribute unless one is already there.
+                        // The caller can supress this with `#[inline(never)]`
+                        if !has_inline_attr(&func.attrs) {
+                            func.attrs.push(parse_quote!(#[inline]));
+                        }
                     }
 
-                    func.attrs = func_attrs;
+                    self.instrument_fn(&fn_spec, &func.sig, &mut func.block)?;
                     new_items.push(ImplItem::Fn(func));
                 }
                 ImplItem::Const(mut const_item) => {

@@ -8,10 +8,10 @@ use syn::{
 
 use crate::{
     LoopSpec,
-    instrument::{Backend, find_spec_attr},
+    instrument::{Config, find_spec_attr},
 };
 
-impl Backend {
+impl Config {
     pub fn instrument_loops_in_fn_body(&self, body: &mut Block) -> Result<()> {
         let mut visitor = LoopSpecVisitor::new(self);
         visitor.visit_block_mut(body);
@@ -55,14 +55,14 @@ impl Backend {
 }
 
 struct LoopSpecVisitor<'a> {
-    backend: &'a Backend,
+    config: &'a Config,
     errors: Option<Error>,
 }
 
 impl<'a> LoopSpecVisitor<'a> {
-    fn new(backend: &'a Backend) -> Self {
+    fn new(config: &'a Config) -> Self {
         Self {
-            backend,
+            config,
             errors: None,
         }
     }
@@ -102,7 +102,7 @@ impl VisitMut for LoopSpecVisitor<'_> {
 
         match spec_attr.parse_args::<LoopSpec>() {
             Ok(spec) => self
-                .backend
+                .config
                 .instrument_loop_body(spec, &mut expr_while.body.stmts),
             Err(error) => self.add_error(error),
         }
@@ -126,7 +126,7 @@ impl VisitMut for LoopSpecVisitor<'_> {
         };
 
         match spec_attr.parse_args::<LoopSpec>() {
-            Ok(spec) => self.backend.instrument_expr_for_loop(spec, expr_for_loop),
+            Ok(spec) => self.config.instrument_expr_for_loop(spec, expr_for_loop),
             Err(error) => self.add_error(error),
         }
     }
