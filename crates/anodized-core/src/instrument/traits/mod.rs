@@ -42,7 +42,7 @@ impl Config {
         for item in the_trait.items.into_iter() {
             match item {
                 TraitItem::Fn(mut func) => {
-                    let (spec_attr, other_attrs) = find_spec_attr(func.attrs)?;
+                    let (spec_attr, mut other_attrs) = find_spec_attr(func.attrs)?;
                     // NOTE: We have no way of knowing which attributes are
                     //   "external" - meant for the interface and belong on the wrapper,
                     //   "internal" - meant for the mangled implementation.
@@ -99,7 +99,6 @@ impl Config {
                         mangled_fn.attrs.push(parse_quote!(#[doc(hidden)]));
                         new_trait_items.push(TraitItem::Fn(mangled_fn));
 
-                        func.attrs = other_attrs;
                         let call_args = build_call_args(&func.sig.inputs)?;
                         let forwarding_body: Block = parse_quote!({
                             Self::#mangled_ident(#(#call_args),*)
@@ -107,11 +106,12 @@ impl Config {
                         func.default = Some(forwarding_body);
                         func.semi_token = None;
                     } else {
-                        func.attrs = other_attrs;
                         if self.target_hax {
-                            Self::build_hax_attrs(&fn_spec, &mut func.attrs);
+                            Self::build_hax_attrs(&fn_spec, &mut other_attrs);
                         }
                     }
+
+                    func.attrs = other_attrs;
 
                     if let Some(default_body) = &mut func.default {
                         // NOTE: Needed to handle loop specs in the body of the default impl.
@@ -245,11 +245,14 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
 
                         // Add a default `#[inline]` attribute unless one is already there.
                         // The caller can supress this with `#[inline(never)]`
-                        if !has_inline_attr(&func.attrs) && !self.target_hax {
+                        if !has_inline_attr(&func.attrs) {
                             func.attrs.push(parse_quote!(#[inline]));
                         }
                     } else if self.target_hax {
                         Self::build_hax_attrs(&fn_spec, &mut func.attrs);
+                        if !has_inline_attr(&func.attrs) {
+                            func.attrs.push(parse_quote!(#[inline]));
+                        }
                     }
 
                     self.instrument_fn(&fn_spec, &func.sig, &mut func.block)?;
