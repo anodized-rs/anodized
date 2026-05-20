@@ -3,7 +3,7 @@ mod tests;
 
 use crate::{
     Capture, PostCondition, PreCondition, Spec,
-    instrument::{Backend, build_assert, build_eprint},
+    instrument::{Config, build_assert, build_eprint},
 };
 
 use proc_macro2::Span;
@@ -13,7 +13,7 @@ use syn::{
     parse_quote,
 };
 
-impl Backend {
+impl Config {
     pub fn instrument_fn(&self, spec: &Spec, sig: &Signature, body: &mut Block) -> syn::Result<()> {
         self.instrument_loops_in_fn_body(body)?;
 

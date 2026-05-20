@@ -9,10 +9,10 @@ use syn::{
 
 use crate::{
     DataSpec, Spec,
-    instrument::{Backend, find_spec_attr, make_item_error},
+    instrument::{Config, find_spec_attr, make_item_error},
 };
 
-impl Backend {
+impl Config {
     /// Expand trait items by mangling each method and adding a wrapper default impl.
     ///
     /// Mangling a function involves the following:
