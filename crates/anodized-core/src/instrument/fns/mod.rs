@@ -13,7 +13,7 @@ use syn::{
 };
 
 impl Backend {
-    pub fn instrument_fn(&self, spec: Spec, sig: &Signature, body: &mut Block) -> syn::Result<()> {
+    pub fn instrument_fn(&self, spec: &Spec, sig: &Signature, body: &mut Block) -> syn::Result<()> {
         self.instrument_loops_in_fn_body(body)?;
 
         let is_async = sig.asyncness.is_some();
@@ -25,7 +25,7 @@ impl Backend {
         };
 
         // Generate the new, instrumented function body.
-        let new_body = self.instrument_fn_body(&spec, body, is_async, &return_type)?;
+        let new_body = self.instrument_fn_body(spec, body, is_async, &return_type)?;
 
         // Replace the old function body with the new one.
         *body = new_body;

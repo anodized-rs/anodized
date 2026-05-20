@@ -23,15 +23,6 @@ fn embed_spec_item_trait() {
 
     let expected: TokenStream = parse_quote! {
         trait TRAIT {
-            fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
-                Self::__anodized_FUNC(self, PARAM_1, PARAM_2)
-            }
-
-            #[doc(hidden)]
-            fn __anodized_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
-                BODY
-            }
-
             #[doc(hidden)]
             #[allow(warnings)]
             fn __anodized_fn_requires_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
@@ -49,6 +40,15 @@ fn embed_spec_item_trait() {
             fn __anodized_fn_ensures_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
                 let () = ();
                 let _ = |PAT_1: &RET_TYPE| COND_3;
+            }
+
+            fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
+                Self::__anodized_FUNC(self, PARAM_1, PARAM_2)
+            }
+
+            #[doc(hidden)]
+            fn __anodized_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
+                BODY
             }
         }
     };
@@ -78,11 +78,6 @@ fn embed_spec_item_impl_trait() {
 
     let expected: TokenStream = parse_quote! {
         impl TRAIT for IMPL_TYPE {
-            #[inline]
-            fn __anodized_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
-                BODY
-            }
-
             #[doc(hidden)]
             #[allow(warnings)]
             fn __anodized_fn_requires_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
@@ -100,6 +95,11 @@ fn embed_spec_item_impl_trait() {
             fn __anodized_fn_ensures_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
                 let () = ();
                 let _ = |PAT_1: &RET_TYPE| COND_3;
+            }
+
+            #[inline]
+            fn __anodized_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
+                BODY
             }
         }
     };

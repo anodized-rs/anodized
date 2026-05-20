@@ -51,9 +51,10 @@ jobs:
     strategy:
       matrix:
         include:
+          - cfg: ""
+          - cfg: '--config ''build.rustflags=["--cfg","anodized_discard_specs"]'''
           - cfg: '--config ''build.rustflags=["--cfg","anodized_panic"]'''
           - cfg: '--config ''build.rustflags=["--cfg","anodized_print"]'''
-          - cfg: ""
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

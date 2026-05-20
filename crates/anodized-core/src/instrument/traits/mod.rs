@@ -49,34 +49,40 @@ impl Backend {
                         None => Spec::empty(),
                     };
 
-                    let attrs: [Attribute; 2] = [
-                        parse_quote!(#[doc(hidden)]),
-                        parse_quote!(#[allow(warnings)]),
-                    ];
+                    if self.embed_spec {
+                        let attrs: [Attribute; 2] = [
+                            parse_quote!(#[doc(hidden)]),
+                            parse_quote!(#[allow(warnings)]),
+                        ];
 
-                    // Embed `spec` elements as `__anodized_fn_*` functions.
-                    let spec_requires_fn = TraitItemFn {
-                        attrs: attrs.to_vec(),
-                        sig: Self::build_spec_fn_sig("__anodized_fn_requires", &func.sig),
-                        default: Some(Self::build_precondition_fn_body(&fn_spec.requires)),
-                        semi_token: None,
-                    };
-                    let spec_maintains_fn = TraitItemFn {
-                        attrs: attrs.to_vec(),
-                        sig: Self::build_spec_fn_sig("__anodized_fn_maintains", &func.sig),
-                        default: Some(Self::build_precondition_fn_body(&fn_spec.maintains)),
-                        semi_token: None,
-                    };
-                    let spec_ensures_fn = TraitItemFn {
-                        attrs: attrs.to_vec(),
-                        sig: Self::build_spec_fn_sig("__anodized_fn_ensures", &func.sig),
-                        default: Some(Self::build_poscondition_fn_body(
-                            &fn_spec.captures,
-                            &fn_spec.ensures,
-                            &func.sig.output,
-                        )?),
-                        semi_token: None,
-                    };
+                        // Embed `spec` elements as `__anodized_fn_*` functions.
+                        let spec_requires_fn = TraitItemFn {
+                            attrs: attrs.to_vec(),
+                            sig: Self::build_spec_fn_sig("__anodized_fn_requires", &func.sig),
+                            default: Some(Self::build_precondition_fn_body(&fn_spec.requires)),
+                            semi_token: None,
+                        };
+                        let spec_maintains_fn = TraitItemFn {
+                            attrs: attrs.to_vec(),
+                            sig: Self::build_spec_fn_sig("__anodized_fn_maintains", &func.sig),
+                            default: Some(Self::build_precondition_fn_body(&fn_spec.maintains)),
+                            semi_token: None,
+                        };
+                        let spec_ensures_fn = TraitItemFn {
+                            attrs: attrs.to_vec(),
+                            sig: Self::build_spec_fn_sig("__anodized_fn_ensures", &func.sig),
+                            default: Some(Self::build_poscondition_fn_body(
+                                &fn_spec.captures,
+                                &fn_spec.ensures,
+                                &func.sig.output,
+                            )?),
+                            semi_token: None,
+                        };
+
+                        new_trait_items.push(TraitItem::Fn(spec_requires_fn));
+                        new_trait_items.push(TraitItem::Fn(spec_maintains_fn));
+                        new_trait_items.push(TraitItem::Fn(spec_ensures_fn));
+                    }
 
                     let mangled_ident = mangle_ident(&func.sig.ident);
 
@@ -86,7 +92,7 @@ impl Backend {
                     let mut wrapper_body: syn::Block = parse_quote!({
                         Self::#mangled_ident(#(#call_args),*)
                     });
-                    self.instrument_fn(fn_spec, &wrapper_fn.sig, &mut wrapper_body)?;
+                    self.instrument_fn(&fn_spec, &wrapper_fn.sig, &mut wrapper_body)?;
                     wrapper_fn.default = Some(wrapper_body);
                     wrapper_fn.semi_token = None;
                     new_trait_items.push(TraitItem::Fn(wrapper_fn));
@@ -96,10 +102,6 @@ impl Backend {
                     mangled_fn.attrs.retain(|attr| !attr.path().is_ident("doc"));
                     mangled_fn.attrs.push(parse_quote!(#[doc(hidden)]));
                     new_trait_items.push(TraitItem::Fn(mangled_fn));
-
-                    new_trait_items.push(TraitItem::Fn(spec_requires_fn));
-                    new_trait_items.push(TraitItem::Fn(spec_maintains_fn));
-                    new_trait_items.push(TraitItem::Fn(spec_ensures_fn));
                 }
                 TraitItem::Const(mut const_item) => {
                     let (spec, attrs) = find_spec_attr(const_item.attrs)?;
@@ -178,40 +180,46 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         None => Spec::empty(),
                     };
 
-                    let attrs: [Attribute; 2] = [
-                        parse_quote!(#[doc(hidden)]),
-                        parse_quote!(#[allow(warnings)]),
-                    ];
+                    if self.embed_spec {
+                        let attrs: [Attribute; 2] = [
+                            parse_quote!(#[doc(hidden)]),
+                            parse_quote!(#[allow(warnings)]),
+                        ];
 
-                    // Embed `spec` elements as `__anodized_fn_*` functions.
-                    let spec_requires_fn = ImplItemFn {
-                        attrs: attrs.to_vec(),
-                        sig: Self::build_spec_fn_sig("__anodized_fn_requires", &func.sig),
-                        block: Self::build_precondition_fn_body(&fn_spec.requires),
-                        vis: Visibility::Inherited,
-                        defaultness: None,
-                    };
-                    let spec_maintains_fn = ImplItemFn {
-                        attrs: attrs.to_vec(),
-                        sig: Self::build_spec_fn_sig("__anodized_fn_maintains", &func.sig),
-                        block: Self::build_precondition_fn_body(&fn_spec.maintains),
-                        vis: Visibility::Inherited,
-                        defaultness: None,
-                    };
-                    let spec_ensures_fn = ImplItemFn {
-                        attrs: attrs.to_vec(),
-                        sig: Self::build_spec_fn_sig("__anodized_fn_ensures", &func.sig),
-                        block: Self::build_poscondition_fn_body(
-                            &fn_spec.captures,
-                            &fn_spec.ensures,
-                            &func.sig.output,
-                        )?,
-                        vis: Visibility::Inherited,
-                        defaultness: None,
-                    };
+                        // Embed `spec` elements as `__anodized_fn_*` functions.
+                        let spec_requires_fn = ImplItemFn {
+                            attrs: attrs.to_vec(),
+                            sig: Self::build_spec_fn_sig("__anodized_fn_requires", &func.sig),
+                            block: Self::build_precondition_fn_body(&fn_spec.requires),
+                            vis: Visibility::Inherited,
+                            defaultness: None,
+                        };
+                        let spec_maintains_fn = ImplItemFn {
+                            attrs: attrs.to_vec(),
+                            sig: Self::build_spec_fn_sig("__anodized_fn_maintains", &func.sig),
+                            block: Self::build_precondition_fn_body(&fn_spec.maintains),
+                            vis: Visibility::Inherited,
+                            defaultness: None,
+                        };
+                        let spec_ensures_fn = ImplItemFn {
+                            attrs: attrs.to_vec(),
+                            sig: Self::build_spec_fn_sig("__anodized_fn_ensures", &func.sig),
+                            block: Self::build_poscondition_fn_body(
+                                &fn_spec.captures,
+                                &fn_spec.ensures,
+                                &func.sig.output,
+                            )?,
+                            vis: Visibility::Inherited,
+                            defaultness: None,
+                        };
+
+                        new_items.push(ImplItem::Fn(spec_requires_fn));
+                        new_items.push(ImplItem::Fn(spec_maintains_fn));
+                        new_items.push(ImplItem::Fn(spec_ensures_fn));
+                    }
 
                     func.sig.ident = mangle_ident(original_ident);
-                    self.instrument_fn(fn_spec, &func.sig, &mut func.block)?;
+                    self.instrument_fn(&fn_spec, &func.sig, &mut func.block)?;
 
                     // Add a default `#[inline]` attribute unless one is already there.
                     // The caller can supress this with `#[inline(never)]`
@@ -221,9 +229,6 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
 
                     func.attrs = func_attrs;
                     new_items.push(ImplItem::Fn(func));
-                    new_items.push(ImplItem::Fn(spec_requires_fn));
-                    new_items.push(ImplItem::Fn(spec_maintains_fn));
-                    new_items.push(ImplItem::Fn(spec_ensures_fn));
                 }
                 ImplItem::Const(mut const_item) => {
                     let (spec, attrs) = find_spec_attr(const_item.attrs)?;
