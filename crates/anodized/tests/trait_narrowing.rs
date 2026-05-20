@@ -113,7 +113,7 @@ fn runtime_rejects_weaker_impl_postcondition() {
 //////////////////////////////////////////////////////
 
 #[spec]
-trait Matrix<T> {
+pub trait Matrix<T> {
     fn count_rows(&self) -> usize;
     fn count_cols(&self) -> usize;
 

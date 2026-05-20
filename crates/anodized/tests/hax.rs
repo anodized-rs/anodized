@@ -19,7 +19,7 @@ pub fn f2() -> u8 {
 // Specs on traits
 
 #[spec]
-trait T {
+pub trait T {
     #[spec(
         requires: x > 0,
         ensures: *output > 0,

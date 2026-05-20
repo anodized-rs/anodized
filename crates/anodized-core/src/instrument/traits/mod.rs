@@ -248,10 +248,8 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         if !has_inline_attr(&func.attrs) && !self.target_hax {
                             func.attrs.push(parse_quote!(#[inline]));
                         }
-                    } else {
-                        if self.target_hax {
-                            Self::build_hax_attrs(&fn_spec, &mut func.attrs);
-                        }
+                    } else if self.target_hax {
+                        Self::build_hax_attrs(&fn_spec, &mut func.attrs);
                     }
 
                     self.instrument_fn(&fn_spec, &func.sig, &mut func.block)?;

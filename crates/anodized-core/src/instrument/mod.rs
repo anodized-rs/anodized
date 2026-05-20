@@ -59,15 +59,12 @@ impl Backend {
             spec_ensures_fn.to_tokens(&mut tokens);
         }
 
-        if self.emit_anything() {
-            // Instrument function body.
-            self.instrument_fn(&spec, &item_fn.sig, &mut item_fn.block)?;
-        } else {
-            if self.target_hax {
-                Self::build_hax_attrs(&spec, &mut item_fn.attrs);
-            }
+        if !self.emit_anything() && self.target_hax {
+            Self::build_hax_attrs(&spec, &mut item_fn.attrs);
         }
 
+        // Instrument function body.
+        self.instrument_fn(&spec, &item_fn.sig, &mut item_fn.block)?;
         item_fn.to_tokens(&mut tokens);
 
         Ok(tokens)
