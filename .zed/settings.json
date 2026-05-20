@@ -5,10 +5,10 @@
         "cargo": {
           "cfgs": ["anodized_hax"],
           "extraEnv": {
-            "RUSTFLAGS": "--cfg anodized_discard_specs --cfg anodized_hax"
-          }
-        }
-      }
-    }
-  }
+            "RUSTFLAGS": "--cfg anodized_hax",
+          },
+        },
+      },
+    },
+  },
 }
