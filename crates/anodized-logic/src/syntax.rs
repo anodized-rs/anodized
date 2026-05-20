@@ -7,6 +7,7 @@ pub use crate::opaque;
 #[macro_export]
 macro_rules! opaque {
     ($($t:tt)*) => {{
+        #[allow(clippy::diverging_sub_expression)]
         let bottom: bool = panic!("Cannot run `opaque!` expression: {}", stringify!($($t)*));
         #[allow(unreachable_code)]
         bottom
