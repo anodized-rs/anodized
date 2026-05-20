@@ -32,10 +32,6 @@ fn embed_spec_item_fn() {
     };
 
     let expected: TokenStream = parse_quote! {
-        fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
-            BODY
-        }
-
         #[doc(hidden)]
         #[allow(warnings)]
         fn __anodized_fn_requires_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
@@ -59,6 +55,10 @@ fn embed_spec_item_fn() {
             let _ = |PAT_1: &RET_TYPE| COND_7;
             let _ = |PAT_1: &RET_TYPE| COND_8;
             let _ = |PAT_2: TYPE| COND_9;
+        }
+
+        fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
+            BODY
         }
     };
 
