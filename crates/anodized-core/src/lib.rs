@@ -3,8 +3,11 @@
 use proc_macro2::Span;
 use syn::{Error, Expr, ExprClosure, Meta, Pat};
 
+use crate::qualifiers::FnQualifiers;
+
 pub mod annotate;
 pub mod instrument;
+pub mod qualifiers;
 
 #[cfg(test)]
 mod test_util;
@@ -13,6 +16,8 @@ mod test_util;
 #[derive(Debug)]
 // TODO: Rename to `FnSpec` to reduce ambiguity.
 pub struct Spec {
+    /// Qualifiers that constrain the behavior of the computation.
+    pub qualifiers: FnQualifiers,
     /// Preconditions: conditions that must hold when the function is called.
     pub requires: Vec<PreCondition>,
     /// Invariants: conditions that must hold both when the function is called and when it returns.
@@ -29,6 +34,7 @@ impl Spec {
     /// Empty spec that contains no elements.
     pub fn empty() -> Self {
         Self {
+            qualifiers: FnQualifiers::empty(),
             requires: vec![],
             maintains: vec![],
             captures: vec![],

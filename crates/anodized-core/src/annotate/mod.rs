@@ -8,6 +8,7 @@ use syn::{
 use crate::{
     Capture, DataSpec, LoopSpec, LoopVariant, PostCondition, PreCondition, Spec,
     annotate::syntax::{CaptureExpr, SpecArg},
+    qualifiers::FnQualifiers,
 };
 
 pub mod syntax;
@@ -21,6 +22,7 @@ impl Parse for Spec {
         let raw_spec = syntax::SpecArgs::parse(input)?;
 
         let mut errors = MultiError::empty();
+        let mut qualifiers = FnQualifiers::empty();
         let mut requires: Vec<PreCondition> = vec![];
         let mut maintains: Vec<PreCondition> = vec![];
         let mut captures: Vec<Capture> = vec![];
@@ -95,6 +97,7 @@ impl Parse for Spec {
         }
 
         Ok(Self {
+            qualifiers,
             requires,
             maintains,
             captures,

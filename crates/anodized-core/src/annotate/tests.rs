@@ -12,6 +12,7 @@ fn simple_spec() {
     };
 
     let expected = Spec {
+        qualifiers: FnQualifiers::empty(),
         requires: vec![PreCondition {
             closure: parse_quote! { || is_valid(x) },
             cfg: None,
@@ -38,6 +39,7 @@ fn all_clauses() {
     };
 
     let expected = Spec {
+        qualifiers: FnQualifiers::empty(),
         requires: vec![PreCondition {
             closure: parse_quote! { || x > 0 && x.is_power_of_two() },
             cfg: None,
@@ -110,6 +112,7 @@ fn array_of_conditions() {
     };
 
     let expected = Spec {
+        qualifiers: FnQualifiers::empty(),
         requires: vec![
             PreCondition {
                 closure: parse_quote! { || x >= 0 },
@@ -145,6 +148,7 @@ fn ensures_with_explicit_closure() {
     };
 
     let expected = Spec {
+        qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
         captures: vec![],
@@ -168,6 +172,7 @@ fn multiple_clauses_of_same_flavor() {
     };
 
     let expected = Spec {
+        qualifiers: FnQualifiers::empty(),
         requires: vec![
             PreCondition {
                 closure: parse_quote! { || x > 0 || x < -10 },
@@ -212,6 +217,7 @@ fn mixed_single_and_array_clauses() {
     };
 
     let expected = Spec {
+        qualifiers: FnQualifiers::empty(),
         requires: vec![
             PreCondition {
                 closure: parse_quote! { || x == 0 },
@@ -258,6 +264,7 @@ fn cfg_attributes() {
     };
 
     let expected = Spec {
+        qualifiers: FnQualifiers::empty(),
         requires: vec![PreCondition {
             closure: parse_quote! { || x > 0 && is_mode() },
             cfg: Some(parse_quote! { test }),
@@ -311,6 +318,7 @@ fn macro_in_condition() {
     };
 
     let expected = Spec {
+        qualifiers: FnQualifiers::empty(),
         requires: vec![PreCondition {
             closure: parse_quote! { || matches!(self.state, State::Idle) },
             cfg: None,
@@ -341,6 +349,7 @@ fn binds_pattern() {
     };
 
     let expected = Spec {
+        qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
         captures: vec![],
@@ -372,6 +381,7 @@ fn multiple_conditions() {
     };
 
     let expected = Spec {
+        qualifiers: FnQualifiers::empty(),
         requires: vec![
             PreCondition {
                 closure: parse_quote! { || self.initialized },
@@ -409,6 +419,7 @@ fn rename_return_value() {
     };
 
     let expected = Spec {
+        qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
         captures: vec![],
@@ -436,6 +447,7 @@ fn captures_simple_identifier() {
     };
 
     let expected = Spec {
+        qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
@@ -460,6 +472,7 @@ fn captures_identifier_with_alias() {
     };
 
     let expected = Spec {
+        qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
@@ -492,6 +505,7 @@ fn captures_array() {
     };
 
     let expected = Spec {
+        qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
         captures: vec![
@@ -539,6 +553,7 @@ fn captures_with_all_clauses() {
     };
 
     let expected = Spec {
+        qualifiers: FnQualifiers::empty(),
         requires: vec![PreCondition {
             closure: parse_quote! { || x > 0 },
             cfg: None,
@@ -578,6 +593,7 @@ fn captures_array_expression() {
     };
 
     let expected = Spec {
+        qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
@@ -672,6 +688,7 @@ fn captures_edge_case_cast_expr() {
     };
 
     let expected = Spec {
+        qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
@@ -696,6 +713,7 @@ fn captures_edge_case_array_of_cast_exprs() {
     };
 
     let expected = Spec {
+        qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
@@ -726,6 +744,7 @@ fn captures_edge_case_list_of_cast_exprs() {
     };
 
     let expected = Spec {
+        qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
         captures: vec![
@@ -756,6 +775,7 @@ fn captures_pattern_matches_slices() {
     };
 
     let expected = Spec {
+        qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
@@ -776,6 +796,7 @@ fn captures_pattern_matches_tuples() {
     };
 
     let expected = Spec {
+        qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
@@ -796,6 +817,7 @@ fn captures_pattern_matches_structs() {
     };
 
     let expected = Spec {
+        qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
@@ -816,6 +838,7 @@ fn captures_pattern_matches_nested() {
     };
 
     let expected = Spec {
+        qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
@@ -836,6 +859,7 @@ fn captures_pattern_with_binding_modifier() {
     };
 
     let expected = Spec {
+        qualifiers: FnQualifiers::empty(),
         requires: vec![],
         maintains: vec![],
         captures: vec![Capture {
