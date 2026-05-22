@@ -37,7 +37,7 @@ pub struct SpecArg {
     pub attrs: Vec<Attribute>,
     pub keyword: Keyword,
     pub keyword_span: Span,
-    pub colon: Token![:],
+    pub colon: Option<Token![:]>,
     pub value: SpecArgValue,
 }
 
@@ -45,11 +45,18 @@ impl Parse for SpecArg {
     fn parse(input: ParseStream) -> Result<Self> {
         let attrs = input.call(Attribute::parse_outer)?;
         let (keyword, keyword_span) = Keyword::parse(input)?;
-        let colon = input.parse()?;
-        let value = match keyword {
-            Keyword::Binds => SpecArgValue::parse_pat_or_expr(input)?,
-            Keyword::Captures => SpecArgValue::Captures(input.parse()?),
-            _ => SpecArgValue::parse_expr_or_pat(input)?,
+
+        let (colon, value) = if input.peek(Token![:]) {
+            (
+                input.parse()?,
+                match keyword {
+                    Keyword::Binds => SpecArgValue::parse_pat_or_expr(input)?,
+                    Keyword::Captures => SpecArgValue::Captures(input.parse()?),
+                    _ => SpecArgValue::parse_expr_or_pat(input)?,
+                },
+            )
+        } else {
+            (None, SpecArgValue::None)
         };
 
         Ok(Self {
@@ -69,6 +76,7 @@ impl Parse for SpecArg {
 /// and even fragments that would never appear as part of a valid Rust program.
 #[derive(Debug, Clone)]
 pub enum SpecArgValue {
+    None,
     Expr(Expr),
     Pat(Pat),
     Captures(Captures),
@@ -154,6 +162,7 @@ impl SpecArgValue {
 impl ToTokens for SpecArgValue {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         match self {
+            SpecArgValue::None => {}
             SpecArgValue::Expr(expr) => expr.to_tokens(tokens),
             SpecArgValue::Pat(pat) => pat.to_tokens(tokens),
             SpecArgValue::Captures(captures) => captures.to_tokens(tokens),
@@ -243,6 +252,12 @@ impl Parse for CaptureExpr {
 /// Custom keywords for parsing. This allows us to use `requires`, `ensures`, etc.,
 /// as if they were built-in Rust keywords during parsing.
 pub mod kw {
+    syn::custom_keyword!(pure);
+    syn::custom_keyword!(total);
+    syn::custom_keyword!(deterministic);
+    syn::custom_keyword!(effectless);
+    syn::custom_keyword!(infallible);
+    syn::custom_keyword!(terminating);
     syn::custom_keyword!(requires);
     syn::custom_keyword!(maintains);
     syn::custom_keyword!(captures);
@@ -254,6 +269,12 @@ pub mod kw {
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
 pub enum Keyword {
     Unknown(Ident),
+    Pure,
+    Total,
+    Deterministic,
+    Effectless,
+    Infallible,
+    Terminating,
     Requires,
     Maintains,
     Captures,
@@ -265,7 +286,25 @@ pub enum Keyword {
 impl Keyword {
     fn parse(input: ParseStream) -> Result<(Self, Span)> {
         use Keyword::*;
-        Ok(if input.peek(kw::requires) {
+        Ok(if input.peek(kw::pure) {
+            let keyword: kw::pure = input.parse()?;
+            (Pure, keyword.span)
+        } else if input.peek(kw::total) {
+            let keyword: kw::total = input.parse()?;
+            (Total, keyword.span)
+        } else if input.peek(kw::deterministic) {
+            let keyword: kw::deterministic = input.parse()?;
+            (Deterministic, keyword.span)
+        } else if input.peek(kw::effectless) {
+            let keyword: kw::effectless = input.parse()?;
+            (Effectless, keyword.span)
+        } else if input.peek(kw::infallible) {
+            let keyword: kw::infallible = input.parse()?;
+            (Infallible, keyword.span)
+        } else if input.peek(kw::terminating) {
+            let keyword: kw::terminating = input.parse()?;
+            (Terminating, keyword.span)
+        } else if input.peek(kw::requires) {
             let keyword: kw::requires = input.parse()?;
             (Requires, keyword.span)
         } else if input.peek(kw::maintains) {
@@ -294,13 +333,19 @@ impl Keyword {
 impl std::fmt::Display for Keyword {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Keyword::Unknown(ident) => write!(f, "{}", ident),
+            Keyword::Pure => write!(f, "pure"),
+            Keyword::Total => write!(f, "total"),
+            Keyword::Deterministic => write!(f, "deterministic"),
+            Keyword::Effectless => write!(f, "effectless"),
+            Keyword::Infallible => write!(f, "infallible"),
+            Keyword::Terminating => write!(f, "terminating"),
             Keyword::Requires => write!(f, "requires"),
             Keyword::Maintains => write!(f, "maintains"),
             Keyword::Captures => write!(f, "captures"),
             Keyword::Binds => write!(f, "binds"),
             Keyword::Ensures => write!(f, "ensures"),
             Keyword::Decreases => write!(f, "decreases"),
-            Keyword::Unknown(ident) => write!(f, "{}", ident),
         }
     }
 }

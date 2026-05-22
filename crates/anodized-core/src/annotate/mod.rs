@@ -33,6 +33,17 @@ impl Parse for Spec {
 
         for arg in raw_spec.args {
             match arg.keyword {
+                Keyword::Unknown(ident) => {
+                    errors.add(Error::new(
+                        arg.keyword_span,
+                        format!("unknown spec keyword `{ident}`"),
+                    ));
+                }
+                // Keyword::Pure => {
+                //     if let Err(error) = arg.parse_qualifier(&mut qualifiers) {
+                //         errors.add(error);
+                //     }
+                // }
                 Keyword::Requires => {
                     if let Err(error) = arg.parse_preconditions(&mut requires) {
                         errors.add(error);
@@ -76,10 +87,10 @@ impl Parse for Spec {
                         format!("`{}` parameter is not supported here", &arg.keyword),
                     ));
                 }
-                Keyword::Unknown(ident) => {
+                _ => {
                     errors.add(Error::new(
                         arg.keyword_span,
-                        format!("unknown spec keyword `{ident}`"),
+                        format!("`{}` parameter is not supported here", &arg.keyword),
                     ));
                 }
             }
@@ -116,25 +127,21 @@ impl Parse for DataSpec {
 
         for arg in raw_spec.args {
             match arg.keyword {
+                Keyword::Unknown(ident) => {
+                    errors.add(Error::new(
+                        arg.keyword_span,
+                        format!("unknown spec keyword `{ident}`"),
+                    ));
+                }
                 Keyword::Maintains => {
                     if let Err(error) = arg.parse_preconditions(&mut maintains) {
                         errors.add(error);
                     }
                 }
-                Keyword::Requires
-                | Keyword::Captures
-                | Keyword::Binds
-                | Keyword::Ensures
-                | Keyword::Decreases => {
+                _ => {
                     errors.add(Error::new(
                         arg.keyword_span,
                         format!("`{}` parameter is not supported here", &arg.keyword),
-                    ));
-                }
-                Keyword::Unknown(ident) => {
-                    errors.add(Error::new(
-                        arg.keyword_span,
-                        format!("unknown spec keyword `{ident}`"),
                     ));
                 }
             }
@@ -163,6 +170,12 @@ impl Parse for LoopSpec {
 
         for arg in raw_spec.args {
             match arg.keyword {
+                Keyword::Unknown(ident) => {
+                    errors.add(Error::new(
+                        arg.keyword_span,
+                        format!("unknown spec keyword `{ident}`"),
+                    ));
+                }
                 Keyword::Maintains => {
                     if let Err(error) = arg.parse_preconditions(&mut maintains) {
                         errors.add(error);
@@ -179,16 +192,10 @@ impl Parse for LoopSpec {
                         errors.add(error);
                     }
                 }
-                Keyword::Requires | Keyword::Captures | Keyword::Binds | Keyword::Ensures => {
+                _ => {
                     errors.add(Error::new(
                         arg.keyword_span,
                         format!("`{}` parameter is not supported here", &arg.keyword),
-                    ));
-                }
-                Keyword::Unknown(ident) => {
-                    errors.add(Error::new(
-                        arg.keyword_span,
-                        format!("unknown spec keyword `{ident}`"),
                     ));
                 }
             }
