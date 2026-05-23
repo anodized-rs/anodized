@@ -30,6 +30,24 @@ fn simple_spec() {
 }
 
 #[test]
+fn fn_qualifiers_functional() {
+    let spec: Spec = parse_quote! {
+        functional
+    };
+
+    let expected = Spec {
+        qualifiers: FnQualifiers::FUNCTIONAL,
+        requires: vec![],
+        maintains: vec![],
+        captures: vec![],
+        ensures: vec![],
+        span: Span::call_site(),
+    };
+
+    assert_spec_eq(&spec, &expected);
+}
+
+#[test]
 fn fn_qualifiers_pure_total() {
     let spec: Spec = parse_quote! {
         pure,
@@ -97,10 +115,28 @@ fn fn_qualifiers_invalid_colon() {
 }
 
 #[test]
-#[should_panic = "qualifier `pure` does not take a value"]
+#[should_panic = "qualifier `functional` does not take a value"]
 fn fn_qualifiers_invalid_value_expr() {
     let _: Spec = parse_quote! {
-        pure: x == 42,
+        functional: x == 42,
+    };
+}
+
+#[test]
+#[should_panic = "this qualifier is redundant; remove it"]
+fn fn_qualifiers_functional_pure() {
+    let _: Spec = parse_quote! {
+        functional,
+        pure,
+    };
+}
+
+#[test]
+#[should_panic = "this qualifier is redundant; remove it"]
+fn fn_qualifiers_functional_total() {
+    let _: Spec = parse_quote! {
+        functional,
+        total,
     };
 }
 

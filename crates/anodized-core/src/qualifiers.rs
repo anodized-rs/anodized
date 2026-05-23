@@ -21,5 +21,8 @@ bitflags! {
 
         /// A total `fn` is both infallible and terminating.
         const TOTAL = Self::INFALLIBLE.bits() | Self::TERMINATING.bits();
+
+        /// A functional `fn` is both pure and total.
+        const FUNCTIONAL = Self::PURE.bits() | Self::TOTAL.bits();
     }
 }

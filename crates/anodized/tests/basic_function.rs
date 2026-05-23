@@ -1,6 +1,7 @@
 use anodized::spec;
 
 #[spec(
+    functional,
     requires: divisor != 0,
     ensures: *output < dividend,
 )]

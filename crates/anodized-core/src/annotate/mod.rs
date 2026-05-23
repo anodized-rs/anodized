@@ -39,6 +39,13 @@ impl Parse for Spec {
                         format!("unknown spec keyword `{ident}`"),
                     ));
                 }
+                Keyword::Functional => {
+                    if let Err(error) =
+                        arg.parse_fn_qualifier(FnQualifiers::FUNCTIONAL, &mut qualifiers)
+                    {
+                        errors.add(error);
+                    }
+                }
                 Keyword::Pure => {
                     if let Err(error) = arg.parse_fn_qualifier(FnQualifiers::PURE, &mut qualifiers)
                     {

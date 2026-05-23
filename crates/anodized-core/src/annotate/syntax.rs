@@ -254,6 +254,7 @@ impl Parse for CaptureExpr {
 /// Custom keywords for parsing. This allows us to use `requires`, `ensures`, etc.,
 /// as if they were built-in Rust keywords during parsing.
 pub mod kw {
+    syn::custom_keyword!(functional);
     syn::custom_keyword!(pure);
     syn::custom_keyword!(total);
     syn::custom_keyword!(deterministic);
@@ -271,6 +272,7 @@ pub mod kw {
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Keyword {
     Unknown(Ident),
+    Functional,
     Pure,
     Total,
     Deterministic,
@@ -288,7 +290,10 @@ pub enum Keyword {
 impl Keyword {
     fn parse(input: ParseStream) -> Result<(Self, Span)> {
         use Keyword::*;
-        Ok(if input.peek(kw::pure) {
+        Ok(if input.peek(kw::functional) {
+            let keyword: kw::functional = input.parse()?;
+            (Functional, keyword.span)
+        } else if input.peek(kw::pure) {
             let keyword: kw::pure = input.parse()?;
             (Pure, keyword.span)
         } else if input.peek(kw::total) {
@@ -336,6 +341,7 @@ impl std::fmt::Display for Keyword {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Keyword::Unknown(ident) => write!(f, "{}", ident),
+            Keyword::Functional => write!(f, "functional"),
             Keyword::Pure => write!(f, "pure"),
             Keyword::Total => write!(f, "total"),
             Keyword::Deterministic => write!(f, "deterministic"),
