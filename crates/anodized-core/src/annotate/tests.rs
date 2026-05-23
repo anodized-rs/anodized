@@ -73,6 +73,38 @@ fn fn_qualifiers_deterministic_effectfree_infallible_terminating() {
 }
 
 #[test]
+#[should_panic = "expected `,`"]
+fn fn_qualifiers_typo_missing_comma() {
+    let _: Spec = parse_quote! {
+        pure total,
+    };
+}
+
+#[test]
+#[should_panic = "qualifier `pure` does not take a value"]
+fn fn_qualifiers_typo_colon_instead_of_comma() {
+    let _: Spec = parse_quote! {
+        pure: total,
+    };
+}
+
+#[test]
+#[should_panic = "expected an expression or a pattern"]
+fn fn_qualifiers_invalid_colon() {
+    let _: Spec = parse_quote! {
+        pure:,
+    };
+}
+
+#[test]
+#[should_panic = "qualifier `pure` does not take a value"]
+fn fn_qualifiers_invalid_value_expr() {
+    let _: Spec = parse_quote! {
+        pure: x == 42,
+    };
+}
+
+#[test]
 #[should_panic = "this qualifier is redundant; remove it"]
 fn fn_qualifiers_pure_deterministic() {
     let _: Spec = parse_quote! {
@@ -994,4 +1026,30 @@ fn captures_pat_without_as_errors() {
         "{}",
         err
     );
+}
+
+#[test]
+fn spec_arg_can_omit_value() {
+    let spec_args: syntax::SpecArgs = parse_quote! {
+        key_1,
+        key_2: value,
+        key_3: value as expr,
+    };
+
+    let args: Vec<_> = spec_args.args.into_iter().collect();
+    let [arg_1, arg_2, arg_3] = args.as_slice() else {
+        panic!("expected 3 args");
+    };
+
+    assert!(arg_1.keyword.to_string() == "key_1");
+    assert!(arg_1.colon.is_none());
+    assert_eq!(arg_1.value, SpecArgValue::None);
+
+    assert!(arg_2.keyword.to_string() == "key_2");
+    assert!(arg_2.colon.is_some());
+    assert_eq!(arg_2.value, SpecArgValue::Expr(parse_quote!(value)));
+
+    assert!(arg_3.keyword.to_string() == "key_3");
+    assert!(arg_3.colon.is_some());
+    assert_eq!(arg_3.value, SpecArgValue::Expr(parse_quote!(value as expr)));
 }

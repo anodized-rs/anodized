@@ -7,7 +7,7 @@ use syn::{
 
 use crate::{
     Capture, DataSpec, LoopSpec, LoopVariant, PostCondition, PreCondition, Spec,
-    annotate::syntax::{CaptureExpr, SpecArg},
+    annotate::syntax::{CaptureExpr, SpecArg, SpecArgValue},
     qualifiers::FnQualifiers,
 };
 
@@ -256,7 +256,13 @@ impl SpecArg {
         if let Some(first_attr) = self.attrs.first() {
             return Err(Error::new_spanned(
                 first_attr,
-                "attributes are not supported on `captures`",
+                format!("attributes are not supported on `{}`", self.keyword),
+            ));
+        }
+        if !matches!(self.value, SpecArgValue::None) {
+            return Err(Error::new_spanned(
+                self.value,
+                format!("qualifier `{}` does not take a value", self.keyword),
             ));
         }
         if qualifiers.contains(value) {

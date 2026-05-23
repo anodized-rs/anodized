@@ -10,6 +10,7 @@ use syn::{
 /// Raw spec arguments, i.e. as they appear in the `#[spec(...)]` proc macro invocation.
 ///
 /// Can represent a well-formed but invalid spec so that e.g. `anodized-fmt` may work with it.
+#[derive(Debug, Clone)]
 pub struct SpecArgs {
     pub args: Punctuated<SpecArg, Token![,]>,
 }
@@ -33,6 +34,7 @@ impl SpecArgs {
 }
 
 /// A single spec argument.
+#[derive(Debug, Clone)]
 pub struct SpecArg {
     pub attrs: Vec<Attribute>,
     pub keyword: Keyword,
@@ -74,7 +76,7 @@ impl Parse for SpecArg {
 /// NOTE:
 /// a [`SpecArgValue`] may hold unrelated syntactic elements such as ['syn::Expr`], [`syn::Pat`],
 /// and even fragments that would never appear as part of a valid Rust program.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum SpecArgValue {
     None,
     Expr(Expr),
@@ -172,7 +174,7 @@ impl ToTokens for SpecArgValue {
 
 /// A group of capture expressions, either a single one or a list.
 /// These are not composed of top level [`syn::Expr`] expressions.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Captures {
     One(Box<CaptureExpr>),
     Many {
@@ -213,7 +215,7 @@ impl ToTokens for Captures {
 }
 
 /// The form in a `captures` clause: <expression> `as` <pattern>.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct CaptureExpr {
     pub expr: Option<Expr>,
     pub as_: Option<Token![as]>,
@@ -266,7 +268,7 @@ pub mod kw {
     syn::custom_keyword!(decreases);
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Keyword {
     Unknown(Ident),
     Pure,
