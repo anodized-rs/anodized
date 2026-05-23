@@ -136,8 +136,9 @@ impl Parse for Spec {
             errors.add(Error::new(
                 input.span(),
                 "parameters are out of order: the expected order is: `<QUALIFIERS>`, `requires`, `maintains`, `captures`, `binds`, `ensures`, where `<QUALIFIERS>` are:\n
-`pure` (`deterministic`, `effectfree`),\n
-`total` (`infallible`, `terminating`)",
+`functional` (`pure` and `total`),\n
+`pure` (`deterministic` and `effectfree`),\n
+`total` (`infallible` and `terminating`)",
             ));
         }
 
