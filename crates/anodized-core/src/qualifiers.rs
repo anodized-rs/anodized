@@ -4,7 +4,7 @@ bitflags! {
     /// A combination of `fn` qualifiers.
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct FnQualifiers: u32 {
-        /// A deterministic `fn`'s return value only depends on its arguments.
+        /// A deterministic `fn`'s return value depends only on its arguments.
         const DETERMINISTIC = 1 << 0;
 
         /// An effectfree `fn` has no side effects.
