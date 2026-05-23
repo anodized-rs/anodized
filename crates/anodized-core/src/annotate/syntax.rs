@@ -255,7 +255,7 @@ pub mod kw {
     syn::custom_keyword!(pure);
     syn::custom_keyword!(total);
     syn::custom_keyword!(deterministic);
-    syn::custom_keyword!(effectless);
+    syn::custom_keyword!(effectfree);
     syn::custom_keyword!(infallible);
     syn::custom_keyword!(terminating);
     syn::custom_keyword!(requires);
@@ -272,7 +272,7 @@ pub enum Keyword {
     Pure,
     Total,
     Deterministic,
-    Effectless,
+    Effectfree,
     Infallible,
     Terminating,
     Requires,
@@ -295,9 +295,9 @@ impl Keyword {
         } else if input.peek(kw::deterministic) {
             let keyword: kw::deterministic = input.parse()?;
             (Deterministic, keyword.span)
-        } else if input.peek(kw::effectless) {
-            let keyword: kw::effectless = input.parse()?;
-            (Effectless, keyword.span)
+        } else if input.peek(kw::effectfree) {
+            let keyword: kw::effectfree = input.parse()?;
+            (Effectfree, keyword.span)
         } else if input.peek(kw::infallible) {
             let keyword: kw::infallible = input.parse()?;
             (Infallible, keyword.span)
@@ -337,7 +337,7 @@ impl std::fmt::Display for Keyword {
             Keyword::Pure => write!(f, "pure"),
             Keyword::Total => write!(f, "total"),
             Keyword::Deterministic => write!(f, "deterministic"),
-            Keyword::Effectless => write!(f, "effectless"),
+            Keyword::Effectfree => write!(f, "effectfree"),
             Keyword::Infallible => write!(f, "infallible"),
             Keyword::Terminating => write!(f, "terminating"),
             Keyword::Requires => write!(f, "requires"),

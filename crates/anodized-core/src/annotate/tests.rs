@@ -30,6 +30,85 @@ fn simple_spec() {
 }
 
 #[test]
+fn fn_qualifiers_pure_total() {
+    let spec: Spec = parse_quote! {
+        pure,
+        total,
+    };
+
+    let expected = Spec {
+        qualifiers: FnQualifiers::PURE | FnQualifiers::TOTAL,
+        requires: vec![],
+        maintains: vec![],
+        captures: vec![],
+        ensures: vec![],
+        span: Span::call_site(),
+    };
+
+    assert_spec_eq(&spec, &expected);
+}
+
+#[test]
+fn fn_qualifiers_deterministic_effectfree_infallible_terminating() {
+    let spec: Spec = parse_quote! {
+        deterministic,
+        effectfree,
+        infallible,
+        terminating,
+    };
+
+    let expected = Spec {
+        qualifiers: FnQualifiers::DETERMINISTIC
+            | FnQualifiers::EFFECTFREE
+            | FnQualifiers::INFALLIBLE
+            | FnQualifiers::TERMINATING,
+        requires: vec![],
+        maintains: vec![],
+        captures: vec![],
+        ensures: vec![],
+        span: Span::call_site(),
+    };
+
+    assert_spec_eq(&spec, &expected);
+}
+
+#[test]
+#[should_panic = "this qualifier is redundant; remove it"]
+fn fn_qualifiers_pure_deterministic() {
+    let _: Spec = parse_quote! {
+        pure,
+        deterministic,
+    };
+}
+
+#[test]
+#[should_panic = "this qualifier is redundant; remove it"]
+fn fn_qualifiers_pure_effectfree() {
+    let _: Spec = parse_quote! {
+        pure,
+        effectfree,
+    };
+}
+
+#[test]
+#[should_panic = "this qualifier is redundant; remove it"]
+fn fn_qualifiers_total_infallible() {
+    let _: Spec = parse_quote! {
+        total,
+        infallible,
+    };
+}
+
+#[test]
+#[should_panic = "this qualifier is redundant; remove it"]
+fn fn_qualifiers_total_terminating() {
+    let _: Spec = parse_quote! {
+        total,
+        terminating,
+    };
+}
+
+#[test]
 fn all_clauses() {
     let spec: Spec = parse_quote! {
         requires: x > 0 && x.is_power_of_two(),

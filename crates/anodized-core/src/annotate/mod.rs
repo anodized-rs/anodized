@@ -39,11 +39,46 @@ impl Parse for Spec {
                         format!("unknown spec keyword `{ident}`"),
                     ));
                 }
-                // Keyword::Pure => {
-                //     if let Err(error) = arg.parse_qualifier(&mut qualifiers) {
-                //         errors.add(error);
-                //     }
-                // }
+                Keyword::Pure => {
+                    if let Err(error) = arg.parse_fn_qualifier(FnQualifiers::PURE, &mut qualifiers)
+                    {
+                        errors.add(error);
+                    }
+                }
+                Keyword::Total => {
+                    if let Err(error) = arg.parse_fn_qualifier(FnQualifiers::TOTAL, &mut qualifiers)
+                    {
+                        errors.add(error);
+                    }
+                }
+                Keyword::Deterministic => {
+                    if let Err(error) =
+                        arg.parse_fn_qualifier(FnQualifiers::DETERMINISTIC, &mut qualifiers)
+                    {
+                        errors.add(error);
+                    }
+                }
+                Keyword::Effectfree => {
+                    if let Err(error) =
+                        arg.parse_fn_qualifier(FnQualifiers::EFFECTFREE, &mut qualifiers)
+                    {
+                        errors.add(error);
+                    }
+                }
+                Keyword::Infallible => {
+                    if let Err(error) =
+                        arg.parse_fn_qualifier(FnQualifiers::INFALLIBLE, &mut qualifiers)
+                    {
+                        errors.add(error);
+                    }
+                }
+                Keyword::Terminating => {
+                    if let Err(error) =
+                        arg.parse_fn_qualifier(FnQualifiers::TERMINATING, &mut qualifiers)
+                    {
+                        errors.add(error);
+                    }
+                }
                 Keyword::Requires => {
                     if let Err(error) = arg.parse_preconditions(&mut requires) {
                         errors.add(error);
@@ -87,19 +122,15 @@ impl Parse for Spec {
                         format!("`{}` parameter is not supported here", &arg.keyword),
                     ));
                 }
-                _ => {
-                    errors.add(Error::new(
-                        arg.keyword_span,
-                        format!("`{}` parameter is not supported here", &arg.keyword),
-                    ));
-                }
             }
         }
 
         if !is_sorted {
             errors.add(Error::new(
                 input.span(),
-                "parameters are out of order: the expected order is `requires`, `maintains`, `captures`, `binds`, `ensures`",
+                "parameters are out of order: the expected order is: `<QUALIFIERS>`, `requires`, `maintains`, `captures`, `binds`, `ensures`, where `<QUALIFIERS>` are:\n
+`pure` (`deterministic`, `effectfree`),\n
+`total` (`infallible`, `terminating`)",
             ));
         }
 
@@ -221,6 +252,23 @@ impl Parse for LoopSpec {
 }
 
 impl SpecArg {
+    fn parse_fn_qualifier(self, value: FnQualifiers, qualifiers: &mut FnQualifiers) -> Result<()> {
+        if let Some(first_attr) = self.attrs.first() {
+            return Err(Error::new_spanned(
+                first_attr,
+                "attributes are not supported on `captures`",
+            ));
+        }
+        if qualifiers.contains(value) {
+            return Err(Error::new(
+                self.keyword_span,
+                "this qualifier is redundant; remove it",
+            ));
+        }
+        *qualifiers |= value;
+        Ok(())
+    }
+
     fn parse_preconditions(self, preconditions: &mut Vec<PreCondition>) -> Result<()> {
         let cfg_attr = find_cfg_attribute(&self.attrs)?;
         let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
