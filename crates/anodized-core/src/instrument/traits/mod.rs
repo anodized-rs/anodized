@@ -241,16 +241,6 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                             defaultness: None,
                         };
 
-                        // Add a compile-time check to the body.
-                        func.block.stmts.insert(
-                            0,
-                            Self::build_qualifier_check_stmt(
-                                &func.sig.ident,
-                                &the_impl.self_ty,
-                                trait_path,
-                            ),
-                        );
-
                         new_items.push(ImplItem::Const(spec_qualifiers_const));
                         new_items.push(ImplItem::Fn(spec_requires_fn));
                         new_items.push(ImplItem::Fn(spec_maintains_fn));
@@ -268,6 +258,19 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                     }
 
                     self.instrument_fn(&fn_spec, &func.sig, &mut func.block)?;
+
+                    if self.embed_spec {
+                        // Add a compile-time check to the body.
+                        func.block.stmts.insert(
+                            0,
+                            Self::build_qualifier_check_stmt(
+                                &func.sig.ident,
+                                &the_impl.self_ty,
+                                trait_path,
+                            ),
+                        );
+                    }
+
                     new_items.push(ImplItem::Fn(func));
                 }
                 ImplItem::Const(mut const_item) => {

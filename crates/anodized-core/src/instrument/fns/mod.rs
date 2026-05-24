@@ -82,7 +82,7 @@ impl Config {
         );
 
         let message = format!(
-            "the qualifiers on the impl `{}::{fn_ident}` must be stronger than the qualifiers on the trait `{}::{fn_ident}`",
+            "the qualifiers on the impl `{}::{fn_ident}` cannot be weaker than the qualifiers on the trait `{}::{fn_ident}`",
             impl_type.to_token_stream(),
             trait_path.to_token_stream(),
         );
