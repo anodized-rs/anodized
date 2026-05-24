@@ -26,11 +26,11 @@ fn embed_spec_item_trait() {
         trait TRAIT {
             #[doc(hidden)]
             #[allow(warnings)]
-            const __anodized_fn_qualifiers_FUNC: u32 = #qualifier_bits;
+            const __anodized_fn_qualifiers_trait_FUNC: u32 = #qualifier_bits;
 
             #[doc(hidden)]
             #[allow(warnings)]
-            const __anodized_fn_qualifiers_trait_FUNC: u32 = #qualifier_bits;
+            const __anodized_fn_qualifiers_FUNC: u32 = #qualifier_bits;
 
             #[doc(hidden)]
             #[allow(warnings)]
