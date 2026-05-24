@@ -4,12 +4,15 @@ mod tests;
 use crate::{
     Capture, PostCondition, PreCondition, Spec,
     instrument::{Config, build_assert, build_eprint},
+    qualifiers::FnQualifiers,
 };
 
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
-    Block, Expr, Ident, Pat, PatIdent, ReturnType, Signature, Stmt, parse::Result, parse_quote,
+    Attribute, Block, Expr, Ident, Pat, PatIdent, ReturnType, Signature, Stmt,
+    parse::{Parse, Result},
+    parse_quote,
 };
 
 impl Config {
@@ -46,6 +49,20 @@ impl Config {
             inputs: sig.inputs.clone(),
             variadic: sig.variadic.clone(),
             output: syn::ReturnType::Default,
+        }
+    }
+
+    pub fn build_qualifier_const_item<SomeConstItem: Parse>(
+        attrs: &[Attribute],
+        qualifiers: FnQualifiers,
+        ident: &Ident,
+    ) -> SomeConstItem {
+        let qualifier_bits = qualifiers.bits();
+        let name: Ident =
+            syn::Ident::new(&format!("__anodized_fn_qualifiers_{}", ident), ident.span());
+        parse_quote! {
+            #(#attrs)*
+            const #name: u32 = #qualifier_bits;
         }
     }
 

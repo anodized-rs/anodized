@@ -31,7 +31,12 @@ fn embed_spec_item_fn() {
         }
     };
 
+    let qualifier_bits = FnQualifiers::empty().bits();
     let expected: TokenStream = parse_quote! {
+        #[doc(hidden)]
+        #[allow(warnings)]
+        const __anodized_fn_qualifiers_FUNC: u32 = #qualifier_bits;
+
         #[doc(hidden)]
         #[allow(warnings)]
         fn __anodized_fn_requires_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {

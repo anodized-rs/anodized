@@ -56,7 +56,12 @@ impl Config {
                             parse_quote!(#[allow(warnings)]),
                         ];
 
-                        // Embed `spec` elements as `__anodized_fn_*` functions.
+                        // Embed `spec` elements as `__anodized_fn_*` items.
+                        let spec_qualifiers_const = Self::build_qualifier_const_item(
+                            &attrs,
+                            fn_spec.qualifiers,
+                            &func.sig.ident,
+                        );
                         let spec_requires_fn = TraitItemFn {
                             attrs: attrs.to_vec(),
                             sig: Self::build_spec_fn_sig("__anodized_fn_requires", &func.sig),
@@ -80,6 +85,7 @@ impl Config {
                             semi_token: None,
                         };
 
+                        new_trait_items.push(TraitItem::Const(spec_qualifiers_const));
                         new_trait_items.push(TraitItem::Fn(spec_requires_fn));
                         new_trait_items.push(TraitItem::Fn(spec_maintains_fn));
                         new_trait_items.push(TraitItem::Fn(spec_ensures_fn));
