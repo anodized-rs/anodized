@@ -188,10 +188,9 @@ impl Config {
                     let (spec_attr, func_attrs) = find_spec_attr(func.attrs)?;
                     func.attrs = func_attrs;
 
-                    let original_ident = &func.sig.ident;
-                    if original_ident.to_string().starts_with("__anodized_") {
+                    if func.sig.ident.to_string().starts_with("__anodized_") {
                         return Err(syn::Error::new_spanned(
-                            original_ident,
+                            func.sig.ident,
                             r#"An item with the `__anodized_` prefix is internal. Do not implement it directly.
 Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation."#,
                         ));
@@ -247,16 +246,6 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         new_items.push(ImplItem::Fn(spec_ensures_fn));
                     }
 
-                    if self.emit_anything() {
-                        func.sig.ident = mangle_ident(original_ident);
-
-                        // Add a default `#[inline]` attribute unless one is already there.
-                        // The caller can supress this with `#[inline(never)]`
-                        if !has_inline_attr(&func.attrs) {
-                            func.attrs.push(parse_quote!(#[inline]));
-                        }
-                    }
-
                     self.instrument_fn(&fn_spec, &func.sig, &mut func.block)?;
 
                     if self.embed_spec {
@@ -271,6 +260,15 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         );
                     }
 
+                    if self.emit_anything() {
+                        func.sig.ident = mangle_ident(&func.sig.ident);
+
+                        // Add a default `#[inline]` attribute unless one is already there.
+                        // The caller can supress this with `#[inline(never)]`
+                        if !has_inline_attr(&func.attrs) {
+                            func.attrs.push(parse_quote!(#[inline]));
+                        }
+                    }
                     new_items.push(ImplItem::Fn(func));
                 }
                 ImplItem::Const(mut const_item) => {
