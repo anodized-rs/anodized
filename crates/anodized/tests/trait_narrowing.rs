@@ -91,7 +91,7 @@ impl MinFinder<u32> for WeakerImplPost {
 #[test]
 fn runtime_allows_valid_narrowing() {
     // NOTE: The trait's runtime checks are active even when the concrete type is statically known.
-    let seq = [5.0, -42.0, 3.14];
+    let seq = [5.0, -42.0, std::f32::consts::PI];
     assert_eq!(ValidNarrowing::find_min(&seq), -42.0);
 }
 
