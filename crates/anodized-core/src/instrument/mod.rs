@@ -30,8 +30,12 @@ impl Config {
             ];
 
             // Embed `spec` elements as `__anodized_fn_*` items.
-            let spec_qualifiers_const: ItemConst =
-                Self::build_qualifier_const_item(&attrs, spec.qualifiers, &item_fn.sig.ident);
+            let spec_qualifiers_const: ItemConst = Self::build_qualifier_const_item(
+                &attrs,
+                "__anodized_fn_qualifiers",
+                spec.qualifiers,
+                &item_fn.sig.ident,
+            );
             let spec_requires_fn = ItemFn {
                 attrs: attrs.to_vec(),
                 vis: syn::Visibility::Inherited,

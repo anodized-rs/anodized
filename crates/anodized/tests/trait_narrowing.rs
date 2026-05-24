@@ -5,8 +5,9 @@ use anodized::spec;
 //////////////////////////
 
 #[spec]
-trait MinFinder {
+trait MinFinder<T: PartialOrd> {
     #[spec(
+        total,
         requires: [
             input.len() > 0,
         ],
@@ -15,14 +16,16 @@ trait MinFinder {
             input.iter().any(|item| output == item) || input.len() == 0,
         ],
     )]
-    fn find_min(input: &[f32]) -> f32;
+    fn find_min(input: &[T]) -> T;
 }
 
 pub struct ValidNarrowing;
 
 #[spec]
-impl MinFinder for ValidNarrowing {
+impl MinFinder<f32> for ValidNarrowing {
     #[spec(
+        // Stronger than trait qualifiers: is also `pure` (`deterministic` and `effectfree`).
+        functional,
         // Weaker than trait precondition: allows `input` to be empty.
         requires: [],
         // Stronger than trait postcondition: clarifies what to output when `input` is empty.
@@ -47,8 +50,9 @@ impl MinFinder for ValidNarrowing {
 pub struct StrongerImplPre;
 
 #[spec]
-impl MinFinder for StrongerImplPre {
+impl MinFinder<i32> for StrongerImplPre {
     #[spec(
+        total,
         // INVALID - Stronger than trait precondition: requires sorted `input`.
         requires: [
             input.len() > 0,
@@ -59,7 +63,7 @@ impl MinFinder for StrongerImplPre {
             input.iter().any(|item| output == item) || input.len() == 0,
         ],
     )]
-    fn find_min(input: &[f32]) -> f32 {
+    fn find_min(input: &[i32]) -> i32 {
         input[0]
     }
 }
@@ -67,8 +71,9 @@ impl MinFinder for StrongerImplPre {
 pub struct WeakerImplPost;
 
 #[spec]
-impl MinFinder for WeakerImplPost {
+impl MinFinder<u32> for WeakerImplPost {
     #[spec(
+        total,
         requires: [
             input.len() > 0,
         ],
@@ -77,18 +82,17 @@ impl MinFinder for WeakerImplPost {
             input.iter().all(|item| output <= item),
         ],
     )]
-    fn find_min(input: &[f32]) -> f32 {
+    fn find_min(input: &[u32]) -> u32 {
         let _ = input;
-        f32::NEG_INFINITY
+        0
     }
 }
-
-const TEST_INPUT: [f32; 3] = [5.0, -42.0, std::f32::consts::PI];
 
 #[test]
 fn runtime_allows_valid_narrowing() {
     // NOTE: The trait's runtime checks are active even when the concrete type is statically known.
-    assert_eq!(ValidNarrowing::find_min(&TEST_INPUT), -42.0);
+    let seq = [5.0, -42.0, 3.14];
+    assert_eq!(ValidNarrowing::find_min(&seq), -42.0);
 }
 
 #[cfg(anodized_panic)]
@@ -96,7 +100,8 @@ fn runtime_allows_valid_narrowing() {
 #[should_panic(expected = "Precondition failed: input.is_sorted()")]
 fn runtime_rejects_stronger_impl_precondition() {
     // NOTE: The trait's runtime checks are active even when the concrete type is statically known.
-    assert_eq!(StrongerImplPre::find_min(&TEST_INPUT), -42.0);
+    let seq = [5, -42, 3];
+    assert_eq!(StrongerImplPre::find_min(&seq), -42);
 }
 
 #[cfg(anodized_panic)]
@@ -105,7 +110,8 @@ fn runtime_rejects_stronger_impl_precondition() {
 Postcondition failed: | output | input.iter().any(| item | output == item) || input.len() == 0")]
 fn runtime_rejects_weaker_impl_postcondition() {
     // NOTE: The trait's runtime checks are active even when the concrete type is statically known.
-    assert_eq!(WeakerImplPost::find_min(&TEST_INPUT), -42.0);
+    let seq = [5, 42, 3];
+    assert_eq!(WeakerImplPost::find_min(&seq), 3);
 }
 
 //////////////////////////////////////////////////////

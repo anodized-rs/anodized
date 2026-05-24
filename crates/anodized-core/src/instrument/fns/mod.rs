@@ -10,7 +10,7 @@ use crate::{
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Block, Expr, Ident, Pat, PatIdent, ReturnType, Signature, Stmt,
+    Attribute, Block, Expr, Ident, Pat, PatIdent, Path, ReturnType, Signature, Stmt, Type,
     parse::{Parse, Result},
     parse_quote,
 };
@@ -54,15 +54,46 @@ impl Config {
 
     pub fn build_qualifier_const_item<SomeConstItem: Parse>(
         attrs: &[Attribute],
+        prefix: &str,
         qualifiers: FnQualifiers,
-        ident: &Ident,
+        fn_ident: &Ident,
     ) -> SomeConstItem {
         let qualifier_bits = qualifiers.bits();
-        let name: Ident =
-            syn::Ident::new(&format!("__anodized_fn_qualifiers_{}", ident), ident.span());
+        let name: Ident = syn::Ident::new(&format!("{}_{}", prefix, fn_ident), fn_ident.span());
         parse_quote! {
             #(#attrs)*
             const #name: u32 = #qualifier_bits;
+        }
+    }
+
+    pub fn build_qualifier_check_stmt(
+        fn_ident: &Ident,
+        impl_type: &Type,
+        trait_path: &Path,
+    ) -> Stmt {
+        let impl_const_name = Ident::new(
+            &format!("__anodized_fn_qualifiers_{}", fn_ident),
+            fn_ident.span(),
+        );
+
+        let trait_const_name = Ident::new(
+            &format!("__anodized_fn_qualifiers_trait_{}", fn_ident),
+            fn_ident.span(),
+        );
+
+        let message = format!(
+            "the qualifiers on the impl `{}::{fn_ident}` must be stronger than the qualifiers on the trait `{}::{fn_ident}`",
+            impl_type.to_token_stream(),
+            trait_path.to_token_stream(),
+        );
+
+        parse_quote! {
+            const {
+                assert!(
+                    Self::#impl_const_name == Self::#trait_const_name | Self::#impl_const_name,
+                    #message,
+                );
+            };
         }
     }
 

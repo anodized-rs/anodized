@@ -59,6 +59,13 @@ impl Config {
                         // Embed `spec` elements as `__anodized_fn_*` items.
                         let spec_qualifiers_const = Self::build_qualifier_const_item(
                             &attrs,
+                            "__anodized_fn_qualifiers",
+                            fn_spec.qualifiers,
+                            &func.sig.ident,
+                        );
+                        let spec_trait_qualifiers_const = Self::build_qualifier_const_item(
+                            &attrs,
+                            "__anodized_fn_qualifiers_trait",
                             fn_spec.qualifiers,
                             &func.sig.ident,
                         );
@@ -86,6 +93,7 @@ impl Config {
                         };
 
                         new_trait_items.push(TraitItem::Const(spec_qualifiers_const));
+                        new_trait_items.push(TraitItem::Const(spec_trait_qualifiers_const));
                         new_trait_items.push(TraitItem::Fn(spec_requires_fn));
                         new_trait_items.push(TraitItem::Fn(spec_maintains_fn));
                         new_trait_items.push(TraitItem::Fn(spec_ensures_fn));
@@ -160,7 +168,7 @@ impl Config {
         spec: DataSpec,
         mut the_impl: syn::ItemImpl,
     ) -> syn::Result<syn::ItemImpl> {
-        let Some((trait_bang, ref _trait_path, _trait_for)) = the_impl.trait_ else {
+        let Some((trait_bang, ref trait_path, _trait_for)) = the_impl.trait_ else {
             return Err(make_item_error(&the_impl, "inherent impl"));
         };
 
@@ -200,7 +208,13 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                             parse_quote!(#[allow(warnings)]),
                         ];
 
-                        // Embed `spec` elements as `__anodized_fn_*` functions.
+                        // Embed `spec` elements as `__anodized_fn_*` items.
+                        let spec_qualifiers_const = Self::build_qualifier_const_item(
+                            &attrs,
+                            "__anodized_fn_qualifiers",
+                            fn_spec.qualifiers,
+                            &func.sig.ident,
+                        );
                         let spec_requires_fn = ImplItemFn {
                             attrs: attrs.to_vec(),
                             sig: Self::build_spec_fn_sig("__anodized_fn_requires", &func.sig),
@@ -227,6 +241,17 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                             defaultness: None,
                         };
 
+                        // Add a compile-time check to the body.
+                        func.block.stmts.insert(
+                            0,
+                            Self::build_qualifier_check_stmt(
+                                &func.sig.ident,
+                                &the_impl.self_ty,
+                                trait_path,
+                            ),
+                        );
+
+                        new_items.push(ImplItem::Const(spec_qualifiers_const));
                         new_items.push(ImplItem::Fn(spec_requires_fn));
                         new_items.push(ImplItem::Fn(spec_maintains_fn));
                         new_items.push(ImplItem::Fn(spec_ensures_fn));
