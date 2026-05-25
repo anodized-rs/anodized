@@ -7,7 +7,8 @@ use syn::{
 
 use crate::{
     Capture, DataSpec, LoopSpec, LoopVariant, PostCondition, PreCondition, Spec,
-    annotate::syntax::{CaptureExpr, SpecArg},
+    annotate::syntax::{CaptureExpr, SpecArg, SpecArgValue},
+    qualifiers::FnQualifiers,
 };
 
 pub mod syntax;
@@ -21,6 +22,7 @@ impl Parse for Spec {
         let raw_spec = syntax::SpecArgs::parse(input)?;
 
         let mut errors = MultiError::empty();
+        let mut qualifiers = FnQualifiers::empty();
         let mut requires: Vec<PreCondition> = vec![];
         let mut maintains: Vec<PreCondition> = vec![];
         let mut captures: Vec<Capture> = vec![];
@@ -31,6 +33,59 @@ impl Parse for Spec {
 
         for arg in raw_spec.args {
             match arg.keyword {
+                Keyword::Unknown(ident) => {
+                    errors.add(Error::new(
+                        arg.keyword_span,
+                        format!("unknown spec keyword `{ident}`"),
+                    ));
+                }
+                Keyword::Functional => {
+                    if let Err(error) =
+                        arg.parse_fn_qualifier(FnQualifiers::FUNCTIONAL, &mut qualifiers)
+                    {
+                        errors.add(error);
+                    }
+                }
+                Keyword::Pure => {
+                    if let Err(error) = arg.parse_fn_qualifier(FnQualifiers::PURE, &mut qualifiers)
+                    {
+                        errors.add(error);
+                    }
+                }
+                Keyword::Total => {
+                    if let Err(error) = arg.parse_fn_qualifier(FnQualifiers::TOTAL, &mut qualifiers)
+                    {
+                        errors.add(error);
+                    }
+                }
+                Keyword::Deterministic => {
+                    if let Err(error) =
+                        arg.parse_fn_qualifier(FnQualifiers::DETERMINISTIC, &mut qualifiers)
+                    {
+                        errors.add(error);
+                    }
+                }
+                Keyword::Effectfree => {
+                    if let Err(error) =
+                        arg.parse_fn_qualifier(FnQualifiers::EFFECTFREE, &mut qualifiers)
+                    {
+                        errors.add(error);
+                    }
+                }
+                Keyword::Infallible => {
+                    if let Err(error) =
+                        arg.parse_fn_qualifier(FnQualifiers::INFALLIBLE, &mut qualifiers)
+                    {
+                        errors.add(error);
+                    }
+                }
+                Keyword::Terminating => {
+                    if let Err(error) =
+                        arg.parse_fn_qualifier(FnQualifiers::TERMINATING, &mut qualifiers)
+                    {
+                        errors.add(error);
+                    }
+                }
                 Keyword::Requires => {
                     if let Err(error) = arg.parse_preconditions(&mut requires) {
                         errors.add(error);
@@ -74,19 +129,16 @@ impl Parse for Spec {
                         format!("`{}` parameter is not supported here", &arg.keyword),
                     ));
                 }
-                Keyword::Unknown(ident) => {
-                    errors.add(Error::new(
-                        arg.keyword_span,
-                        format!("unknown spec keyword `{ident}`"),
-                    ));
-                }
             }
         }
 
         if !is_sorted {
             errors.add(Error::new(
                 input.span(),
-                "parameters are out of order: the expected order is `requires`, `maintains`, `captures`, `binds`, `ensures`",
+                "parameters are out of order: the expected order is: `<QUALIFIERS>`, `requires`, `maintains`, `captures`, `binds`, `ensures`, where `<QUALIFIERS>` are:\n
+`functional` (`pure` and `total`),\n
+`pure` (`deterministic` and `effectfree`),\n
+`total` (`infallible` and `terminating`)",
             ));
         }
 
@@ -95,6 +147,7 @@ impl Parse for Spec {
         }
 
         Ok(Self {
+            qualifiers,
             requires,
             maintains,
             captures,
@@ -113,25 +166,21 @@ impl Parse for DataSpec {
 
         for arg in raw_spec.args {
             match arg.keyword {
+                Keyword::Unknown(ident) => {
+                    errors.add(Error::new(
+                        arg.keyword_span,
+                        format!("unknown spec keyword `{ident}`"),
+                    ));
+                }
                 Keyword::Maintains => {
                     if let Err(error) = arg.parse_preconditions(&mut maintains) {
                         errors.add(error);
                     }
                 }
-                Keyword::Requires
-                | Keyword::Captures
-                | Keyword::Binds
-                | Keyword::Ensures
-                | Keyword::Decreases => {
+                _ => {
                     errors.add(Error::new(
                         arg.keyword_span,
                         format!("`{}` parameter is not supported here", &arg.keyword),
-                    ));
-                }
-                Keyword::Unknown(ident) => {
-                    errors.add(Error::new(
-                        arg.keyword_span,
-                        format!("unknown spec keyword `{ident}`"),
                     ));
                 }
             }
@@ -160,6 +209,12 @@ impl Parse for LoopSpec {
 
         for arg in raw_spec.args {
             match arg.keyword {
+                Keyword::Unknown(ident) => {
+                    errors.add(Error::new(
+                        arg.keyword_span,
+                        format!("unknown spec keyword `{ident}`"),
+                    ));
+                }
                 Keyword::Maintains => {
                     if let Err(error) = arg.parse_preconditions(&mut maintains) {
                         errors.add(error);
@@ -176,16 +231,10 @@ impl Parse for LoopSpec {
                         errors.add(error);
                     }
                 }
-                Keyword::Requires | Keyword::Captures | Keyword::Binds | Keyword::Ensures => {
+                _ => {
                     errors.add(Error::new(
                         arg.keyword_span,
                         format!("`{}` parameter is not supported here", &arg.keyword),
-                    ));
-                }
-                Keyword::Unknown(ident) => {
-                    errors.add(Error::new(
-                        arg.keyword_span,
-                        format!("unknown spec keyword `{ident}`"),
                     ));
                 }
             }
@@ -211,6 +260,29 @@ impl Parse for LoopSpec {
 }
 
 impl SpecArg {
+    fn parse_fn_qualifier(self, value: FnQualifiers, qualifiers: &mut FnQualifiers) -> Result<()> {
+        if let Some(first_attr) = self.attrs.first() {
+            return Err(Error::new_spanned(
+                first_attr,
+                format!("attributes are not supported on `{}`", self.keyword),
+            ));
+        }
+        if !matches!(self.value, SpecArgValue::None) {
+            return Err(Error::new_spanned(
+                self.value,
+                format!("qualifier `{}` does not take a value", self.keyword),
+            ));
+        }
+        if qualifiers.contains(value) {
+            return Err(Error::new(
+                self.keyword_span,
+                "this qualifier is redundant; remove it",
+            ));
+        }
+        *qualifiers |= value;
+        Ok(())
+    }
+
     fn parse_preconditions(self, preconditions: &mut Vec<PreCondition>) -> Result<()> {
         let cfg_attr = find_cfg_attribute(&self.attrs)?;
         let cfg: Option<Meta> = if let Some(attr) = cfg_attr {

@@ -10,6 +10,7 @@ pub fn assert_tokens_eq(left: &impl ToTokens, right: &impl ToTokens) {
 pub fn assert_spec_eq(left: &Spec, right: &Spec) {
     // Destructure to ensure we handle all fields - compilation will fail if fields are added
     let Spec {
+        qualifiers: left_qualifiers,
         requires: left_requires,
         maintains: left_maintains,
         captures: left_captures,
@@ -18,12 +19,18 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
     } = left;
 
     let Spec {
+        qualifiers: right_qualifiers,
         requires: right_requires,
         maintains: right_maintains,
         captures: right_captures,
         ensures: right_ensures,
         span: _,
     } = right;
+
+    assert_eq!(
+        left_qualifiers, right_qualifiers,
+        "qualifiers do not match: {left_qualifiers:?} vs {right_qualifiers:?}"
+    );
 
     assert_slice_eq(
         left_requires,

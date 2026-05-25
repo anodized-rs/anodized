@@ -125,6 +125,7 @@ impl<'a> Formatter<'a> {
 
         // Format the value based on what it contains
         let value_str = match &arg.value {
+            SpecArgValue::None => String::new(),
             SpecArgValue::Expr(expr) => {
                 // Special handling for arrays to format with proper indentation
                 if let syn::Expr::Array(array) = expr {
@@ -138,7 +139,11 @@ impl<'a> Formatter<'a> {
             SpecArgValue::Captures(captures) => self.format_captures(captures),
         };
 
-        self.write(&format!("{}: {},", arg.keyword, value_str));
+        if value_str.is_empty() {
+            self.write(&format!("{},", arg.keyword));
+        } else {
+            self.write(&format!("{}: {},", arg.keyword, value_str));
+        }
     }
 
     /// Format a group of captures.
