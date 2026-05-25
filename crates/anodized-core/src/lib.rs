@@ -45,7 +45,8 @@ impl Spec {
 
     /// Returns `true` if the spec is empty (specifies nothing), otherwise returns `false`.
     pub fn is_empty(&self) -> bool {
-        self.requires.is_empty()
+        self.qualifiers.is_empty()
+            && self.requires.is_empty()
             && self.maintains.is_empty()
             && self.ensures.is_empty()
             && self.captures.is_empty()
