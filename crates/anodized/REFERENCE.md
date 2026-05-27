@@ -108,6 +108,148 @@ use anodized::spec;
 fn push_checked<T>(vec: &mut Vec<T>, value: T) { todo!() }
 ```
 
+### `captures`: Capture Entry-Time Values
+
+Sometimes postconditions need to compare the function's final state with its initial state. The `captures` parameter lets you capture values at function entry for use in postconditions.
+
+```rust, no_run
+use anodized::spec;
+
+#[spec(
+    captures: [
+        // Copy types: captured directly
+        items.len() as orig_len,
+        // Non-Copy types: use .clone() explicitly
+        items.clone() as orig_items,
+    ],
+    ensures: [
+        items.len() == orig_len + 1,
+        items[0] == orig_items[0],
+    ],
+)]
+fn add_item<T: Clone + Eq>(items: &mut Vec<T>, item: T) { todo!() }
+
+// A capture may have a pattern to destructure tuples, structs, arrays, and other composite types:
+#[spec(
+    captures: triple as (first, second, third),
+    ensures: [
+        first == triple.0,
+        second == triple.1,
+        third == triple.2,
+    ],
+)]
+fn match_tuple(triple: (bool, char, i32)) { todo!() }
+```
+
+- **Simple identifiers** get an automatic `old_` prefix, i.e. `x` becomes `old_x`.
+- **Complex expressions** require an explicit alias using `as`, i.e. `self.items.len() as orig_len`.
+- **Patterns** may be used to destructure the captured value, e.g. `person.clone() as Person { name, age }`.- **No automatic cloning**: Each captured expression is **moved**. For a `Copy` type, a copy is made implicitly. For a non-`Copy` type, you must explicitly use `.clone()`, `.to_owned()`, or another appropriate method.
+- Capturing happens **after** preconditions are checked but **before** the function body executes.
+- The captured values are **only** available to postconditions, not to preconditions or the function body itself.
+
+### `binds`: Bind the Return Value
+
+In **postconditions** (`ensures`), you can refer to the function's return value by the default name `output`.
+
+```rust, no_run
+use anodized::spec;
+
+#[spec(
+    ensures: *output > 0,
+)]
+fn get_positive_value() -> i32 { todo!() }
+```
+
+**Note** that a postcondition is a closure that takes the function's return value by reference. When you write a postcondition as a "naked" expression `<EXPR>`, that is shorthand for `|<PATTERN>| <EXPR>`, where `<PATTERN>` is the spec-wide binding. In error messages, a postcondition is always displayed as a closure to make it clear (e.g. `| output | *output > 0`).
+
+The default spec-wide binding is `output`. If that collides with an existing identifier, you can choose a different name for it in two ways:
+
+**1. Spec-Wide Binding**: Use the `binds` parameter to set a new name for the return value across all postconditions in the specification. It must be placed immediately before any `ensures` conditions.
+
+```rust, no_run
+use anodized::spec;
+
+#[spec(
+    binds: new_value,
+    ensures: *new_value > old_value,
+)]
+fn increment(old_value: i32) -> i32 { todo!() }
+```
+
+**2. Explicit Binding**: Write the postcondition with an explicit binding, i.e. as a closure `|<PATTERN>| <EXPR>`. This has the highest precedence and affects only that single condition.
+
+```rust, no_run
+use anodized::spec;
+
+#[spec(
+    ensures: [
+        // This postcondition uses the default binding.
+        output.is_ascii(),
+        // This postcondition binds the output as `c`.
+        |c| c.is_digit(16),
+    ],
+)]
+fn create_data() -> char { todo!() }
+```
+
+**3. Binding Precedence**: The explicit binding takes precedence; same as in Rust. Plain postconditions still use the spec-wide binding.
+
+```rust, no_run
+use anodized::spec;
+
+// A function where 'output' is an argument name, requiring a different name.
+#[spec(
+    // Set a spec-wide binding for the return value: `result`.
+    binds: result,
+    ensures: [
+        // This postcondition uses the spec-wide binding: `result`.
+        *result > output,
+        // This postcondition uses an explicit binding: `val`.
+        |val| *val % 2 == 0,
+    ],
+)]
+fn calculate_even_result(output: i32) -> i32 { todo!() }
+```
+
+**4. Beyond Names: Destructuring Return Values**
+
+Bindings also lets you destructure return values, making complex postconditions easier to read and write. You can use any valid Rust pattern, including tuple patterns, struct patterns, or even more complex nested patterns.
+
+```rust, no_run
+use anodized::spec;
+
+#[spec(
+    // Destructure the returned tuple into `(a, b)`.
+    binds: (a, b),
+    // Postconditions can now use the bound variables `a` and `b`.
+    ensures: [
+        a <= b,
+        // They can also reference the arguments.
+        (*a, *b) == pair || (*b, *a) == pair,
+    ],
+)]
+fn sort_pair(pair: (i32, i32)) -> (i32, i32) { todo!() }
+```
+
+**5. Example With All Function Spec Arguments**
+
+```rust, no_run
+use anodized::spec;
+
+#[spec(
+    requires: *balance >= amount,
+    maintains: *balance >= 0,
+    captures: *balance as initial_balance,
+    binds: (new_balance, receipt_amount),
+    ensures: [
+        *new_balance == initial_balance - amount,
+        *receipt_amount == amount,
+        *balance == *new_balance,
+    ],
+)]
+fn withdraw(balance: &mut u64, amount: u64) -> (u64, u64) { todo!() }
+```
+
 ### Loop Specs
 
 Anodized supports specs on loops to ensure correctness and bounded iteration.
@@ -270,145 +412,3 @@ Important restrictions:
 
 - Runtime checks are **not implemented** yet.
 - Only the `maintains` spec parameter is supported.
-
-### `captures`: Capture Entry-Time Values
-
-Sometimes postconditions need to compare the function's final state with its initial state. The `captures` parameter lets you capture values at function entry for use in postconditions.
-
-```rust, no_run
-use anodized::spec;
-
-#[spec(
-    captures: [
-        // Copy types: captured directly
-        items.len() as orig_len,
-        // Non-Copy types: use .clone() explicitly
-        items.clone() as orig_items,
-    ],
-    ensures: [
-        items.len() == orig_len + 1,
-        items[0] == orig_items[0],
-    ],
-)]
-fn add_item<T: Clone + Eq>(items: &mut Vec<T>, item: T) { todo!() }
-
-// A capture may have a pattern to destructure tuples, structs, arrays, and other composite types:
-#[spec(
-    captures: triple as (first, second, third),
-    ensures: [
-        first == triple.0,
-        second == triple.1,
-        third == triple.2,
-    ],
-)]
-fn match_tuple(triple: (bool, char, i32)) { todo!() }
-```
-
-- **Simple identifiers** get an automatic `old_` prefix, i.e. `x` becomes `old_x`.
-- **Complex expressions** require an explicit alias using `as`, i.e. `self.items.len() as orig_len`.
-- **Patterns** may be used to destructure the captured value, e.g. `person.clone() as Person { name, age }`.- **No automatic cloning**: Each captured expression is **moved**. For a `Copy` type, a copy is made implicitly. For a non-`Copy` type, you must explicitly use `.clone()`, `.to_owned()`, or another appropriate method.
-- Capturing happens **after** preconditions are checked but **before** the function body executes.
-- The captured values are **only** available to postconditions, not to preconditions or the function body itself.
-
-### `binds`: Bind the Return Value
-
-In **postconditions** (`ensures`), you can refer to the function's return value by the default name `output`.
-
-```rust, no_run
-use anodized::spec;
-
-#[spec(
-    ensures: *output > 0,
-)]
-fn get_positive_value() -> i32 { todo!() }
-```
-
-**Note** that a postcondition is a closure that takes the function's return value by reference. When you write a postcondition as a "naked" expression `<EXPR>`, that is shorthand for `|<PATTERN>| <EXPR>`, where `<PATTERN>` is the spec-wide binding. In error messages, a postcondition is always displayed as a closure to make it clear (e.g. `| output | *output > 0`).
-
-The default spec-wide binding is `output`. If that collides with an existing identifier, you can choose a different name for it in two ways:
-
-**1. Spec-Wide Binding**: Use the `binds` parameter to set a new name for the return value across all postconditions in the specification. It must be placed immediately before any `ensures` conditions.
-
-```rust, no_run
-use anodized::spec;
-
-#[spec(
-    binds: new_value,
-    ensures: *new_value > old_value,
-)]
-fn increment(old_value: i32) -> i32 { todo!() }
-```
-
-**2. Explicit Binding**: Write the postcondition with an explicit binding, i.e. as a closure `|<PATTERN>| <EXPR>`. This has the highest precedence and affects only that single condition.
-
-```rust, no_run
-use anodized::spec;
-
-#[spec(
-    ensures: [
-        // This postcondition uses the default binding.
-        output.is_ascii(),
-        // This postcondition binds the output as `c`.
-        |c| c.is_digit(16),
-    ],
-)]
-fn create_data() -> char { todo!() }
-```
-
-**3. Binding Precedence**: The explicit binding takes precedence; same as in Rust. Plain postconditions still use the spec-wide binding.
-
-```rust, no_run
-use anodized::spec;
-
-// A function where 'output' is an argument name, requiring a different name.
-#[spec(
-    // Set a spec-wide binding for the return value: `result`.
-    binds: result,
-    ensures: [
-        // This postcondition uses the spec-wide binding: `result`.
-        *result > output,
-        // This postcondition uses an explicit binding: `val`.
-        |val| *val % 2 == 0,
-    ],
-)]
-fn calculate_even_result(output: i32) -> i32 { todo!() }
-```
-
-**4. Beyond Names: Destructuring Return Values**
-
-Bindings also lets you destructure return values, making complex postconditions easier to read and write. You can use any valid Rust pattern, including tuple patterns, struct patterns, or even more complex nested patterns.
-
-```rust, no_run
-use anodized::spec;
-
-#[spec(
-    // Destructure the returned tuple into `(a, b)`.
-    binds: (a, b),
-    // Postconditions can now use the bound variables `a` and `b`.
-    ensures: [
-        a <= b,
-        // They can also reference the arguments.
-        (*a, *b) == pair || (*b, *a) == pair,
-    ],
-)]
-fn sort_pair(pair: (i32, i32)) -> (i32, i32) { todo!() }
-```
-
-### Example With All Specification Parameters
-
-```rust, no_run
-use anodized::spec;
-
-#[spec(
-    requires: *balance >= amount,
-    maintains: *balance >= 0,
-    captures: *balance as initial_balance,
-    binds: (new_balance, receipt_amount),
-    ensures: [
-        *new_balance == initial_balance - amount,
-        *receipt_amount == amount,
-        *balance == *new_balance,
-    ],
-)]
-fn withdraw(balance: &mut u64, amount: u64) -> (u64, u64) { todo!() }
-```
