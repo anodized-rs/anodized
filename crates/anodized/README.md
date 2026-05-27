@@ -10,38 +10,29 @@
 
 # Anodized
 
-Anodized is a system that helps **enforce complex specifications** beyond Rust's built-in static analysis capabilities. In contrast to other systems, Anodized **works on stable Rust** and **does not alter the language or the toolchain** in any way. Going beyond that, Anodized **makes it easy for static analysis tools** to deeply integrate with Rust without duplicating parts of the language or the toolchain.
+In short: `anodized` is to specification what `serde` is to serialization.
 
-## The `spec` Annotation: Anodized's Workhorse
+Anodized is a unified specification layer for Rust: it allows writing specs directly in Rust. The specs can **express complex properties** that go far beyond what the type system supports. Anodized **works on stable Rust** and does not alter the language or the toolchain in any way, staying compatible with components such as `rust-analyzer`. Besides expressing specs, Anodized also helps enforce them by **providing integration points** for tools such as fuzzers, property-based testing, formal verifiers, and so on.
+
+## The `spec` Attribute
 
 <img style="max-width:630px;" alt="editor integration demo" src="https://raw.githubusercontent.com/mkovaxx/anodized/main/assets/anodized-editor-integration.gif">
 
-- **expressive**: Write preconditions, postconditions, and invariants as ordinary Rust expressions.
-- **integrated**: Parsed and validated on every build, even with runtime checks disabled.
-- **automated**: Runtime checks out of the box, with fuzzing and static analysis on the roadmap.
+- **highly expressive**: Write pre/postconditions, loop invariants, and type refinements: all in the standard Rust you already know.
+- **deeply integrated**: Syntax/type-checked by the compiler, and understood by `rust-analyzer` - no need for special components.
+- **widely compatible**: Validate the specs with any combination of runtime checks, fuzzers, model checkers, or formal provers.
 
-**Anodized `spec` Annotations vs Comments, Assertions, and Types**
-
-|              | Anodized | Comments | Assertions | Types |
-| ------------ | -------- | -------- | ---------- | ----- |
-| Expressivity | High     | Highest  | High       | Low   |
-| Validated    | Yes      | No       | Yes        | Yes   |
-| Centralized  | Yes      | No       | No         | Yes   |
-| Tool-Ready   | Yes      | No       | No         | No    |
-
-## Anodized in the Rust Verification Ecosystem
-
-Anodized is to verification what `serde` is to serialization.
+## Anodized in the Rust Correctness Ecosystem
 
 The Rust Team is building [native contract support](https://github.com/rust-lang/rust/issues/128044) into the language. We hope that learnings from Anodized will help their work, and we plan to offer a migration tool so that Anodized users can switch to Rust-native contracts as soon as they're ready.
 
-Rust has many excellent verification tools (Aeneas, Creusot, Flux, Hax, Kani, Prusti, Verus, and more). Their wider adoption is limited by the following key issues:
+Rust has many excellent verification tools: Aeneas, Creusot, Flux, Hax, Kani, Prusti, Verus, just to name a few. Their wider adoption is limited by the following key issues:
 
-- Modifying Rust (the language or the toolchain) make learning and use more difficult.
+- Modifications to Rust (the language or the toolchain) make learning and use more difficult.
 - Differences make using a combination of tools difficult and increase switching costs.
 - Keeping modified components in sync with upstream Rust is more work for tool developers.
 
-Anodized aims to help other systems become easier to maintain and use by solving those problems. Developers of verification systems can focus on the analysis itself and avoid duplicating the effort of defining and processing specifications. Users can write their specifications once, and gain access to a wide range of capabilities including runtime checks, fuzzing, static analysis, and more.
+Anodized aims to help other systems become easier to maintain and use by solving those problems. Developers of verification systems can focus on the analysis itself and avoid duplicating the effort of defining and processing specifications. Users can write their specs once, and gain access to a wide range of enforcement approaches including runtime checks, fuzzing, verification, and more.
 
 **How Anodized's Goals Are Different**
 
