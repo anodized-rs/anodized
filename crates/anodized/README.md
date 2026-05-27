@@ -8,6 +8,8 @@
 
 > Harden your Rust with **specifications**.
 
+The detailed reference is here: [The Anodized Reference](REFERENCE.md).
+
 # Anodized
 
 In short: `anodized` is to specification what `serde` is to serialization.
@@ -88,7 +90,7 @@ A spec violation will cause a panic with a descriptive error message:
 thread 'main' panicked at 'Precondition failed: part <= whole', src/main.rs:17:5
 ```
 
-See the Manual for more details and other approaches.
+For more details and other approaches, see [The Anodized Reference](REFERENCE.md).
 
 ## Why Anodized
 

@@ -1,4 +1,4 @@
-# The Anodized Manual
+# The Anodized Reference
 
 ## `spec` Support
 
