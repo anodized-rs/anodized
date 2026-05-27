@@ -13,7 +13,7 @@ version = "0.4.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/mkovaxx/anodized"
-description = "An ecosystem for correct Rust based on lightweight specification annotations"
+description = "A common specification layer for Rust"
 categories = [
     "development-tools",
     "development-tools::procedural-macro-helpers",

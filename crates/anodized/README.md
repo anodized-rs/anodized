@@ -8,92 +8,21 @@
 
 > Harden your Rust with **specifications**.
 
+**The detailed reference is here: [The Anodized Reference](https://github.com/mkovaxx/anodized/blob/main/crates/anodized/REFERENCE.md).**
+
 # Anodized
 
-Anodized is a system that helps **enforce complex specifications** beyond Rust's built-in static analysis capabilities. In contrast to other systems, Anodized **works on stable Rust** and **does not alter the language or the toolchain** in any way. Going beyond that, Anodized **makes it easy for static analysis tools** to deeply integrate with Rust without duplicating parts of the language or the toolchain.
+In short: `anodized` is to specification what `serde` is to serialization.
 
-## The `spec` Annotation: Anodized's Workhorse
+Anodized is a common specification layer for Rust: it allows writing specs directly in Rust. The specs can **express complex properties** that go far beyond what the type system supports. Anodized **works on stable Rust** and does not alter the language or the toolchain in any way, staying compatible with components such as `rust-analyzer`. Besides expressing specs, Anodized also helps enforce them by **providing integration points** for tools such as fuzzers, property-based testing, formal verifiers, and so on.
+
+## The `spec` Attribute
+
+- **highly expressive**: Write pre/postconditions, loop invariants, and type refinements: all in the standard Rust you already know.
+- **deeply integrated**: Syntax/type-checked by the compiler, and understood by `rust-analyzer` - no need for special components.
+- **widely compatible**: Validate the specs with any combination of runtime checks, fuzzers, model checkers, or formal provers.
 
 <img style="max-width:630px;" alt="editor integration demo" src="https://raw.githubusercontent.com/mkovaxx/anodized/main/assets/anodized-editor-integration.gif">
-
-- **expressive**: Write preconditions, postconditions, and invariants as ordinary Rust expressions.
-- **integrated**: Parsed and validated on every build, even with runtime checks disabled.
-- **automated**: Runtime checks out of the box, with fuzzing and static analysis on the roadmap.
-
-**Anodized `spec` Annotations vs Comments, Assertions, and Types**
-
-|              | Anodized | Comments | Assertions | Types |
-| ------------ | -------- | -------- | ---------- | ----- |
-| Expressivity | High     | Highest  | High       | Low   |
-| Validated    | Yes      | No       | Yes        | Yes   |
-| Centralized  | Yes      | No       | No         | Yes   |
-| Tool-Ready   | Yes      | No       | No         | No    |
-
-## Anodized in the Rust Verification Ecosystem
-
-Anodized is to verification what `serde` is to serialization.
-
-The Rust Team is building [native contract support](https://github.com/rust-lang/rust/issues/128044) into the language. We hope that learnings from Anodized will help their work, and we plan to offer a migration tool so that Anodized users can switch to Rust-native contracts as soon as they're ready.
-
-Rust has many excellent verification tools (Aeneas, Creusot, Flux, Hax, Kani, Prusti, Verus, and more). Their wider adoption is limited by the following key issues:
-
-- Modifying Rust (the language or the toolchain) make learning and use more difficult.
-- Differences make using a combination of tools difficult and increase switching costs.
-- Keeping modified components in sync with upstream Rust is more work for tool developers.
-
-Anodized aims to help other systems become easier to maintain and use by solving those problems. Developers of verification systems can focus on the analysis itself and avoid duplicating the effort of defining and processing specifications. Users can write their specifications once, and gain access to a wide range of capabilities including runtime checks, fuzzing, static analysis, and more.
-
-**How Anodized's Goals Are Different**
-
-| System      | Language | Toolchain | Static | Runtime | API | Focus            |
-| ----------- | -------- | --------- | ------ | ------- | --- | ---------------- |
-| Anodized    | Standard | Stable    | Yes    | Yes     | Yes | Interoperability |
-| Aeneas      | Modified | Custom    | Yes    | No      | Yes | Static Analysis  |
-| `contracts` | Modified | Stable    | No     | Yes     | No  | Runtime Checks   |
-| Creusot     | Modified | Custom    | Yes    | No      | No  | Static Analysis  |
-| Flux        | Modified | Nightly   | Yes    | No      | No  | Refinement Types |
-| Kani        | Modified | Custom    | Yes    | No      | No  | Static Analysis  |
-| Prusti      | Modified | Nightly   | Yes    | No      | No  | Static Analysis  |
-| Verus       | Modified | Custom    | Yes    | No      | No  | Static Analysis  |
-
-## Roadmap
-
-Anodized aims to become a common layer across runtime checks, fuzzing, and verification.
-
-**`#[spec]` Support**
-
-| Program Element       | Status                    | Notes                                |
-| --------------------- | ------------------------- | ------------------------------------ |
-| free-standing `fn`    | Available                 | Pre- and postconditions, invariants. |
-| `fn` inside an `impl` | Available                 | Pre- and postconditions, invariants. |
-| `fn` inside a `trait` | [Available](#trait-specs) | Enforces each `impl` to conform.     |
-| `for` and `while`     | [Available](#loop-specs)  | Loop invariants and variant (bound). |
-| `struct` and `enum`   | [Available](#data-specs)  | Refinements to constrain instances.  |
-| `mod`                 | In Progress               | Invariants across multiple entities. |
-
-**Build Configurations**
-
-| `--cfg` setting  | Status    | A `spec` violation...  |
-| ---------------- | --------- | ---------------------- |
-| `anodized_print` | Available | prints an error        |
-| `anodized_panic` | Available | causes a panic         |
-| `anodized_log`   | Planned   | writes to a log        |
-| `anodized_trace` | Planned   | emits a trace event    |
-| `anodized_trap`  | Planned   | breaks into a debugger |
-
-**NOTE**: You can use `anodized_discard_specs` to disable embedding the specs as Rust code. Note that this has **no effect on runtime performance** because the embedded specs are always dead code. However, it **prevents spec validation** by the Rust compiler (for syntax, scope, and types), and may thus decrease compilation speed.
-
-**Analyzer Integrations**
-
-| System  | Status      | Notes                 |
-| ------- | ----------- | --------------------- |
-| Aeneas  | Planned     | Integrate with Charon |
-| Creusot | Planned     |                       |
-| Flux    | Planned     |                       |
-| Hax     | In Progress | Uses `hax_lib` macros |
-| Kani    | Planned     |                       |
-| Prusti  | Planned     |                       |
-| Verus   | Planned     | Emit VIR              |
 
 ## Quickstart
 
@@ -104,15 +33,7 @@ Anodized aims to become a common layer across runtime checks, fuzzing, and verif
 anodized = { version = "0.4.0" }
 ```
 
-Then compile with an `anodized_*` build setting:
-
-```bash
-RUSTFLAGS="--cfg anodized_panic" cargo run
-```
-
-See the [Build Configurations](#build-configurations) section for other options.
-
-**2. Add specifications to your code.**
+**2. Extend your code with specs.**
 
 Use the `#[spec]` attribute to attach preconditions and postconditions to functions, invariants to loops, and refinements to data types. Each _condition_ is a standard Rust expression that evaluates to `bool`.
 
@@ -133,420 +54,63 @@ use anodized::spec;
 fn calculate_percentage(part: f64, whole: f64) -> f64 {
     100.0 * part / whole
 }
+```
 
-fn main() {
+**3. Validate your code against the specs.**
+
+Use one or more enforcement tool.
+
+The easiest is runtime checks, which Anodized provides out of the box.
+
+All you need is tests that make function calls.
+
+```rust,no_run
+#[test]
+fn percentage_25_over_100() {
     // This call satisfies the spec and runs fine.
     println!("25 out of 100 = {}%", calculate_percentage(25.0, 100.0));
+}
 
+#[test]
+fn percentage_10_over_0() {
     // This call violates the precondition and will panic.
     println!("10 out of 0 = {}%", calculate_percentage(10.0, 0.0));
 }
 ```
 
-**3. Run or test your code as usual.**
+Use the `anodized_panic` setting to instrument the code with runtime checks.
 
-Your code is automatically instrumented to check the specifications at runtime. A spec violation will cause a panic with a descriptive error message:
+```bash
+RUSTFLAGS="--cfg anodized_panic" cargo test
+```
+
+A spec violation will cause a panic with a descriptive error message:
 
 ```text
 thread 'main' panicked at 'Precondition failed: part <= whole', src/main.rs:17:5
 ```
 
-Runtime checks are active when you compile with `--cfg anodized_panic` or `--cfg anodized_print`. You can additionally use `#[cfg]` attributes on individual conditions to control when checks run (see the [#[cfg] section](#cfg-configure-runtime-checks) below).
+For more details and other approaches, see [The Anodized Reference](https://github.com/mkovaxx/anodized/blob/main/crates/anodized/REFERENCE.md).
 
-**Important:** Even when a condition's runtime check is disabled via a `#[cfg]` build setting, the compiler still validates that condition at compile time for syntax errors, unknown identifiers, type mismatches, etc.
+## Why Anodized
 
-## `#[spec]`: Specifications
+The Rust Team is building [native contract support](https://github.com/rust-lang/rust/issues/128044) into the language. We hope that learnings from Anodized will help their work, and we plan to offer a migration tool so that Anodized users can switch to Rust-native contracts as soon as they're ready.
 
-The `#[spec]` attribute provides a powerful and ergonomic way to define specifications.
+Rust has many excellent verification tools: Aeneas, Creusot, Flux, Hax, Kani, Prusti, Verus, just to name a few. Their wider adoption is limited by the following key issues:
 
-### Preconditions, Postconditions, and Invariants
+- Modifications to Rust (the language or the toolchain) make learning and use more difficult.
+- Differences make using a combination of tools difficult and increase switching costs.
+- Keeping modified components in sync with upstream Rust is more work for tool developers.
 
-Specifications are built from conditions, which come in three flavors:
+By adopting Anodized as a frontend, developers of verification systems can focus on the analysis itself and avoid duplicating the effort of defining and processing specs. Users can write their specs once, and gain access to a wide range of enforcement tools including runtime checks, fuzzing, verification, and more.
 
-- **`requires: <conditions>`: Preconditions** must be true when the function is called.
+## Why Write Specs as Rust Code
 
-- **`ensures: <conditions>`: Postconditions** must be true when the function returns.
+A core design principle of Anodized is that a spec uses **standard Rust syntax**. This is a deliberate choice that provides key benefits over using a custom language.
 
-- **`maintains: <conditions>`: Invariants** must hold true both before and after the function runs. It's most useful for expressing properties of `self` that a method must preserve.
+- **The Language You Already Know**: No need to learn yet another language to write the specs. Write them in the one you already know: standard Rust. Call functions, use macros (like `matches!`), or write `if` and `match` expressions, and so on. As long as it syntax- and type-checks, it's good to go.
 
-For convenience, `<conditions>` can be either a single condition or a list (i.e. `[<condition>, <condition>, ...]`).
-
-The conditions must be given in the following order: `requires`, `maintains`, and `ensures`. This order is enforced to mirror the logical flow of a function's execution: preconditions (`requires`) are checked upon entry, invariants (`maintains`) must hold true upon both entry and exit, and postconditions (`ensures`) are checked upon exit.
-
-A condition is a `bool`-valued Rust expression; as simple as that. This is a non-trivial design choice, so its benefits are explained in the section below: [Why Conditions Are Rust Expressions](#why-conditions-are-rust-expressions).
-
-You can include any number of each flavor. Multiple conditions of the same flavor are combined with a logical **AND** (`&&`).
-
-```rust, no_run
-use anodized::spec;
-
-#[spec(
-    // Precondition: the vector must have room for at least one more element
-    requires: vec.len() < vec.capacity() || vec.capacity() == 0,
-    // Invariant: length never exceeds capacity
-    maintains: vec.len() <= vec.capacity(),
-)]
-fn push_checked<T>(vec: &mut Vec<T>, value: T) { todo!() }
-```
-
-### Loop Specs
-
-Anodized supports specs on loops to ensure correctness and bounded iteration.
-
-Loop specs support the following elements:
-
-- `maintains`: Loop invariants that must hold both before and after each iteration.
-- `decreases`: A loop variant expression that shows strict progress toward termination.
-
-**On a `for` Loop**
-
-```rust, no_run
-use anodized::spec;
-
-#[spec(
-    ensures: [
-        seq.iter().any(|elem| elem == output),
-        seq.iter().all(|elem| elem <= output),
-    ],
-)]
-fn find_maximum(seq: &[u8]) -> u8 {
-    let mut max = 0;
-
-    #[spec(
-        maintains: seq[0..i].iter().all(|elem| elem <= &max),
-    )]
-    for i in 0..seq.len() {
-        if seq[i] > max {
-            max = seq[i]
-        }
-    }
-
-    max
-}
-```
-
-**On a `while` Loop**
-
-```rust, no_run
-use anodized::spec;
-
-#[spec(
-    requires: seq.is_sorted(),
-    ensures: [
-        *output <= seq.len(),
-        seq[0..*output].iter().all(|item| item < value),
-        seq[*output..].iter().all(|item| item >= value),
-    ],
-)]
-fn find_insert_position<T: Ord>(seq: &[T], value: &T) -> usize {
-    let mut i = 0;
-
-    #[spec(
-        maintains: seq[0..i].iter().all(|item| item < value),
-        decreases: seq.len() - i,
-    )]
-    while i < seq.len() && seq[i] < *value {
-        i += 1;
-    }
-
-    i
-}
-```
-
-Important restrictions:
-
-- The **containing function** must have a `#[spec]` attribute.
-- Runtime checking loop specs is **planned but not yet implemented**.
-
-### Trait Specs
-
-Anodized supports specs on trait methods, which automatically constrain all implementations.
-
-Use the following structure:
-
-1. Put `#[spec]` on the trait.
-2. Put method-level `#[spec(...)]` on trait methods that define requirements.
-3. Put `#[spec]` on each corresponding trait `impl`.
-4. (Optional) Put `#[spec(...)]` on impl `fn`s to narrow the trait's spec.
-
-```rust, no_run
-use anodized::spec;
-
-#[spec]
-trait MonotonicGenerator {
-    fn current(&self) -> i32;
-
-    #[spec(
-        captures: self.current() as old_val,
-        ensures: self.current() > old_val,
-    )]
-    fn update(&mut self);
-}
-
-struct Counter(i32);
-
-#[spec]
-impl MonotonicGenerator for Counter {
-    fn current(&self) -> i32 {
-        self.0
-    }
-
-    fn update(&mut self) {
-        self.0 += 1;
-    }
-}
-```
-
-Important restrictions:
-
-- The trait-level (or impl-level) `#[spec]` is an enabler; specification clauses belong on `fn`s, not on the trait (or impl) itself.
-- Only a `fn` item may have a spec, other trait items (`const`, `type`, etc.) are not supported.
-- A spec on an impl `fn` must **narrow** the spec of the trait `fn`. This is a consequence of the [Liskov substitution principle](https://en.wikipedia.org/wiki/Liskov_substitution_principle).
-  - Runtime checks enforce narrowing.
-  - Static analyzers **must validate** narrowing as part of verification.
-- Names prefixed with `__anodized_` are internal and must not be implemented directly.
-
-### Data Specs
-
-Anodized supports specs on data types, meant to constrain all instances. This capability is equivalent to refinement types.
-
-**On a Struct**
-
-```rust, no_run
-use anodized::spec;
-
-#[spec(maintains: self.a.pow(2) + self.b.pow(2) == self.c.pow(2))]
-struct PythagoreanTriple {
-    a: u32,
-    b: u32,
-    c: u32,
-}
-
-#[spec(maintains: !self.0.is_empty())]
-struct NonEmptyVec<T>(Vec<T>);
-
-#[spec(maintains: self.0.iter().rev().eq(&self.0))]
-struct PalindromeVec<T: Eq>(Vec<T>);
-```
-
-**On an Enum**
-
-```rust, no_run
-use anodized::spec;
-
-#[spec(
-    maintains: match self {
-        Ascending(vec) => vec.is_sorted(),
-        Descending(vec) => vec.iter().rev().is_sorted(),
-    }
-)]
-#[allow(unused)]
-enum MonotonicVec<T: Ord> {
-    Ascending(Vec<T>),
-    Descending(Vec<T>),
-}
-```
-
-Important restrictions:
-
-- Runtime checks are **not implemented** yet.
-- Only the `maintains` spec parameter is supported.
-
-### Build Configurations
-
-Anodized uses `cfg` options to control how each `#[spec]` changes the Rust code.
-
-- **`anodized_print`**: Reports each violation with `eprintln!`, so execution can continue. Useful for experiments, logging, etc.
-- **`anodized_panic`**: Checks each condition via an `assert!`, so a violation panics with a descriptive message.
-
-Select the desired options via compiler `cfg` flags, for example:
-
-```bash
-RUSTFLAGS="--cfg anodized_print" cargo test
-```
-
-To disable runtime checks completely, run without any `anodized_*` options.
-
-Future options (log, trace, breakpoint, etc.) will use the same `cfg`-based mechanism.
-
-### Attribute Support
-
-With `anodized_panic` or `anodized_print`, each condition is checked at runtime. You can use the standard `#[cfg]` attribute to select build configurations under which a condition is checked.
-
-```rust, no_run
-use anodized::spec;
-
-#[spec(
-    // Runtime checks only during `cargo test`.
-    #[cfg(test)]
-    requires: input > 0,
-
-    // Runtime checks only in debug builds (like `debug_assert!`)
-    #[cfg(debug_assertions)]
-    ensures: output.is_ok(),
-)]
-fn perform_complex_operation(input: i32) -> Result<i32, String> { todo!() }
-```
-
-The `#[cfg]` attribute follows standard Rust semantics: when the configuration predicate is false, the runtime check for the condition is completely omitted.
-
-**Important:** Anodized guarantees that each condition remains syntactically valid and type-correct regardless of its `#[cfg]` settings. This prevents conditions from becoming invalid between different build configurations, and keeps the entire spec always visible to analysis tools.
-
-**Common Patterns:**
-
-- `#[cfg(debug_assertions)]`: Check only in debug builds (like `debug_assert!`).
-- `#[cfg(test)]`: Check only during testing.
-- No `#[cfg]`: Always check (like `assert!`).
-
-### `captures`: Capture Entry-Time Values
-
-Sometimes postconditions need to compare the function's final state with its initial state. The `captures` parameter lets you capture values at function entry for use in postconditions.
-
-```rust, no_run
-use anodized::spec;
-
-#[spec(
-    captures: [
-        // Copy types: captured directly
-        items.len() as orig_len,
-        // Non-Copy types: use .clone() explicitly
-        items.clone() as orig_items,
-    ],
-    ensures: [
-        items.len() == orig_len + 1,
-        items[0] == orig_items[0],
-    ],
-)]
-fn add_item<T: Clone + Eq>(items: &mut Vec<T>, item: T) { todo!() }
-
-// A capture may have a pattern to destructure tuples, structs, arrays, and other composite types:
-#[spec(
-    captures: triple as (first, second, third),
-    ensures: [
-        first == triple.0,
-        second == triple.1,
-        third == triple.2,
-    ],
-)]
-fn match_tuple(triple: (bool, char, i32)) { todo!() }
-```
-
-- **Simple identifiers** get an automatic `old_` prefix, i.e. `x` becomes `old_x`.
-- **Complex expressions** require an explicit alias using `as`, i.e. `self.items.len() as orig_len`.
-- **Patterns** may be used to destructure the captured value, e.g. `person.clone() as Person { name, age }`.- **No automatic cloning**: Each captured expression is **moved**. For a `Copy` type, a copy is made implicitly. For a non-`Copy` type, you must explicitly use `.clone()`, `.to_owned()`, or another appropriate method.
-- Capturing happens **after** preconditions are checked but **before** the function body executes.
-- The captured values are **only** available to postconditions, not to preconditions or the function body itself.
-
-### `binds`: Bind the Return Value
-
-In **postconditions** (`ensures`), you can refer to the function's return value by the default name `output`.
-
-```rust, no_run
-use anodized::spec;
-
-#[spec(
-    ensures: *output > 0,
-)]
-fn get_positive_value() -> i32 { todo!() }
-```
-
-**Note** that a postcondition is a closure that takes the function's return value by reference. When you write a postcondition as a "naked" expression `<EXPR>`, that is shorthand for `|<PATTERN>| <EXPR>`, where `<PATTERN>` is the spec-wide binding. In error messages, a postcondition is always displayed as a closure to make it clear (e.g. `| output | *output > 0`).
-
-The default spec-wide binding is `output`. If that collides with an existing identifier, you can choose a different name for it in two ways:
-
-**1. Spec-Wide Binding**: Use the `binds` parameter to set a new name for the return value across all postconditions in the specification. It must be placed immediately before any `ensures` conditions.
-
-```rust, no_run
-use anodized::spec;
-
-#[spec(
-    binds: new_value,
-    ensures: *new_value > old_value,
-)]
-fn increment(old_value: i32) -> i32 { todo!() }
-```
-
-**2. Explicit Binding**: Write the postcondition with an explicit binding, i.e. as a closure `|<PATTERN>| <EXPR>`. This has the highest precedence and affects only that single condition.
-
-```rust, no_run
-use anodized::spec;
-
-#[spec(
-    ensures: [
-        // This postcondition uses the default binding.
-        output.is_ascii(),
-        // This postcondition binds the output as `c`.
-        |c| c.is_digit(16),
-    ],
-)]
-fn create_data() -> char { todo!() }
-```
-
-**3. Binding Precedence**: The explicit binding takes precedence; same as in Rust. Plain postconditions still use the spec-wide binding.
-
-```rust, no_run
-use anodized::spec;
-
-// A function where 'output' is an argument name, requiring a different name.
-#[spec(
-    // Set a spec-wide binding for the return value: `result`.
-    binds: result,
-    ensures: [
-        // This postcondition uses the spec-wide binding: `result`.
-        *result > output,
-        // This postcondition uses an explicit binding: `val`.
-        |val| *val % 2 == 0,
-    ],
-)]
-fn calculate_even_result(output: i32) -> i32 { todo!() }
-```
-
-**4. Beyond Names: Destructuring Return Values**
-
-Bindings also lets you destructure return values, making complex postconditions easier to read and write. You can use any valid Rust pattern, including tuple patterns, struct patterns, or even more complex nested patterns.
-
-```rust, no_run
-use anodized::spec;
-
-#[spec(
-    // Destructure the returned tuple into `(a, b)`.
-    binds: (a, b),
-    // Postconditions can now use the bound variables `a` and `b`.
-    ensures: [
-        a <= b,
-        // They can also reference the arguments.
-        (*a, *b) == pair || (*b, *a) == pair,
-    ],
-)]
-fn sort_pair(pair: (i32, i32)) -> (i32, i32) { todo!() }
-```
-
-### Example With All Specification Parameters
-
-```rust, no_run
-use anodized::spec;
-
-#[spec(
-    requires: *balance >= amount,
-    maintains: *balance >= 0,
-    captures: *balance as initial_balance,
-    binds: (new_balance, receipt_amount),
-    ensures: [
-        *new_balance == initial_balance - amount,
-        *receipt_amount == amount,
-        *balance == *new_balance,
-    ],
-)]
-fn withdraw(balance: &mut u64, amount: u64) -> (u64, u64) { todo!() }
-```
-
-### Why Conditions Are Rust Expressions
-
-A core design principle of Anodized is that a condition is written as a **standard Rust expression** that evaluates to `bool`. This is a deliberate choice that provides key benefits over using a custom language.
-
-- **The Language You Already Know**: No need to learn yet another language to write the conditions. Write them in the one you already know: standard Rust. Call functions, use macros (like `matches!`), or write `if` and `match` expressions, and so on. As long as it all evaluates to a `bool`, it's good to go.
-
-- **An Integral Part of Your Code**: Conditions aren't special comments or strings; they are real Rust expressions, fully integrated with your code. The Rust compiler checks every condition for syntax and type errors, just like any other part of your code. If you misspell a variable, compare incompatible types, or make any other mistake, you'll get a familiar compiler error pointing directly to the condition that needs fixing.
+- **An Integral Part of Your Code**: Specs aren't special comments or strings; they are real Rust expressions, fully integrated with your code. The Rust compiler checks every spec for syntax and type errors, just like any other part of your code. If you misspell a variable, compare incompatible types, or make any other mistake, you'll get a familiar compiler error pointing directly to the spec element that needs fixing.
 
 ## Why "Spec" Instead of "Contract"
 
@@ -572,11 +136,11 @@ The most direct and popular predecessor is the [`contracts`](https://crates.io/c
 
 Anodized differentiates itself with a few key design choices:
 
-- **Unified Attribute**: Anodized uses a single, comprehensive `#[spec]` attribute to group all conditions for a function, presenting the entire specification as one cohesive block.
+- **Unified Attribute**: Anodized uses a single, comprehensive `#[spec]` attribute, presenting each specification as one cohesive block.
 
 - **Ergonomic Focus**: The design process has been heavily focused on refining the user-facing syntax (e.g. keyword choices, return value binding) to be as intuitive, approachable, and powerful as possible.
 
-- **Ecosystem Vision**: While `contracts` is an excellent tool for runtime checking, Anodized is designed from the ground up to be a foundational layer for a wider ecosystem of diverse correctness tools, from fuzzing to formal verification.
+- **Ecosystem Vision**: While `contracts` is an excellent tool for runtime checking, Anodized is designed from the ground up to be a foundational layer for a wider ecosystem of diverse correctness tools.
 
 **Other Crates**
 
