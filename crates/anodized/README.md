@@ -14,7 +14,7 @@
 
 In short: `anodized` is to specification what `serde` is to serialization.
 
-Anodized is a unified specification layer for Rust: it allows writing specs directly in Rust. The specs can **express complex properties** that go far beyond what the type system supports. Anodized **works on stable Rust** and does not alter the language or the toolchain in any way, staying compatible with components such as `rust-analyzer`. Besides expressing specs, Anodized also helps enforce them by **providing integration points** for tools such as fuzzers, property-based testing, formal verifiers, and so on.
+Anodized is a common specification layer for Rust: it allows writing specs directly in Rust. The specs can **express complex properties** that go far beyond what the type system supports. Anodized **works on stable Rust** and does not alter the language or the toolchain in any way, staying compatible with components such as `rust-analyzer`. Besides expressing specs, Anodized also helps enforce them by **providing integration points** for tools such as fuzzers, property-based testing, formal verifiers, and so on.
 
 ## The `spec` Attribute
 
