@@ -8,7 +8,7 @@
 
 > Harden your Rust with **specifications**.
 
-The detailed reference is here: [The Anodized Reference](https://github.com/mkovaxx/anodized/blob/main/crates/anodized/REFERENCE.md).
+**The detailed reference is here: [The Anodized Reference](https://github.com/mkovaxx/anodized/blob/main/crates/anodized/REFERENCE.md).**
 
 # Anodized
 
