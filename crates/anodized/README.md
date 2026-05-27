@@ -64,7 +64,7 @@ The easiest is runtime checks, which Anodized provides out of the box.
 
 All you need is tests that make function calls.
 
-```rust
+```rust,no_run
 #[test]
 fn percentage_25_over_100() {
     // This call satisfies the spec and runs fine.
