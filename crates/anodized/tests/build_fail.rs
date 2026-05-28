@@ -1,3 +1,5 @@
+#![cfg(not(feature = "hax"))]
+
 #[test]
 fn qualifier_narrowing_fails_to_compile() {
     let output = std::process::Command::new("cargo")

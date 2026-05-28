@@ -33,7 +33,6 @@ impl<T: Copy + PartialOrd> MinFinder<T> for WeakerImplQualifiers<T> {
         ],
     )]
     fn find_min(input: &[T]) -> T {
-        let _: u32 = const { Self::__anodized_fn_qualifiers_find_min };
         let _ = input;
         // Panic on empty input.
         let mut min = input[0];

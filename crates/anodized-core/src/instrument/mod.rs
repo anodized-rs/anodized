@@ -2,10 +2,11 @@ use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{Attribute, ItemConst, ItemFn, ItemImpl, ItemTrait, Meta, Result, parse_quote};
 
-use crate::{DataSpec, Spec};
+use crate::{DataSpec, Spec, instrument::hax::haxify_fn};
 
 pub mod data;
 pub mod fns;
+pub mod hax;
 pub mod loops;
 pub mod traits;
 
@@ -67,7 +68,7 @@ impl Config {
         }
 
         if !self.emit_anything() && self.target_hax {
-            Self::build_hax_attrs(&spec, &mut item_fn.attrs);
+            haxify_fn(&spec, &mut item_fn.attrs);
         }
 
         // Instrument function body.

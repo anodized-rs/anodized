@@ -9,7 +9,7 @@ use syn::{
 
 use crate::{
     DataSpec, Spec,
-    instrument::{Config, find_spec_attr, make_item_error},
+    instrument::{Config, find_spec_attr, hax::haxify_fn, make_item_error},
 };
 
 impl Config {
@@ -121,7 +121,7 @@ impl Config {
                         func.semi_token = None;
                     } else {
                         if self.target_hax {
-                            Self::build_hax_attrs(&fn_spec, &mut other_attrs);
+                            haxify_fn(&fn_spec, &mut other_attrs);
                         }
                     }
 
@@ -284,7 +284,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                             func.attrs.push(parse_quote!(#[inline]));
                         }
                     } else if self.target_hax {
-                        Self::build_hax_attrs(&fn_spec, &mut func.attrs);
+                        haxify_fn(&fn_spec, &mut func.attrs);
                         if !has_inline_attr(&func.attrs) {
                             func.attrs.push(parse_quote!(#[inline]));
                         }
