@@ -9,7 +9,11 @@ use syn::{
 
 use crate::{
     DataSpec, Spec,
-    instrument::{Config, find_spec_attr, hax::haxify_fn, make_item_error},
+    instrument::{
+        Config, find_spec_attr,
+        hax::{haxify_fn, haxify_impl_or_trait},
+        make_item_error,
+    },
 };
 
 impl Config {
@@ -24,11 +28,6 @@ impl Config {
         spec: DataSpec,
         mut the_trait: syn::ItemTrait,
     ) -> syn::Result<syn::ItemTrait> {
-        if self.target_hax {
-            the_trait
-                .attrs
-                .push(parse_quote! { #[::hax_lib::attributes] });
-        }
         // Currently we don't support any spec arguments for traits themselves.
         if !spec.is_empty() {
             return Err(spec.spec_err(
@@ -164,6 +163,11 @@ impl Config {
             }
         }
         the_trait.items = new_trait_items;
+
+        if self.target_hax {
+            haxify_impl_or_trait(&mut the_trait.attrs);
+        }
+
         Ok(the_trait)
     }
 
@@ -177,12 +181,6 @@ impl Config {
         spec: DataSpec,
         mut the_impl: syn::ItemImpl,
     ) -> syn::Result<syn::ItemImpl> {
-        if self.target_hax {
-            the_impl
-                .attrs
-                .push(parse_quote! { #[::hax_lib::attributes] });
-        }
-
         let Some((trait_bang, ref trait_path, _trait_for)) = the_impl.trait_ else {
             return Err(make_item_error(&the_impl, "inherent impl"));
         };
@@ -321,8 +319,12 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                 _ => unimplemented!(),
             };
         }
-
         the_impl.items = new_items;
+
+        if self.target_hax {
+            haxify_impl_or_trait(&mut the_impl.attrs);
+        }
+
         Ok(the_impl)
     }
 }

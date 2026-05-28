@@ -19,6 +19,10 @@ pub(crate) fn haxify_fn(spec: &Spec, attrs: &mut Vec<Attribute>) {
     }
 }
 
+pub(crate) fn haxify_impl_or_trait(attrs: &mut Vec<Attribute>) {
+    attrs.push(parse_quote! { #[::hax_lib::attributes] });
+}
+
 pub(crate) fn haxify_expr(expr: &Expr) -> Expr {
     expr.clone()
 }
