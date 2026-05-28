@@ -1,4 +1,7 @@
-use syn::{Attribute, Expr, ExprCall, Pat, Stmt, parse_quote, visit_mut::VisitMut};
+use syn::{
+    Attribute, Expr, ExprCall, Pat, Stmt, parse_quote,
+    visit_mut::{self, VisitMut},
+};
 
 use crate::{LoopSpec, Spec};
 
@@ -50,15 +53,25 @@ pub(crate) fn haxify_expr(expr: &Expr) -> Expr {
 struct HaxExprVisitor;
 
 impl VisitMut for HaxExprVisitor {
-    fn visit_expr_call_mut(&mut self, expr: &mut ExprCall) {
-        let Expr::Path(path) = expr.func.as_mut() else {
-            return;
+    fn visit_expr_mut(&mut self, expr: &mut Expr) {
+        if let Expr::Macro(invocation) = expr {
+            if invocation.mac.path.is_ident("opaque") {
+                *expr = Expr::Verbatim(invocation.mac.tokens.clone());
+            }
+        }
+
+        visit_mut::visit_expr_mut(self, expr);
+    }
+
+    fn visit_expr_call_mut(&mut self, call: &mut ExprCall) {
+        if let Expr::Path(path) = call.func.as_mut() {
+            if path.path.is_ident("forall") {
+                *call.func.as_mut() = parse_quote!(::hax_lib::forall);
+            } else if path.path.is_ident("exists") {
+                *call.func.as_mut() = parse_quote!(::hax_lib::exists);
+            }
         };
 
-        if path.path.is_ident("forall") {
-            *expr.func.as_mut() = parse_quote!(::hax_lib::forall);
-        } else if path.path.is_ident("exists") {
-            *expr.func.as_mut() = parse_quote!(::hax_lib::exists);
-        }
+        visit_mut::visit_expr_call_mut(self, call);
     }
 }
