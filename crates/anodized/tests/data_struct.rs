@@ -1,3 +1,4 @@
+#![allow(unused)]
 use anodized::spec;
 
 #[spec(maintains: self.a.pow(2) + self.b.pow(2) == self.c.pow(2))]

@@ -1,3 +1,4 @@
+#![allow(unused)]
 use anodized::spec;
 
 struct Counter {
