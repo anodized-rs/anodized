@@ -55,7 +55,7 @@ jobs:
           - cfg: '--config ''build.rustflags=["--cfg","anodized_discard_specs"]'''
           - cfg: '--config ''build.rustflags=["--cfg","anodized_panic"]'''
           - cfg: '--config ''build.rustflags=["--cfg","anodized_print"]'''
-          - cfg: '--config ''build.rustflags=["--cfg","anodized_discard_specs","--cfg","anodized_hax"]'' --features hax'
+          - cfg: '--features hax --config ''build.rustflags=["--cfg","anodized_discard_specs","--cfg","anodized_hax"]'''
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
