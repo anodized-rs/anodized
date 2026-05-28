@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
-use syn::{Attribute, ItemFn, ItemImpl, ItemTrait, Meta, Result, parse_quote};
+use syn::{Attribute, ItemConst, ItemFn, ItemImpl, ItemTrait, Meta, Result, parse_quote};
 
 use crate::{DataSpec, Spec};
 
@@ -30,7 +30,13 @@ impl Config {
                 parse_quote!(#[allow(warnings)]),
             ];
 
-            // Embed `spec` elements as `__anodized_fn_*` functions.
+            // Embed `spec` elements as `__anodized_fn_*` items.
+            let spec_qualifiers_const: ItemConst = Self::build_qualifier_const_item(
+                &attrs,
+                "__anodized_fn_qualifiers",
+                spec.qualifiers,
+                &item_fn.sig.ident,
+            );
             let spec_requires_fn = ItemFn {
                 attrs: attrs.to_vec(),
                 vis: syn::Visibility::Inherited,
@@ -54,6 +60,7 @@ impl Config {
                 )?),
             };
 
+            spec_qualifiers_const.to_tokens(&mut tokens);
             spec_requires_fn.to_tokens(&mut tokens);
             spec_maintains_fn.to_tokens(&mut tokens);
             spec_ensures_fn.to_tokens(&mut tokens);

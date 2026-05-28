@@ -1,4 +1,4 @@
-use crate::test_util::assert_tokens_eq;
+use crate::{qualifiers::FnQualifiers, test_util::assert_tokens_eq};
 
 use super::*;
 use proc_macro2::TokenStream;
@@ -21,8 +21,17 @@ fn embed_spec_item_trait() {
         }
     };
 
+    let qualifier_bits = FnQualifiers::empty().bits();
     let expected: TokenStream = parse_quote! {
         trait TRAIT {
+            #[doc(hidden)]
+            #[allow(warnings)]
+            const __anodized_fn_qualifiers_trait_FUNC: u32 = #qualifier_bits;
+
+            #[doc(hidden)]
+            #[allow(warnings)]
+            const __anodized_fn_qualifiers_FUNC: u32 = #qualifier_bits;
+
             #[doc(hidden)]
             #[allow(warnings)]
             fn __anodized_fn_requires_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
@@ -71,8 +80,13 @@ fn embed_spec_item_impl_trait() {
         }
     };
 
+    let qualifier_bits = FnQualifiers::empty().bits();
     let expected: TokenStream = parse_quote! {
         impl TRAIT for IMPL_TYPE {
+            #[doc(hidden)]
+            #[allow(warnings)]
+            const __anodized_fn_qualifiers_FUNC: u32 = #qualifier_bits;
+
             #[doc(hidden)]
             #[allow(warnings)]
             fn __anodized_fn_requires_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
@@ -93,6 +107,14 @@ fn embed_spec_item_impl_trait() {
             }
 
             fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
+                const {
+                    assert!(
+                        Self::__anodized_fn_qualifiers_FUNC ==
+                            Self::__anodized_fn_qualifiers_trait_FUNC |
+                            Self::__anodized_fn_qualifiers_FUNC,
+                        "the qualifiers on the impl `IMPL_TYPE::FUNC` cannot be weaker than the qualifiers on the trait `TRAIT::FUNC`",
+                    );
+                };
                 BODY
             }
         }

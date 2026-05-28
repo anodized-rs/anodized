@@ -61,7 +61,19 @@ impl Config {
                             parse_quote!(#[allow(warnings)]),
                         ];
 
-                        // Embed `spec` elements as `__anodized_fn_*` functions.
+                        // Embed `spec` elements as `__anodized_fn_*` items.
+                        let spec_trait_qualifiers_const = Self::build_qualifier_const_item(
+                            &attrs,
+                            "__anodized_fn_qualifiers_trait",
+                            fn_spec.qualifiers,
+                            &func.sig.ident,
+                        );
+                        let spec_qualifiers_const = Self::build_qualifier_const_item(
+                            &attrs,
+                            "__anodized_fn_qualifiers",
+                            fn_spec.qualifiers,
+                            &func.sig.ident,
+                        );
                         let spec_requires_fn = TraitItemFn {
                             attrs: attrs.to_vec(),
                             sig: Self::build_spec_fn_sig("__anodized_fn_requires", &func.sig),
@@ -85,6 +97,8 @@ impl Config {
                             semi_token: None,
                         };
 
+                        new_trait_items.push(TraitItem::Const(spec_trait_qualifiers_const));
+                        new_trait_items.push(TraitItem::Const(spec_qualifiers_const));
                         new_trait_items.push(TraitItem::Fn(spec_requires_fn));
                         new_trait_items.push(TraitItem::Fn(spec_maintains_fn));
                         new_trait_items.push(TraitItem::Fn(spec_ensures_fn));
@@ -168,7 +182,8 @@ impl Config {
                 .attrs
                 .push(parse_quote! { #[::hax_lib::attributes] });
         }
-        let Some((trait_bang, ref _trait_path, _trait_for)) = the_impl.trait_ else {
+
+        let Some((trait_bang, ref trait_path, _trait_for)) = the_impl.trait_ else {
             return Err(make_item_error(&the_impl, "inherent impl"));
         };
 
@@ -188,10 +203,9 @@ impl Config {
                     let (spec_attr, func_attrs) = find_spec_attr(func.attrs)?;
                     func.attrs = func_attrs;
 
-                    let original_ident = &func.sig.ident;
-                    if original_ident.to_string().starts_with("__anodized_") {
+                    if func.sig.ident.to_string().starts_with("__anodized_") {
                         return Err(syn::Error::new_spanned(
-                            original_ident,
+                            func.sig.ident,
                             r#"An item with the `__anodized_` prefix is internal. Do not implement it directly.
 Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation."#,
                         ));
@@ -208,7 +222,13 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                             parse_quote!(#[allow(warnings)]),
                         ];
 
-                        // Embed `spec` elements as `__anodized_fn_*` functions.
+                        // Embed `spec` elements as `__anodized_fn_*` items.
+                        let spec_qualifiers_const = Self::build_qualifier_const_item(
+                            &attrs,
+                            "__anodized_fn_qualifiers",
+                            fn_spec.qualifiers,
+                            &func.sig.ident,
+                        );
                         let spec_requires_fn = ImplItemFn {
                             attrs: attrs.to_vec(),
                             sig: Self::build_spec_fn_sig("__anodized_fn_requires", &func.sig),
@@ -235,13 +255,28 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                             defaultness: None,
                         };
 
+                        new_items.push(ImplItem::Const(spec_qualifiers_const));
                         new_items.push(ImplItem::Fn(spec_requires_fn));
                         new_items.push(ImplItem::Fn(spec_maintains_fn));
                         new_items.push(ImplItem::Fn(spec_ensures_fn));
                     }
 
+                    self.instrument_fn(&fn_spec, &func.sig, &mut func.block)?;
+
+                    if self.embed_spec {
+                        // Add a compile-time check to the body.
+                        func.block.stmts.insert(
+                            0,
+                            Self::build_qualifier_check_stmt(
+                                &func.sig.ident,
+                                &the_impl.self_ty,
+                                trait_path,
+                            ),
+                        );
+                    }
+
                     if self.emit_anything() {
-                        func.sig.ident = mangle_ident(original_ident);
+                        func.sig.ident = mangle_ident(&func.sig.ident);
 
                         // Add a default `#[inline]` attribute unless one is already there.
                         // The caller can supress this with `#[inline(never)]`
@@ -254,8 +289,6 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                             func.attrs.push(parse_quote!(#[inline]));
                         }
                     }
-
-                    self.instrument_fn(&fn_spec, &func.sig, &mut func.block)?;
                     new_items.push(ImplItem::Fn(func));
                 }
                 ImplItem::Const(mut const_item) => {

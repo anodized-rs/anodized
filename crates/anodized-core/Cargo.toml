@@ -13,6 +13,7 @@ license.workspace = true
 [lib]
 
 [dependencies]
+bitflags = "2.11.1"
 proc-macro2.workspace = true
 quote.workspace = true
 syn.workspace = true

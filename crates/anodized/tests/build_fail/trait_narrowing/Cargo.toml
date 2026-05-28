@@ -1,0 +1,14 @@
+[workspace]
+members = []
+
+[package]
+name = "test_trait_narrowing"
+publish = false
+edition = "2024"
+
+[[bin]]
+name = "main"
+path = "main.rs"
+
+[dependencies]
+anodized = { path = "../../../" }
