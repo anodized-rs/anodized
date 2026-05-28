@@ -54,10 +54,10 @@ struct HaxExprVisitor;
 
 impl VisitMut for HaxExprVisitor {
     fn visit_expr_mut(&mut self, expr: &mut Expr) {
-        if let Expr::Macro(invocation) = expr {
-            if invocation.mac.path.is_ident("opaque") {
-                *expr = Expr::Verbatim(invocation.mac.tokens.clone());
-            }
+        if let Expr::Macro(invocation) = expr
+            && invocation.mac.path.is_ident("opaque")
+        {
+            *expr = Expr::Verbatim(invocation.mac.tokens.clone());
         }
 
         visit_mut::visit_expr_mut(self, expr);
