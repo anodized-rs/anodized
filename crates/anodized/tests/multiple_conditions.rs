@@ -1,3 +1,4 @@
+#![allow(unused, unused_variables)]
 use anodized::spec;
 
 struct SafeBuffer<T> {

@@ -9,11 +9,11 @@ trait MinFinder<T: PartialOrd> {
     #[spec(
         total,
         requires: [
-            input.len() > 0,
+            !input.is_empty(),
         ],
         ensures: [
             input.iter().all(|item| output <= item),
-            input.iter().any(|item| output == item) || input.len() == 0,
+            input.iter().any(|item| output == item) || input.is_empty(),
         ],
     )]
     fn find_min(input: &[T]) -> T;
@@ -32,7 +32,7 @@ impl MinFinder<f32> for ValidNarrowing {
         ensures: [
             input.iter().all(|item| output <= item),
             input.iter().any(|item| output == item)
-                || (input.len() == 0 && *output == f32::INFINITY),
+                || (input.is_empty() && *output == f32::INFINITY),
         ],
     )]
     #[warn(unused_comparisons)]
@@ -55,12 +55,12 @@ impl MinFinder<i32> for StrongerImplPre {
         total,
         // INVALID - Stronger than trait precondition: requires sorted `input`.
         requires: [
-            input.len() > 0,
+            !input.is_empty(),
             input.is_sorted(),
         ],
         ensures: [
             input.iter().all(|item| output <= item),
-            input.iter().any(|item| output == item) || input.len() == 0,
+            input.iter().any(|item| output == item) || input.is_empty(),
         ],
     )]
     fn find_min(input: &[i32]) -> i32 {
@@ -75,7 +75,7 @@ impl MinFinder<u32> for WeakerImplPost {
     #[spec(
         total,
         requires: [
-            input.len() > 0,
+            !input.is_empty(),
         ],
         // INVALID - Weaker than trait postcondition: `input` may be ignored completely.
         ensures: [
@@ -107,7 +107,7 @@ fn runtime_rejects_stronger_impl_precondition() {
 #[cfg(anodized_panic)]
 #[test]
 #[should_panic(expected = "\
-Postcondition failed: | output | input.iter().any(| item | output == item) || input.len() == 0")]
+Postcondition failed: | output | input.iter().any(| item | output == item) || input.is_empty()")]
 fn runtime_rejects_weaker_impl_postcondition() {
     // NOTE: The trait's runtime checks are active even when the concrete type is statically known.
     let seq = [5, 42, 3];
