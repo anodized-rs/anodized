@@ -1,4 +1,4 @@
-use syn::{Attribute, Expr, Pat, Stmt, parse_quote};
+use syn::{Attribute, Expr, ExprCall, Pat, Stmt, parse_quote, visit_mut::VisitMut};
 
 use crate::{LoopSpec, Spec};
 
@@ -42,5 +42,23 @@ pub(crate) fn haxify_while_loop(spec: &LoopSpec, stmts: &mut Vec<Stmt>) {
 }
 
 pub(crate) fn haxify_expr(expr: &Expr) -> Expr {
-    expr.clone()
+    let mut expr = expr.clone();
+    HaxExprVisitor.visit_expr_mut(&mut expr);
+    expr
+}
+
+struct HaxExprVisitor;
+
+impl VisitMut for HaxExprVisitor {
+    fn visit_expr_call_mut(&mut self, expr: &mut ExprCall) {
+        let Expr::Path(path) = expr.func.as_mut() else {
+            return;
+        };
+
+        if path.path.is_ident("forall") {
+            *expr.func.as_mut() = parse_quote!(::hax_lib::forall);
+        } else if path.path.is_ident("exists") {
+            *expr.func.as_mut() = parse_quote!(::hax_lib::exists);
+        }
+    }
 }
