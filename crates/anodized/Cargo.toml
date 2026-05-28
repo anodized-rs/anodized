@@ -13,11 +13,15 @@ license.workspace = true
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ["cfg(anodized_discard_specs)", "cfg(anodized_panic)", "cfg(anodized_print)", "cfg(anodized_hax)"] }
 
+[features]
+default_features = []
+hax = ["dep:hax-lib"]
+
 [dependencies]
 anodized-logic.workspace = true
 anodized-macros.workspace = true
+hax-lib = { optional = true, git = "https://github.com/cryspen/hax.git", branch = "anodized-example" }
 
 [dev-dependencies]
 pollster = "0.4"
 trybuild = "1.0"
-hax-lib = { git = "https://github.com/cryspen/hax.git", branch = "anodized-example" }

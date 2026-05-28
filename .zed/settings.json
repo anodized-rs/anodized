@@ -3,6 +3,7 @@
     "rust-analyzer": {
       "initialization_options": {
         "cargo": {
+          "features": ["hax"],
           "cfgs": ["anodized_hax"],
           "extraEnv": {
             "RUSTFLAGS": "--cfg anodized_hax",

@@ -1,3 +1,4 @@
+#![cfg(feature = "hax")]
 #![allow(unused_variables, unused_imports, unused)]
 
 use anodized::{
