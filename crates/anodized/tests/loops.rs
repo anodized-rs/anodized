@@ -1,3 +1,4 @@
+#![allow(clippy::needless_range_loop)]
 use anodized::spec;
 
 #[spec(

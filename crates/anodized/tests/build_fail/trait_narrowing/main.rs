@@ -13,7 +13,7 @@ trait MinFinder<T: Copy + PartialOrd> {
         ],
         ensures: [
             input.iter().all(|item| output <= item),
-            input.iter().any(|item| output == item) || input.len() == 0,
+            input.iter().any(|item| output == item) || input.is_empty(),
         ],
     )]
     fn find_min(input: &[T]) -> T;

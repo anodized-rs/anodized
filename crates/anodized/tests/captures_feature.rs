@@ -1,3 +1,4 @@
+#![allow(unused)]
 use anodized::spec;
 
 // Test simple identifier capturing with auto-generated alias
