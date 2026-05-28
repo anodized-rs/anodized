@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.0 (2026 May 28)
+
+### Breaking Changes
+
+- **[anodized] Runtime mode selection moved from Cargo features to compiler `cfg` flags** - Removed `runtime-check-and-panic`, `runtime-check-and-print`, and `runtime-no-check` features; use flags such as `--cfg anodized_panic` or `--cfg anodized_print` instead (#118).
+- **[anodized-core] `Backend` became `Config`** - Instrumentation configuration APIs were renamed and cleaned up (#131).
+
+### Added
+
+- **[anodized-logic] Quantifiers `exists` and `forall`** (#115).
+- **[anodized] Data specs on `struct` and `enum`** - `#[spec]` now supports data-level invariants on these items (#121).
+- **[anodized] Loop specs on `for` and `while`** - Added loop invariant (`maintains`) and loop variant (`decreases`) support (#122).
+- **[anodized-core] Trait spec narrowing** - `impl` trait methods can narrow trait-level specs, with checks in place (#124).
+- **[anodized-logic] `int` type for embedding integer arithmetic in specs** (#127).
+- **[anodized-logic] Material implication and opaque expressions** (#129).
+- **[anodized] `cfg(anodized_discard_specs)`** - Allows dropping spec embedding while still compiling normal code (#130).
+- **[anodized-core] `fn` qualifiers in spec annotations** (#133).
+
+### Changed
+
+- **[workspace] Introduced the `anodized-macros` crate** - Macro implementation moved out of the `anodized` crate and re-exported from there (#126).
+- **[anodized-core] Embedded spec elements now use internal `fn __anodized_*` items** (#120).
+- **[anodized-core] `instrument_fn` was generalized to work with function items across contexts** (`ItemFn`, `TraitItemFn`, `ImplItemFn`) (#119).
+
+### Documentation
+
+- **[anodized] README updates for loop specs and related guidance** (#122).
+- **[anodized] Split docs into `README` and `REFERENCE`** for clearer user guidance and API details (#134).
+
 ## 0.4.0 (2026 Apr 19)
 
 ### Breaking Changes
