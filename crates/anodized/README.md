@@ -30,7 +30,7 @@ Anodized is a common specification layer for Rust: it allows writing specs direc
 
 ```toml
 [dependencies]
-anodized = { version = "0.4.0" }
+anodized = { version = "0.5.0" }
 ```
 
 **2. Extend your code with specs.**
