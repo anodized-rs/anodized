@@ -1,14 +1,14 @@
 [![crates.io](https://img.shields.io/crates/v/anodized.svg)](https://crates.io/crates/anodized)
 [![docs.rs](https://docs.rs/anodized/badge.svg)](https://docs.rs/anodized)
-[![CI tests](https://github.com/mkovaxx/anodized/actions/workflows/ci.yml/badge.svg)](https://github.com/mkovaxx/anodized/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/mkovaxx/anodized/blob/main/LICENSE-MIT)
-[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/mkovaxx/anodized/blob/main/LICENSE-APACHE)
+[![CI tests](https://github.com/anodized-rs/anodized/actions/workflows/ci.yml/badge.svg)](https://github.com/anodized-rs/anodized/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/anodized-rs/anodized/blob/main/LICENSE-MIT)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/anodized-rs/anodized/blob/main/LICENSE-APACHE)
 
-<img width="100" alt="Anodized Logo" src="https://raw.githubusercontent.com/mkovaxx/anodized/main/assets/logo.svg">
+<img width="100" alt="Anodized Logo" src="https://raw.githubusercontent.com/anodized-rs/anodized/main/assets/logo.svg">
 
 > Harden your Rust with **specifications**.
 
-**The detailed reference is here: [The Anodized Reference](https://github.com/mkovaxx/anodized/blob/main/crates/anodized/REFERENCE.md).**
+**The detailed reference is here: [The Anodized Reference](https://github.com/anodized-rs/anodized/blob/main/crates/anodized/REFERENCE.md).**
 
 # Anodized
 
@@ -22,7 +22,7 @@ Write preconditions, postconditions, loop invariants, and type refinements direc
 - **deeply integrated**: Syntax-checked, type-checked, and understood by `rust-analyzer` out of the box. No special toolchain components needed.
 - **widely compatible**: Validate the same specs with any combination of runtime checks, fuzzers, model checkers, or formal provers.
 
-<img style="max-width:630px;" alt="editor integration demo" src="https://raw.githubusercontent.com/mkovaxx/anodized/main/assets/anodized-editor-integration.gif">
+<img style="max-width:630px;" alt="editor integration demo" src="https://raw.githubusercontent.com/anodized-rs/anodized/main/assets/anodized-editor-integration.gif">
 
 ## Quickstart
 
@@ -88,7 +88,7 @@ A spec violation will cause a panic with a descriptive error message:
 thread 'main' panicked at 'Precondition failed: part <= whole', src/main.rs:17:5
 ```
 
-For more details and other approaches, see [The Anodized Reference](https://github.com/mkovaxx/anodized/blob/main/crates/anodized/REFERENCE.md).
+For more details and other approaches, see [The Anodized Reference](https://github.com/anodized-rs/anodized/blob/main/crates/anodized/REFERENCE.md).
 
 ## Why Anodized
 
