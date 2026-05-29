@@ -1,8 +1,8 @@
-<img width="100" alt="Anodized Logo" src="https://raw.githubusercontent.com/mkovaxx/anodized/main/assets/logo.svg">
+<img width="100" alt="Anodized Logo" src="https://raw.githubusercontent.com/anodized-rs/anodized/main/assets/logo.svg">
 
 # Anodized-fmt
 
-A formatter for `#[spec]` annotations in Rust code using [Anodized](https://github.com/mkovaxx/anodized).
+A formatter for `#[spec]` annotations in Rust code using [Anodized](https://github.com/anodized-rs/anodized).
 
 ## Overview
 
