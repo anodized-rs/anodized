@@ -2,10 +2,11 @@ use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{Attribute, ItemConst, ItemFn, ItemImpl, ItemTrait, Meta, Result, parse_quote};
 
-use crate::{DataSpec, Spec};
+use crate::{DataSpec, Spec, instrument::hax::haxify_fn};
 
 pub mod data;
 pub mod fns;
+pub mod hax;
 pub mod loops;
 pub mod traits;
 
@@ -13,6 +14,7 @@ pub struct Config {
     pub embed_spec: bool,
     pub emit_print: bool,
     pub emit_panic: bool,
+    pub target_hax: bool,
 }
 
 impl Config {
@@ -65,6 +67,10 @@ impl Config {
             spec_ensures_fn.to_tokens(&mut tokens);
         }
 
+        if !self.emit_anything() && self.target_hax {
+            haxify_fn(&spec, &mut item_fn.attrs);
+        }
+
         // Instrument function body.
         self.instrument_fn(&spec, &item_fn.sig, &mut item_fn.block)?;
         item_fn.to_tokens(&mut tokens);
@@ -97,18 +103,21 @@ impl Config {
         embed_spec: true,
         emit_print: false,
         emit_panic: false,
+        target_hax: false,
     };
 
     pub(crate) const PRINT: Config = Config {
         embed_spec: true,
         emit_print: true,
         emit_panic: false,
+        target_hax: false,
     };
 
     pub(crate) const PANIC: Config = Config {
         embed_spec: true,
         emit_print: true,
         emit_panic: true,
+        target_hax: false,
     };
 }
 

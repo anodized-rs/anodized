@@ -55,6 +55,7 @@ jobs:
           - cfg: '--config ''build.rustflags=["--cfg","anodized_discard_specs"]'''
           - cfg: '--config ''build.rustflags=["--cfg","anodized_panic"]'''
           - cfg: '--config ''build.rustflags=["--cfg","anodized_print"]'''
+          - cfg: '--features hax --config ''build.rustflags=["--cfg","anodized_discard_specs","--cfg","anodized_hax"]'''
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -65,10 +66,10 @@ jobs:
           components: clippy
 
       - name: Lint anodized with cfg `${{ matrix.cfg }}`
-        run: cargo ${{ matrix.cfg }} clippy -p anodized --all-targets -- -D warnings
+        run: cargo clippy -p anodized ${{ matrix.cfg }} --all-targets -- -D warnings
 
       - name: Integration test anodized with cfg `${{ matrix.cfg }}`
-        run: cargo ${{ matrix.cfg }} test -p anodized --tests --no-fail-fast
+        run: cargo test -p anodized ${{ matrix.cfg }} --tests --no-fail-fast
 
   test-anodized-fmt:
     name: Lint and test anodized-fmt

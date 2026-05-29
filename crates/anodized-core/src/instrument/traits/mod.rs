@@ -9,7 +9,11 @@ use syn::{
 
 use crate::{
     DataSpec, Spec,
-    instrument::{Config, find_spec_attr, make_item_error},
+    instrument::{
+        Config, find_spec_attr,
+        hax::{haxify_fn, haxify_impl_or_trait},
+        make_item_error,
+    },
 };
 
 impl Config {
@@ -37,7 +41,7 @@ impl Config {
         for item in the_trait.items.into_iter() {
             match item {
                 TraitItem::Fn(mut func) => {
-                    let (spec_attr, other_attrs) = find_spec_attr(func.attrs)?;
+                    let (spec_attr, mut other_attrs) = find_spec_attr(func.attrs)?;
                     // NOTE: We have no way of knowing which attributes are
                     //   "external" - meant for the interface and belong on the wrapper,
                     //   "internal" - meant for the mangled implementation.
@@ -114,6 +118,10 @@ impl Config {
                         });
                         func.default = Some(forwarding_body);
                         func.semi_token = None;
+                    } else {
+                        if self.target_hax {
+                            haxify_fn(&fn_spec, &mut other_attrs);
+                        }
                     }
 
                     func.attrs = other_attrs;
@@ -155,6 +163,11 @@ impl Config {
             }
         }
         the_trait.items = new_trait_items;
+
+        if self.target_hax {
+            haxify_impl_or_trait(&mut the_trait.attrs);
+        }
+
         Ok(the_trait)
     }
 
@@ -268,6 +281,11 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         if !has_inline_attr(&func.attrs) {
                             func.attrs.push(parse_quote!(#[inline]));
                         }
+                    } else if self.target_hax {
+                        haxify_fn(&fn_spec, &mut func.attrs);
+                        if !has_inline_attr(&func.attrs) {
+                            func.attrs.push(parse_quote!(#[inline]));
+                        }
                     }
                     new_items.push(ImplItem::Fn(func));
                 }
@@ -301,8 +319,12 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                 _ => unimplemented!(),
             };
         }
-
         the_impl.items = new_items;
+
+        if self.target_hax {
+            haxify_impl_or_trait(&mut the_impl.attrs);
+        }
+
         Ok(the_impl)
     }
 }
