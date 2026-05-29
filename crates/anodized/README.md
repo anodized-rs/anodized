@@ -109,7 +109,7 @@ Rust has a growing ecosystem of excellent verification tools - Aeneas, Creusot, 
 
 ### Relationship to Rust Native Contracts
 
-The Rust Team is building [native contract support](https://github.com/rust-lang/rust/issues/128044) into the language. Anodized is a library-level experiment that lets developers start writing specs on stable Rust today. We hope to actively participate in the native contracts effort and contribute useful data points with practical experience from Anodized. When Rust-native contracts stabilize, we plan to offer a migration tool so that Anodized users can transition smoothly.
+The Rust Team is building [native contract support](https://github.com/rust-lang/rust/issues/128044) into the language. Anodized is a library-level experiment that lets developers start writing specs on stable Rust today. We hope to actively participate in the native contracts effort and contribute useful data points from practical experience with Anodized. When Rust-native contracts stabilize, we plan to offer a migration tool so that Anodized users can transition smoothly.
 
 ## Why Write Specs as Rust Code
 
