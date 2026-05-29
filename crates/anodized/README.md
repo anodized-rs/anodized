@@ -30,7 +30,7 @@ Write preconditions, postconditions, loop invariants, and type refinements direc
 
 ```toml
 [dependencies]
-anodized = { version = "0.5.0" }
+anodized = { version = "0.5.1" }
 ```
 
 **2. Extend your code with specs.**
