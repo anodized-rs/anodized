@@ -9,10 +9,10 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.5.0"
+version = "0.5.1"
 edition = "2024"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/mkovaxx/anodized"
+repository = "https://github.com/anodized-rs/anodized"
 description = "A common specification layer for Rust"
 categories = [
     "development-tools",
@@ -27,9 +27,9 @@ keywords = [
 ]
 
 [workspace.dependencies]
-anodized-core = { version = "0.5.0", path = "crates/anodized-core" }
-anodized-logic = { version = "0.5.0", path = "crates/anodized-logic" }
-anodized-macros = { version = "0.5.0", path = "crates/anodized-macros" }
+anodized-core = { version = "0.5.1", path = "crates/anodized-core" }
+anodized-logic = { version = "0.5.1", path = "crates/anodized-logic" }
+anodized-macros = { version = "0.5.1", path = "crates/anodized-macros" }
 num-bigint = "0.4.6"
 proc-macro2 = { version = "1.0", features = ["span-locations"] }
 quote = "1.0"

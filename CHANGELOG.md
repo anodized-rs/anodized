@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.1 (2026 May 29)
+
+### Fixed
+
+- **[anodized] Removed a prototyping leftover from trait narrowing build-fail tests**.
+
+### Changed
+
+- **[anodized] Test suite cleanup for Clippy compliance** - Updated test code patterns and lint allowances in test files (#136).
+- **[workspace] Updated repository URLs after ownership transfer** - Crate metadata, README links/badges, and diagnostics issue links now point to `anodized-rs/anodized` (#138).
+
+### Documentation
+
+- **[anodized] README refinements** - Clarified project positioning, ecosystem fit, and relationship to existing efforts (#137).
+
 ## 0.5.0 (2026 May 28)
 
 ### Breaking Changes

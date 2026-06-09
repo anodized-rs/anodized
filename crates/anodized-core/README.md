@@ -1,8 +1,8 @@
-<img width="100" alt="Anodized Logo" src="https://raw.githubusercontent.com/mkovaxx/anodized/main/assets/logo.svg">
+<img width="100" alt="Anodized Logo" src="https://raw.githubusercontent.com/anodized-rs/anodized/main/assets/logo.svg">
 
 # Anodized Core
 
-This crate is the interoperability layer for tools connected to the [Anodized](https://github.com/mkovaxx/anodized) specification system.
+This crate is the interoperability layer for tools connected to the [Anodized](https://github.com/anodized-rs/anodized) specification system.
 
 ## Who Is This For?
 
