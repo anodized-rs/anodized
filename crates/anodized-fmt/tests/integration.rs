@@ -110,8 +110,7 @@ fn test_format_is_idempotent() {
     let config = Config::default();
     for input in inputs {
         let formatted1 = format_file(input, &config).expect("Failed to format first time");
-        let formatted2 =
-            format_file(&formatted1, &config).expect("Failed to format second time");
+        let formatted2 = format_file(&formatted1, &config).expect("Failed to format second time");
         assert_eq!(formatted1, formatted2, "Formatting should be idempotent");
     }
 }

@@ -22,9 +22,7 @@ fn arg_end_line(arg: &SpecArg) -> usize {
                     arg.keyword_span.end().line.saturating_sub(1)
                 }
             }
-            Captures::Many { bracket, .. } => {
-                bracket.span.close().end().line.saturating_sub(1)
-            }
+            Captures::Many { bracket, .. } => bracket.span.close().end().line.saturating_sub(1),
         },
     }
 }

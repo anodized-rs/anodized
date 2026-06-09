@@ -145,8 +145,13 @@ impl<'a> Formatter<'a> {
                         .iter()
                         .map(|e| e.span().start().line.saturating_sub(1))
                         .collect();
-                    let bracket_line =
-                        array.bracket_token.span.open().start().line.saturating_sub(1);
+                    let bracket_line = array
+                        .bracket_token
+                        .span
+                        .open()
+                        .start()
+                        .line
+                        .saturating_sub(1);
                     self.format_array(&elem_strs, Some(&elem_lines), Some(bracket_line))
                 } else {
                     format_expr(expr)
@@ -169,10 +174,8 @@ impl<'a> Formatter<'a> {
             Captures::One(capture_expr) => Self::format_capture(capture_expr),
             Captures::Many { bracket, elems } => {
                 let elem_strs = Vec::from_iter(elems.iter().map(Self::format_capture));
-                let elem_lines: Vec<usize> = elems
-                    .iter()
-                    .map(|ce| capture_expr_start_line(ce))
-                    .collect();
+                let elem_lines: Vec<usize> =
+                    elems.iter().map(|ce| capture_expr_start_line(ce)).collect();
                 let bracket_line = bracket.span.open().start().line.saturating_sub(1);
                 self.format_array(&elem_strs, Some(&elem_lines), Some(bracket_line))
             }
