@@ -174,8 +174,7 @@ impl<'a> Formatter<'a> {
             Captures::One(capture_expr) => Self::format_capture(capture_expr),
             Captures::Many { bracket, elems } => {
                 let elem_strs = Vec::from_iter(elems.iter().map(Self::format_capture));
-                let elem_lines: Vec<usize> =
-                    elems.iter().map(|ce| capture_expr_start_line(ce)).collect();
+                let elem_lines: Vec<usize> = elems.iter().map(capture_expr_start_line).collect();
                 let bracket_line = bracket.span.open().start().line.saturating_sub(1);
                 self.format_array(&elem_strs, Some(&elem_lines), Some(bracket_line))
             }
@@ -236,13 +235,13 @@ impl<'a> Formatter<'a> {
                 };
 
                 for line_idx in start_line..target_line {
-                    if let Some(comment_opt) = self.whitespace_and_comments.remove(&line_idx) {
-                        if let Some(comment) = comment_opt {
-                            result.push_str(&elem_indent);
-                            result.push_str("// ");
-                            result.push_str(&comment);
-                            result.push('\n');
-                        }
+                    if let Some(comment_opt) = self.whitespace_and_comments.remove(&line_idx)
+                        && let Some(comment) = comment_opt
+                    {
+                        result.push_str(&elem_indent);
+                        result.push_str("// ");
+                        result.push_str(&comment);
+                        result.push('\n');
                     }
                 }
             }
@@ -256,10 +255,10 @@ impl<'a> Formatter<'a> {
             result.push('\n');
         }
 
-        if let Some(lines) = elem_lines {
-            if let Some(&last) = lines.last() {
-                self.line_offset = Some(last);
-            }
+        if let Some(lines) = elem_lines
+            && let Some(&last) = lines.last()
+        {
+            self.line_offset = Some(last);
         }
 
         result.push_str(&" ".repeat(self.base_indent));
