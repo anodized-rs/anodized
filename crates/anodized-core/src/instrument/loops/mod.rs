@@ -33,13 +33,21 @@ impl Config {
         self.instrument_loop_body(spec, &mut expr_for_loop.body.stmts);
 
         if self.target_hax {
-            haxify_for_loop(spec, &expr_for_loop.pat, &mut expr_for_loop.body.stmts);
+            haxify_for_loop(spec, &mut expr_for_loop.body.stmts);
         }
     }
 
     fn instrument_loop_body(&self, spec: &LoopSpec, stmts: &mut Vec<Stmt>) {
         if self.embed_spec {
-            let maintains_block = Self::build_precondition_fn_body(&spec.maintains);
+            let invariant_closures = spec
+                .maintains
+                .iter()
+                .map(|loop_invariant| &loop_invariant.closure);
+            let maintains_block: Block = parse_quote! {
+                {
+                    #(let _ = #invariant_closures;)*
+                }
+            };
             stmts.insert(
                 0,
                 parse_quote! {

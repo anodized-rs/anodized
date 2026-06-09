@@ -48,7 +48,7 @@ impl T for u8 {
 pub fn f_loop(x: &[u8]) -> u8 {
     let mut max = 0;
     #[spec(
-        maintains: forall(|j: usize| implies!(j < i, x[j] <= max)),
+        maintains: |i: usize| forall(|j: usize| implies!(j < i, x[j] <= max)),
     )]
     for i in 0..x.len() {
         if x[i] > max {

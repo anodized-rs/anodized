@@ -1,5 +1,5 @@
 use syn::{
-    Attribute, Expr, ExprCall, Pat, Stmt, parse_quote,
+    Attribute, Expr, ExprCall, Stmt, parse_quote,
     visit_mut::{self, VisitMut},
 };
 
@@ -26,8 +26,9 @@ pub(crate) fn haxify_impl_or_trait(attrs: &mut Vec<Attribute>) {
     attrs.push(parse_quote! { #[::hax_lib::attributes] });
 }
 
-pub(crate) fn haxify_for_loop(spec: &LoopSpec, pat: &Pat, stmts: &mut Vec<Stmt>) {
+pub(crate) fn haxify_for_loop(spec: &LoopSpec, stmts: &mut Vec<Stmt>) {
     for condition in &spec.maintains {
+        let pat = &condition.closure.inputs;
         let invariant = haxify_expr(&condition.closure.body);
         stmts.push(parse_quote! { ::hax_lib::loop_invariant!(|#pat| #invariant); });
     }

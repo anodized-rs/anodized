@@ -6,7 +6,7 @@ use syn::{
 };
 
 use crate::{
-    Capture, DataSpec, LoopSpec, LoopVariant, PostCondition, PreCondition, Spec,
+    Capture, DataSpec, LoopInvariant, LoopSpec, LoopVariant, PostCondition, PreCondition, Spec,
     annotate::syntax::{CaptureExpr, SpecArg, SpecArgValue},
     qualifiers::FnQualifiers,
 };
@@ -205,7 +205,7 @@ impl Parse for LoopSpec {
 
         let mut errors = MultiError::empty();
         let mut decreases = None;
-        let mut maintains: Vec<PreCondition> = vec![];
+        let mut maintains: Vec<LoopInvariant> = vec![];
 
         for arg in raw_spec.args {
             match arg.keyword {
@@ -216,7 +216,7 @@ impl Parse for LoopSpec {
                     ));
                 }
                 Keyword::Maintains => {
-                    if let Err(error) = arg.parse_preconditions(&mut maintains) {
+                    if let Err(error) = arg.parse_loop_invariants(&mut maintains) {
                         errors.add(error);
                     }
                 }
@@ -387,6 +387,30 @@ impl SpecArg {
         }
         Ok(())
     }
+
+    fn parse_loop_invariants(self, maintains: &mut Vec<LoopInvariant>) -> Result<()> {
+        let cfg_attr = find_cfg_attribute(&self.attrs)?;
+        let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
+            Some(attr.parse_args()?)
+        } else {
+            None
+        };
+        let expr = self.value.try_into_expr()?;
+        if let Expr::Array(conditions) = expr {
+            for expr in conditions.elems {
+                maintains.push(LoopInvariant {
+                    closure: interpret_expr_as_loop_invariant(expr)?,
+                    cfg: cfg.clone(),
+                });
+            }
+        } else {
+            maintains.push(LoopInvariant {
+                closure: interpret_expr_as_loop_invariant(expr)?,
+                cfg,
+            });
+        }
+        Ok(())
+    }
 }
 
 /// Try to interpret a CaptureExpr as a single Capture
@@ -509,6 +533,28 @@ fn interpret_expr_as_postcondition(expr: Expr, default_binding: Pat) -> Result<s
             output: syn::ReturnType::Default,
             body: Box::new(expr),
         }),
+    }
+}
+
+/// Interpret expression as loop invariant: a closure with one or zero inputs.
+fn interpret_expr_as_loop_invariant(expr: Expr) -> Result<syn::ExprClosure> {
+    match expr {
+        // Already a closure, validate it has one or zero inputs.
+        Expr::Closure(closure) => {
+            if closure.inputs.is_empty() || closure.inputs.len() == 1 {
+                Ok(closure)
+            } else {
+                Err(Error::new_spanned(
+                    closure.or1_token,
+                    format!(
+                        "loop invariant closure must have one or zero inputs, found {}",
+                        closure.inputs.len()
+                    ),
+                ))
+            }
+        }
+        // Naked expression, wrap in a closure with no inputs.
+        expr => Ok(parse_quote! { || #expr }),
     }
 }
 
