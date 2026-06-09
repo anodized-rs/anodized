@@ -1,10 +1,33 @@
 use std::collections::HashMap;
 
-use anodized_core::annotate::syntax::{SpecArg, SpecArgs};
+use anodized_core::annotate::syntax::{Captures, SpecArg, SpecArgValue, SpecArgs};
+use syn::spanned::Spanned;
 
 use crate::{collect::ParentIndent, config::Config};
 
 use super::Formatter;
+
+fn arg_end_line(arg: &SpecArg) -> usize {
+    match &arg.value {
+        SpecArgValue::None => arg.keyword_span.end().line.saturating_sub(1),
+        SpecArgValue::Expr(expr) => expr.span().end().line.saturating_sub(1),
+        SpecArgValue::Pat(pat) => pat.span().end().line.saturating_sub(1),
+        SpecArgValue::Captures(captures) => match captures {
+            Captures::One(ce) => {
+                if let Some(pat) = &ce.pat {
+                    pat.span().end().line.saturating_sub(1)
+                } else if let Some(expr) = &ce.expr {
+                    expr.span().end().line.saturating_sub(1)
+                } else {
+                    arg.keyword_span.end().line.saturating_sub(1)
+                }
+            }
+            Captures::Many { bracket, .. } => {
+                bracket.span.close().end().line.saturating_sub(1)
+            }
+        },
+    }
+}
 
 /// Format a complete #[spec(...)] attribute with comment preservation.
 ///
@@ -51,23 +74,20 @@ impl Formatter<'_> {
             .collect();
 
         // Associate comments with their corresponding args before sorting
-        // For each arg, find comments that appear between the previous arg and this arg
+        // For each arg, find comments that appear between the previous arg's end and this arg's keyword
         type ArgWithComments<'a> = (&'a SpecArg, usize, Vec<(usize, Option<String>)>);
         let args_with_comments: Vec<ArgWithComments> = if self.settings.reorder_spec_items {
-            // Collect comments for each arg based on line ranges
             args_with_lines
                 .iter()
                 .enumerate()
                 .map(|(idx, (arg, line))| {
-                    // Find the line range for this arg's comments
                     let start_line = if idx == 0 {
                         0
                     } else {
-                        args_with_lines[idx - 1].1 + 1
+                        arg_end_line(args_with_lines[idx - 1].0) + 1
                     };
                     let end_line = *line;
 
-                    // Extract comments in this range
                     let mut comments = Vec::new();
                     for l in start_line..end_line {
                         if let Some(comment) = self.whitespace_and_comments.get(&l) {
@@ -124,8 +144,6 @@ impl Formatter<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::collect_comments::extract_whitespace_and_comments;
-    use crop::Rope;
     use syn::parse_str;
 
     #[test]
@@ -138,29 +156,6 @@ mod tests {
         let formatted = format_spec_attribute(&spec_args, &config, &indent, comments);
 
         assert_eq!(formatted, "#[spec(\n    requires: x > 0,\n)]");
-    }
-
-    #[test]
-    fn test_format_with_comment() {
-        // Note: parse_str doesn't give us proper span line numbers,
-        // so comments won't be properly associated. This is mainly
-        // testing that the formatter doesn't crash with comments present.
-        let source_text = r#"
-            // This is a comment
-            requires: x > 0,
-            ensures: *output > 0
-            "#;
-        let spec_args: SpecArgs = parse_str(source_text).unwrap();
-        let config = Config::default();
-        let source = Rope::from(source_text);
-        let tokens = source_text.parse().unwrap();
-        let comments = extract_whitespace_and_comments(&source, tokens);
-        let indent = ParentIndent::default();
-
-        let formatted = format_spec_attribute(&spec_args, &config, &indent, comments);
-
-        // Should format the spec args (comment preservation is tested in integration tests)
-        assert!(formatted.contains("requires: x > 0"));
     }
 
     #[test]
