@@ -44,8 +44,9 @@ fuzz_target!(
 
         let template = TEMPLATE.get().unwrap();
         let default_input = template.generate(Variant::default());
-        dbg!(&default_input);
         let variant_input = template.generate(variant);
+
+        dbg!(&default_input);
         dbg!(&variant_input);
 
         let fmt_default = format_file(&default_input, &config).expect("formatting default");
