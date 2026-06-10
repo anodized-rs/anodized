@@ -5,6 +5,8 @@ members = [
     "crates/anodized-fmt",
     "crates/anodized-logic",
     "crates/anodized-macros",
+    "crates/test-util",
+    "fuzz",
 ]
 resolver = "2"
 
@@ -28,8 +30,10 @@ keywords = [
 
 [workspace.dependencies]
 anodized-core = { version = "0.5.1", path = "crates/anodized-core" }
+anodized-fmt = { version = "0.5.1", path = "crates/anodized-fmt" }
 anodized-logic = { version = "0.5.1", path = "crates/anodized-logic" }
 anodized-macros = { version = "0.5.1", path = "crates/anodized-macros" }
+test-util = { path = "crates/test-util" }
 num-bigint = "0.4.6"
 proc-macro2 = { version = "1.0", features = ["span-locations"] }
 quote = "1.0"

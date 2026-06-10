@@ -1,0 +1,20 @@
+[package]
+name = "fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+anodized-fmt.workspace = true
+test-util.workspace = true
+
+[[bin]]
+name = "fmt_whitespace"
+path = "fuzz_targets/fmt_whitespace.rs"
+test = false
+doc = false
+bench = false
