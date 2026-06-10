@@ -11,6 +11,9 @@ mod collect_comments;
 mod formatter;
 pub mod source_file;
 
+#[cfg(test)]
+pub mod test_util;
+
 pub use config::{Config, ConfigError};
 pub use source_file::{check_file, format_file};
 

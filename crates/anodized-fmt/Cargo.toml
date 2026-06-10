@@ -34,3 +34,5 @@ walkdir = "2"
 
 [dev-dependencies]
 pretty_assertions = "1"
+ra-ap-rustc_lexer = "0.170.0"
+rand_pcg = "0.10.2"
