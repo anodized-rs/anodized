@@ -35,6 +35,12 @@ impl Template {
         self
     }
 
+    /// Add a fixed span of text.
+    pub fn fixed(mut self: Self, text: &str) -> Self {
+        self.0.push(Span::F(text.to_string()));
+        self
+    }
+
     /// Add a line comment.
     pub fn line_comment(mut self: Self, text: &str) -> Self {
         assert!(text.chars().all(|c| c != '\n'));
