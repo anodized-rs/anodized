@@ -2,8 +2,10 @@
 
 use std::sync::OnceLock;
 
-use anodized_fmt::{Config, format_file};
 use libfuzzer_sys::fuzz_target;
+use pretty_assertions::assert_eq;
+
+use anodized_fmt::{Config, format_file};
 use test_util::fmt::{Template, Variant};
 
 static TEMPLATE: OnceLock<Template> = OnceLock::new();
@@ -11,7 +13,9 @@ static TEMPLATE: OnceLock<Template> = OnceLock::new();
 /// Build a template for the following fragment:
 ///
 ///     #[spec(
+///         // precondition
 ///         requires: x > 0,
+///         // postcondition
 ///         ensures: *output > 0,
 ///     )]
 ///     fn func(x: i32) -> i32 { todo!() }
@@ -19,7 +23,12 @@ static TEMPLATE: OnceLock<Template> = OnceLock::new();
 #[rustfmt::skip]
 fn make_template() -> Template {
     Template::new()
-        .code("#[spec( requires : x > 0 , ensures : * output > 0 , )]").fixed("\n")
+        .fixed("#[spec(")
+        //.line_comment(" precondition")
+        .z().code("requires : x > 0 ,")
+        //.line_comment(" postcondition")
+        .z().code("ensures : * output > 0 ,")
+        .z().fixed(")]\n")
         .fixed("fn func(x: i32) -> i32 { todo!() }\n")
 }
 
