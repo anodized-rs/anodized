@@ -17,6 +17,16 @@ pub enum Span {
     P,
 }
 
+/// Describes a variation the template can generate.
+#[derive(Debug, Clone, Arbitrary)]
+pub struct Variation(Vec<Whitespace>);
+
+impl Default for Variation {
+    fn default() -> Self {
+        Variation(vec![])
+    }
+}
+
 impl Template {
     /// New empty template.
     pub fn new() -> Self {
@@ -41,15 +51,8 @@ impl Template {
         self
     }
 
-    /// Add a line comment.
-    pub fn line_comment(mut self: Self, text: &str) -> Self {
-        assert!(text.chars().all(|c| c != '\n'));
-        self.0.push(Span::F(format!("//{text}\n")));
-        self
-    }
-
-    /// Add code, replacing each span of whitespace with a `.z()`.
-    pub fn code(mut self: Self, text: &str) -> Self {
+    /// Add tokens, replacing each internal span of whitespace with a `.z()`.
+    pub fn tokens(mut self: Self, text: &str) -> Self {
         for (i, non_whitespace) in text.split_whitespace().enumerate() {
             if i > 0 {
                 self.0.push(Span::Z);
@@ -60,22 +63,12 @@ impl Template {
     }
 }
 
-/// Describes a variant the template can generate.
-#[derive(Debug, Clone, Arbitrary)]
-pub struct Variant(Vec<Whitespace>);
-
-impl Default for Variant {
-    fn default() -> Self {
-        Variant(vec![])
-    }
-}
-
 impl Template {
-    /// Generates an instantiation of the template based on variant information.
-    pub fn generate(&self, variant: Variant) -> String {
+    /// Generates an instantiation of the template based on variation information.
+    pub fn generate(&self, variation: Variation) -> String {
         let mut output = String::new();
 
-        let mut whitespaces = variant.0.into_iter();
+        let mut whitespaces = variation.0.into_iter();
 
         for span in &self.0 {
             match span {
