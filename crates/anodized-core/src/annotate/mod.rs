@@ -126,7 +126,7 @@ impl Parse for Spec {
                 Keyword::Decreases => {
                     errors.add(Error::new(
                         arg.keyword_span,
-                        format!("`{}` parameter is not supported here", &arg.keyword),
+                        format!("`{}` parameter is not supported here", arg.keyword),
                     ));
                 }
             }
@@ -180,7 +180,7 @@ impl Parse for DataSpec {
                 _ => {
                     errors.add(Error::new(
                         arg.keyword_span,
-                        format!("`{}` parameter is not supported here", &arg.keyword),
+                        format!("`{}` parameter is not supported here", arg.keyword),
                     ));
                 }
             }
@@ -234,7 +234,7 @@ impl Parse for LoopSpec {
                 _ => {
                     errors.add(Error::new(
                         arg.keyword_span,
-                        format!("`{}` parameter is not supported here", &arg.keyword),
+                        format!("`{}` parameter is not supported here", arg.keyword),
                     ));
                 }
             }

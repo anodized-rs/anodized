@@ -4,7 +4,7 @@
 use arbitrary::Arbitrary;
 
 /// A template to generate formatting variations of a piece of code.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Template(Vec<Span>);
 
 #[derive(Debug, Clone)]
@@ -18,19 +18,13 @@ pub enum Span {
 }
 
 /// Describes a variation the template can generate.
-#[derive(Debug, Clone, Arbitrary)]
+#[derive(Debug, Clone, Default, Arbitrary)]
 pub struct Variation(Vec<Whitespace>);
-
-impl Default for Variation {
-    fn default() -> Self {
-        Variation(vec![])
-    }
-}
 
 impl Template {
     /// New empty template.
     pub fn new() -> Self {
-        Template(vec![])
+        Self::default()
     }
 
     /// Add a placeholder for zero or more whitespace characters.
@@ -46,13 +40,13 @@ impl Template {
     }
 
     /// Add a fixed span of text.
-    pub fn fixed(mut self: Self, text: &str) -> Self {
+    pub fn fixed(mut self, text: &str) -> Self {
         self.0.push(Span::F(text.to_string()));
         self
     }
 
     /// Add tokens, replacing each internal span of whitespace with a `.z()`.
-    pub fn tokens(mut self: Self, text: &str) -> Self {
+    pub fn tokens(mut self, text: &str) -> Self {
         for (i, non_whitespace) in text.split_whitespace().enumerate() {
             if i > 0 {
                 self.0.push(Span::Z);
@@ -89,26 +83,20 @@ impl Template {
 }
 
 /// A non-empty sequence of whitespace characters.
-#[derive(Debug, Clone, Arbitrary)]
-pub struct Whitespace(Vec<WsChar>, WsChar);
-
-impl Default for Whitespace {
-    fn default() -> Self {
-        Whitespace(vec![], WsChar::Space)
-    }
-}
+#[derive(Debug, Clone, Default, Arbitrary)]
+pub struct Whitespace(Vec<WsChar>);
 
 impl Whitespace {
     fn to_string(self: Whitespace) -> String {
-        self.0.into_iter().map(|w| char::from(w)).collect()
+        self.0.into_iter().map(char::from).collect()
     }
 
     fn to_non_empty_string(self: Whitespace) -> String {
-        self.0
-            .into_iter()
-            .chain(std::iter::once(self.1))
-            .map(|w| char::from(w))
-            .collect()
+        if !self.0.is_empty() {
+            self.to_string()
+        } else {
+            " ".into()
+        }
     }
 }
 
@@ -128,5 +116,60 @@ impl From<WsChar> for char {
             WsChar::Tab => '\t',
             WsChar::Newline => '\n',
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_variation_produces_minimal_whitespace() {
+        let template = Template::new()
+            .fixed("fn")
+            .z() // zero-or-more -> empty
+            .fixed("foo")
+            .p() // one-or-more -> single space
+            .fixed("()");
+
+        let output = template.generate(Variation::default());
+        assert_eq!(output, "fnfoo ()");
+    }
+
+    #[test]
+    fn custom_variation_uses_provided_whitespace() {
+        let template = Template::new().fixed("x").z().fixed("=").p().fixed("1");
+
+        let variation = Variation(vec![
+            Whitespace(vec![WsChar::Tab, WsChar::Newline]), // for z()
+            Whitespace(vec![]),                             // for p()
+        ]);
+
+        let output = template.generate(variation);
+        assert_eq!(output, "x\t\n= 1");
+    }
+
+    #[test]
+    fn tokens_splits_on_whitespace() {
+        let template = Template::new().tokens("a b  c");
+        let output = template.generate(Variation::default());
+        // Should be: "a" + Z + "b" + Z + "c"
+        // With default variation, Z becomes empty
+        assert_eq!(output, "abc");
+    }
+
+    #[test]
+    fn whitespace_to_string_methods() {
+        let ws1 = Whitespace(vec![WsChar::Tab, WsChar::Space]);
+        assert_eq!(ws1.clone().to_string(), "\t ");
+        assert_eq!(ws1.to_non_empty_string(), "\t ");
+
+        let ws2 = Whitespace(vec![]);
+        assert_eq!(ws2.clone().to_string(), "");
+        assert_eq!(ws2.to_non_empty_string(), " ");
+
+        let ws3 = Whitespace(vec![WsChar::Newline]);
+        assert_eq!(ws3.clone().to_string(), "\n");
+        assert_eq!(ws3.to_non_empty_string(), "\n");
     }
 }
