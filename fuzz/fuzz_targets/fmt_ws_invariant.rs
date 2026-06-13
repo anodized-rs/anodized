@@ -20,9 +20,8 @@ static TEMPLATE: OnceLock<Template> = OnceLock::new();
 ///             // precond 2
 ///             y < 2 * z
 ///         ],
-///         maintains:
-///             // invar 1
-///             x + y == z,
+///         // invariants
+///         maintains: x + y == z,
 ///         // captures
 ///         captures: [
 ///             // capture 1
@@ -53,15 +52,14 @@ fn make_template() -> Template {
         .z().tokens("y < 2 * x").fixed("\n")
         .z().tokens("] ,").fixed("\n")
 
-        .z().tokens("maintains :").fixed("\n")
-        .z().fixed("// invar 1\n")
-        .z().tokens("x + y == z ,").fixed("\n")
+        .z().fixed("// invariants\n")
+        .z().tokens("maintains : x + y == z ,").fixed("\n")
 
         .z().fixed("// captures\n")
         .z().tokens("captures : [").fixed("\n")
         .z().fixed("// capture 1\n")
-        .z().tokens("values as [ first , second , third ] ,").fixed("\n")
-        .z().tokens("state . clone ( ) as State { active , count } ,").fixed("\n")
+        .z().fixed("values").p().tokens("as [ first , second , third ] ,").fixed("\n")
+        .z().tokens("state . clone ( ) as").p().tokens("State { active , count } ,").fixed("\n")
         .z().tokens("] ,").fixed("\n")
 
         .z().fixed("// return value binding\n")
@@ -90,6 +88,10 @@ fuzz_target!(
         let config = Config::default();
         let fmt_default = format_file(&default_input, &config).expect("formatting default");
         let fmt_variant = format_file(&variant_input, &config).expect("formatting variant");
+
+        if fmt_variant != fmt_default {
+            print!("{variant_input}");
+        }
 
         assert_eq!(fmt_variant, fmt_default);
     }
