@@ -161,13 +161,15 @@ mod tests {
     #[test]
     fn whitespace_to_string_methods() {
         let ws1 = Whitespace(vec![WsChar::Tab, WsChar::Space]);
-        assert_eq!(ws1.to_string(), "\t ");
+        assert_eq!(ws1.clone().to_string(), "\t ");
+        assert_eq!(ws1.to_non_empty_string(), "\t ");
 
         let ws2 = Whitespace(vec![]);
+        assert_eq!(ws2.clone().to_string(), "");
         assert_eq!(ws2.to_non_empty_string(), " ");
 
         let ws3 = Whitespace(vec![WsChar::Newline]);
-        assert_eq!(ws3.clone().to_string(), "");
+        assert_eq!(ws3.clone().to_string(), "\n");
         assert_eq!(ws3.to_non_empty_string(), "\n");
     }
 }
