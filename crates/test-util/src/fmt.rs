@@ -83,14 +83,8 @@ impl Template {
 }
 
 /// A non-empty sequence of whitespace characters.
-#[derive(Debug, Clone, Arbitrary)]
-pub struct Whitespace(Vec<WsChar>, WsChar);
-
-impl Default for Whitespace {
-    fn default() -> Self {
-        Whitespace(vec![], WsChar::Space)
-    }
-}
+#[derive(Debug, Clone, Default, Arbitrary)]
+pub struct Whitespace(Vec<WsChar>);
 
 impl Whitespace {
     fn to_string(self: Whitespace) -> String {
@@ -98,11 +92,11 @@ impl Whitespace {
     }
 
     fn to_non_empty_string(self: Whitespace) -> String {
-        self.0
-            .into_iter()
-            .chain(std::iter::once(self.1))
-            .map(char::from)
-            .collect()
+        if !self.0.is_empty() {
+            self.to_string()
+        } else {
+            " ".into()
+        }
     }
 }
 
@@ -147,12 +141,12 @@ mod tests {
         let template = Template::new().fixed("x").z().fixed("=").p().fixed("1");
 
         let variation = Variation(vec![
-            Whitespace(vec![WsChar::Space], WsChar::Tab), // for z() - only vec is used
-            Whitespace(vec![WsChar::Tab, WsChar::Newline], WsChar::Space), // for p() - vec + second
+            Whitespace(vec![WsChar::Tab, WsChar::Newline]), // for z()
+            Whitespace(vec![]),                             // for p()
         ]);
 
         let output = template.generate(variation);
-        assert_eq!(output, "x =\t\n 1");
+        assert_eq!(output, "x\t\n= 1");
     }
 
     #[test]
@@ -166,16 +160,13 @@ mod tests {
 
     #[test]
     fn whitespace_to_string_methods() {
-        // to_string() uses only the Vec, omitting the second WsChar
-        let ws1 = Whitespace(vec![WsChar::Tab, WsChar::Space], WsChar::Newline);
+        let ws1 = Whitespace(vec![WsChar::Tab, WsChar::Space]);
         assert_eq!(ws1.to_string(), "\t ");
 
-        // to_non_empty_string() uses Vec + second WsChar
-        let ws2 = Whitespace(vec![WsChar::Space], WsChar::Tab);
-        assert_eq!(ws2.to_non_empty_string(), " \t");
+        let ws2 = Whitespace(vec![]);
+        assert_eq!(ws2.to_non_empty_string(), " ");
 
-        // Empty vec: to_string() is empty, to_non_empty_string() uses second WsChar
-        let ws3 = Whitespace(vec![], WsChar::Newline);
+        let ws3 = Whitespace(vec![WsChar::Newline]);
         assert_eq!(ws3.clone().to_string(), "");
         assert_eq!(ws3.to_non_empty_string(), "\n");
     }
