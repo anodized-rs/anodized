@@ -124,3 +124,59 @@ impl From<WsChar> for char {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_variation_produces_minimal_whitespace() {
+        let template = Template::new()
+            .fixed("fn")
+            .z() // zero-or-more -> empty
+            .fixed("foo")
+            .p() // one-or-more -> single space
+            .fixed("()");
+
+        let output = template.generate(Variation::default());
+        assert_eq!(output, "fnfoo ()");
+    }
+
+    #[test]
+    fn custom_variation_uses_provided_whitespace() {
+        let template = Template::new().fixed("x").z().fixed("=").p().fixed("1");
+
+        let variation = Variation(vec![
+            Whitespace(vec![WsChar::Space], WsChar::Tab), // for z() - only vec is used
+            Whitespace(vec![WsChar::Tab, WsChar::Newline], WsChar::Space), // for p() - vec + second
+        ]);
+
+        let output = template.generate(variation);
+        assert_eq!(output, "x =\t\n 1");
+    }
+
+    #[test]
+    fn tokens_splits_on_whitespace() {
+        let template = Template::new().tokens("a b  c");
+        let output = template.generate(Variation::default());
+        // Should be: "a" + Z + "b" + Z + "c"
+        // With default variation, Z becomes empty
+        assert_eq!(output, "abc");
+    }
+
+    #[test]
+    fn whitespace_to_string_methods() {
+        // to_string() uses only the Vec, omitting the second WsChar
+        let ws1 = Whitespace(vec![WsChar::Tab, WsChar::Space], WsChar::Newline);
+        assert_eq!(ws1.to_string(), "\t ");
+
+        // to_non_empty_string() uses Vec + second WsChar
+        let ws2 = Whitespace(vec![WsChar::Space], WsChar::Tab);
+        assert_eq!(ws2.to_non_empty_string(), " \t");
+
+        // Empty vec: to_string() is empty, to_non_empty_string() uses second WsChar
+        let ws3 = Whitespace(vec![], WsChar::Newline);
+        assert_eq!(ws3.clone().to_string(), "");
+        assert_eq!(ws3.to_non_empty_string(), "\n");
+    }
+}
