@@ -8,7 +8,10 @@ use syn::{
 
 use crate::{
     LoopSpec,
-    instrument::{Config, find_spec_attr},
+    instrument::{
+        Config, find_spec_attr,
+        hax::{haxify_for_loop, haxify_while_loop},
+    },
 };
 
 impl Config {
@@ -18,17 +21,33 @@ impl Config {
         visitor.finish()
     }
 
-    pub fn instrument_expr_while(&self, spec: LoopSpec, expr_while: &mut ExprWhile) {
+    pub fn instrument_expr_while(&self, spec: &LoopSpec, expr_while: &mut ExprWhile) {
         self.instrument_loop_body(spec, &mut expr_while.body.stmts);
+
+        if self.target_hax {
+            haxify_while_loop(spec, &mut expr_while.body.stmts);
+        }
     }
 
-    pub fn instrument_expr_for_loop(&self, spec: LoopSpec, expr_for_loop: &mut ExprForLoop) {
+    pub fn instrument_expr_for_loop(&self, spec: &LoopSpec, expr_for_loop: &mut ExprForLoop) {
         self.instrument_loop_body(spec, &mut expr_for_loop.body.stmts);
+
+        if self.target_hax {
+            haxify_for_loop(spec, &mut expr_for_loop.body.stmts);
+        }
     }
 
-    fn instrument_loop_body(&self, spec: LoopSpec, stmts: &mut Vec<Stmt>) {
+    fn instrument_loop_body(&self, spec: &LoopSpec, stmts: &mut Vec<Stmt>) {
         if self.embed_spec {
-            let maintains_block = Self::build_precondition_fn_body(&spec.maintains);
+            let invariant_closures = spec
+                .maintains
+                .iter()
+                .map(|loop_invariant| &loop_invariant.closure);
+            let maintains_block: Block = parse_quote! {
+                {
+                    #(let _ = #invariant_closures;)*
+                }
+            };
             stmts.insert(
                 0,
                 parse_quote! {
@@ -36,8 +55,8 @@ impl Config {
                 },
             );
 
-            let let_decreases: Option<Stmt> = spec.decreases.map(|loop_variant| {
-                let expr = loop_variant.expr;
+            let let_decreases: Option<Stmt> = spec.decreases.as_ref().map(|loop_variant| {
+                let expr = loop_variant.expr.clone();
                 parse_quote! {
                     let _ = || #expr;
                 }
@@ -103,7 +122,7 @@ impl VisitMut for LoopSpecVisitor<'_> {
         match spec_attr.parse_args::<LoopSpec>() {
             Ok(spec) => self
                 .config
-                .instrument_loop_body(spec, &mut expr_while.body.stmts),
+                .instrument_loop_body(&spec, &mut expr_while.body.stmts),
             Err(error) => self.add_error(error),
         }
     }
@@ -126,7 +145,7 @@ impl VisitMut for LoopSpecVisitor<'_> {
         };
 
         match spec_attr.parse_args::<LoopSpec>() {
-            Ok(spec) => self.config.instrument_expr_for_loop(spec, expr_for_loop),
+            Ok(spec) => self.config.instrument_expr_for_loop(&spec, expr_for_loop),
             Err(error) => self.add_error(error),
         }
     }

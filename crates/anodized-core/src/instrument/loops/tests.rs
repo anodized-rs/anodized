@@ -31,7 +31,7 @@ fn embed_spec_expr_while() {
         }
     };
 
-    Config::DEFAULT.instrument_expr_while(while_spec, &mut expr_while);
+    Config::DEFAULT.instrument_expr_while(&while_spec, &mut expr_while);
     let observed = expr_while;
 
     assert_tokens_eq(&observed, &expected);
@@ -41,8 +41,8 @@ fn embed_spec_expr_while() {
 fn embed_spec_expr_for() {
     let for_spec: LoopSpec = parse_quote! {
         maintains: [
-            INVAR_1,
-            INVAR_2,
+            |INDEX_1: TYPE_1| INVAR_1,
+            |INDEX_2: TYPE_2| INVAR_2,
         ],
     };
     let mut expr_for_loop: ExprForLoop = parse_quote! {
@@ -54,15 +54,15 @@ fn embed_spec_expr_for() {
     let expected: TokenStream = parse_quote! {
         for FOR_VAR in FOR_EXPR {
             let __anodized_loop_maintains = {
-                let _ = | | INVAR_1;
-                let _ = | | INVAR_2;
+                let _ = |INDEX_1: TYPE_1| INVAR_1;
+                let _ = |INDEX_2: TYPE_2| INVAR_2;
             };
             let __anodized_loop_decreases = {};
             LOOP_BODY
         }
     };
 
-    Config::DEFAULT.instrument_expr_for_loop(for_spec, &mut expr_for_loop);
+    Config::DEFAULT.instrument_expr_for_loop(&for_spec, &mut expr_for_loop);
     let observed = expr_for_loop;
 
     assert_tokens_eq(&observed, &expected);

@@ -91,7 +91,7 @@ impl DataSpec {
 #[derive(Debug)]
 pub struct LoopSpec {
     /// Loop invariants: conditions that must hold both before and after the loop's body runs.
-    pub maintains: Vec<PreCondition>,
+    pub maintains: Vec<LoopInvariant>,
     /// Loop variant: an expression that decreases with each run of the loop's body.
     pub decreases: Option<LoopVariant>,
     /// The span in the source code, from which this spec was parsed.
@@ -153,6 +153,21 @@ pub struct Capture {
     pub expr: Expr,
     /// The pattern to bind/destructure the captured value.
     pub pat: Pat,
+}
+
+/// Holds true before and after each iteration of a loop's body.
+#[derive(Debug)]
+pub struct LoopInvariant {
+    /// The closure that defines the invariant.
+    ///
+    /// On a `for` loop, the closure's single argument is the logical index.
+    /// On a `while` loop, the closure has no arguments.
+    pub closure: ExprClosure,
+    /// **Static analyzers can safely ignore this field.**
+    ///
+    /// Build configuration filter to decide whether to add runtime checks.
+    /// Passed to a `cfg!()` guard in the instrumented code.
+    pub cfg: Option<Meta>,
 }
 
 /// Decreases with each run of a loop's body.
