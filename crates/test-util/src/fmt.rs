@@ -17,6 +17,16 @@ pub enum Span {
     P,
 }
 
+/// Describes a variation the template can generate.
+#[derive(Debug, Clone, Arbitrary)]
+pub struct Variation(Vec<Whitespace>);
+
+impl Default for Variation {
+    fn default() -> Self {
+        Variation(vec![])
+    }
+}
+
 impl Template {
     /// New empty template.
     pub fn new() -> Self {
@@ -53,22 +63,12 @@ impl Template {
     }
 }
 
-/// Describes a variant the template can generate.
-#[derive(Debug, Clone, Arbitrary)]
-pub struct Variant(Vec<Whitespace>);
-
-impl Default for Variant {
-    fn default() -> Self {
-        Variant(vec![])
-    }
-}
-
 impl Template {
-    /// Generates an instantiation of the template based on variant information.
-    pub fn generate(&self, variant: Variant) -> String {
+    /// Generates an instantiation of the template based on variation information.
+    pub fn generate(&self, variation: Variation) -> String {
         let mut output = String::new();
 
-        let mut whitespaces = variant.0.into_iter();
+        let mut whitespaces = variation.0.into_iter();
 
         for span in &self.0 {
             match span {

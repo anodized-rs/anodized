@@ -6,7 +6,7 @@ use libfuzzer_sys::fuzz_target;
 use pretty_assertions::assert_eq;
 
 use anodized_fmt::{Config, format_file};
-use test_util::fmt::{Template, Variant};
+use test_util::fmt::{Template, Variation};
 
 static TEMPLATE: OnceLock<Template> = OnceLock::new();
 
@@ -36,10 +36,10 @@ fuzz_target!(
     init: {
         TEMPLATE.set(make_template()).unwrap();
     },
-    |variant: Variant| {
+    |variation: Variation| {
         let template = TEMPLATE.get().unwrap();
-        let default_input = template.generate(Variant::default());
-        let variant_input = template.generate(variant);
+        let default_input = template.generate(Variation::default());
+        let variant_input = template.generate(variation);
 
         let config = Config::default();
         let fmt_default = format_file(&default_input, &config).expect("formatting default");
