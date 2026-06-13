@@ -4,7 +4,7 @@
 use arbitrary::Arbitrary;
 
 /// A template to generate formatting variations of a piece of code.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Template(Vec<Span>);
 
 #[derive(Debug, Clone)]
@@ -18,19 +18,13 @@ pub enum Span {
 }
 
 /// Describes a variation the template can generate.
-#[derive(Debug, Clone, Arbitrary)]
+#[derive(Debug, Clone, Default, Arbitrary)]
 pub struct Variation(Vec<Whitespace>);
-
-impl Default for Variation {
-    fn default() -> Self {
-        Variation(vec![])
-    }
-}
 
 impl Template {
     /// New empty template.
     pub fn new() -> Self {
-        Template(vec![])
+        Self::default()
     }
 
     /// Add a placeholder for zero or more whitespace characters.
@@ -46,13 +40,13 @@ impl Template {
     }
 
     /// Add a fixed span of text.
-    pub fn fixed(mut self: Self, text: &str) -> Self {
+    pub fn fixed(mut self, text: &str) -> Self {
         self.0.push(Span::F(text.to_string()));
         self
     }
 
     /// Add tokens, replacing each internal span of whitespace with a `.z()`.
-    pub fn tokens(mut self: Self, text: &str) -> Self {
+    pub fn tokens(mut self, text: &str) -> Self {
         for (i, non_whitespace) in text.split_whitespace().enumerate() {
             if i > 0 {
                 self.0.push(Span::Z);
@@ -100,14 +94,14 @@ impl Default for Whitespace {
 
 impl Whitespace {
     fn to_string(self: Whitespace) -> String {
-        self.0.into_iter().map(|w| char::from(w)).collect()
+        self.0.into_iter().map(char::from).collect()
     }
 
     fn to_non_empty_string(self: Whitespace) -> String {
         self.0
             .into_iter()
             .chain(std::iter::once(self.1))
-            .map(|w| char::from(w))
+            .map(char::from)
             .collect()
     }
 }

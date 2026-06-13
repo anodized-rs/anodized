@@ -107,3 +107,44 @@ jobs:
 
       - name: Integration test anodized-logic
         run: cargo test -p anodized-logic --tests --no-fail-fast
+
+  test-test-util:
+    name: Lint test-util
+    runs-on: ubuntu-latest
+    needs: fmt
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Lint test-util
+        run: cargo clippy -p test-util --all-targets -- -D warnings
+
+      - name: Test test-util
+        run: cargo test -p test-util --no-fail-fast
+
+  test-fuzz:
+    name: Lint and smoke-test fuzz targets
+    runs-on: ubuntu-latest
+    needs: fmt
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust nightly toolchain
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: clippy
+
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz
+
+      - name: Lint fuzz targets
+        run: cargo clippy -p fuzz --all-targets -- -D warnings
+
+      - name: Smoke test fuzz target (fmt_ws_invariant)
+        run: cd fuzz && cargo +nightly fuzz run --no-cfg-fuzzing fmt_ws_invariant -- -runs=1000 -max_total_time=30
