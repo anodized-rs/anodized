@@ -1,0 +1,22 @@
+[package]
+name = "fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+anodized-fmt.workspace = true
+test-util.workspace = true
+
+libfuzzer-sys = "0.4"
+pretty_assertions = "1"
+
+[[bin]]
+name = "fmt_ws_invariant"
+path = "fuzz_targets/fmt_ws_invariant.rs"
+test = false
+doc = false
+bench = false
