@@ -89,10 +89,6 @@ fuzz_target!(
         let fmt_default = format_file(&default_input, &config).expect("formatting default");
         let fmt_variant = format_file(&variant_input, &config).expect("formatting variant");
 
-        if fmt_variant != fmt_default {
-            print!("{variant_input}");
-        }
-
         assert_eq!(fmt_variant, fmt_default);
     }
 );
