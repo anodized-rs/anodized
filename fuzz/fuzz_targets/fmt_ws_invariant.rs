@@ -37,12 +37,11 @@ fuzz_target!(
         TEMPLATE.set(make_template()).unwrap();
     },
     |variant: Variant| {
-        let config = Config::default();
-
         let template = TEMPLATE.get().unwrap();
         let default_input = template.generate(Variant::default());
         let variant_input = template.generate(variant);
 
+        let config = Config::default();
         let fmt_default = format_file(&default_input, &config).expect("formatting default");
         let fmt_variant = format_file(&variant_input, &config).expect("formatting variant");
 
