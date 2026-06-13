@@ -2,8 +2,19 @@ use std::collections::HashMap;
 
 use anodized_core::annotate::syntax::{CaptureExpr, Captures, SpecArg, SpecArgValue};
 use syn::Meta;
+use syn::spanned::Spanned;
 
 use crate::config::{Config, TrailingComma};
+
+fn capture_expr_start_line(ce: &CaptureExpr) -> usize {
+    if let Some(expr) = &ce.expr {
+        expr.span().start().line.saturating_sub(1)
+    } else if let Some(pat) = &ce.pat {
+        pat.span().start().line.saturating_sub(1)
+    } else {
+        0
+    }
+}
 
 mod expr;
 mod spec;
@@ -127,10 +138,21 @@ impl<'a> Formatter<'a> {
         let value_str = match &arg.value {
             SpecArgValue::None => String::new(),
             SpecArgValue::Expr(expr) => {
-                // Special handling for arrays to format with proper indentation
                 if let syn::Expr::Array(array) = expr {
                     let elem_strs = Vec::from_iter(array.elems.iter().map(format_expr));
-                    self.format_array(&elem_strs)
+                    let elem_lines: Vec<usize> = array
+                        .elems
+                        .iter()
+                        .map(|e| e.span().start().line.saturating_sub(1))
+                        .collect();
+                    let bracket_line = array
+                        .bracket_token
+                        .span
+                        .open()
+                        .start()
+                        .line
+                        .saturating_sub(1);
+                    self.format_array(&elem_strs, Some(&elem_lines), Some(bracket_line))
                 } else {
                     format_expr(expr)
                 }
@@ -147,12 +169,14 @@ impl<'a> Formatter<'a> {
     }
 
     /// Format a group of captures.
-    fn format_captures(&self, captures: &Captures) -> String {
+    fn format_captures(&mut self, captures: &Captures) -> String {
         match captures {
             Captures::One(capture_expr) => Self::format_capture(capture_expr),
-            Captures::Many { elems, .. } => {
-                let elems = Vec::from_iter(elems.iter().map(Self::format_capture));
-                self.format_array(&elems)
+            Captures::Many { bracket, elems } => {
+                let elem_strs = Vec::from_iter(elems.iter().map(Self::format_capture));
+                let elem_lines: Vec<usize> = elems.iter().map(capture_expr_start_line).collect();
+                let bracket_line = bracket.span.open().start().line.saturating_sub(1);
+                self.format_array(&elem_strs, Some(&elem_lines), Some(bracket_line))
             }
         }
     }
@@ -173,21 +197,28 @@ impl<'a> Formatter<'a> {
     }
 
     /// Format an array expression with proper indentation.
-    fn format_array(&self, elems: &[String]) -> String {
+    ///
+    /// When `elem_lines` is provided, comments from `self.whitespace_and_comments`
+    /// are flushed before each element at the appropriate line positions.
+    /// `bracket_line` is the 0-indexed line of the opening `[`, used to determine
+    /// the comment range for the first element.
+    fn format_array(
+        &mut self,
+        elems: &[String],
+        elem_lines: Option<&[usize]>,
+        bracket_line: Option<usize>,
+    ) -> String {
         if elems.is_empty() {
             return "[]".to_string();
         }
 
-        // For single element arrays, keep them compact
         if elems.len() == 1 {
             return elems[0].clone();
         }
 
-        // Multi-element arrays: one per line with proper indentation
         let mut result = String::from("[\n");
         let elem_indent = " ".repeat(self.base_indent + self.settings.tab_spaces);
 
-        // Determine if we should add trailing comma
         let add_trailing_comma = match self.settings.trailing_comma {
             TrailingComma::Always => true,
             TrailingComma::Never => false,
@@ -195,6 +226,26 @@ impl<'a> Formatter<'a> {
         };
 
         for (i, elem) in elems.iter().enumerate() {
+            if let Some(lines) = elem_lines {
+                let target_line = lines[i];
+                let start_line = if i == 0 {
+                    bracket_line.map_or(target_line, |bl| bl + 1)
+                } else {
+                    lines[i - 1] + 1
+                };
+
+                for line_idx in start_line..target_line {
+                    if let Some(comment_opt) = self.whitespace_and_comments.remove(&line_idx)
+                        && let Some(comment) = comment_opt
+                    {
+                        result.push_str(&elem_indent);
+                        result.push_str("// ");
+                        result.push_str(&comment);
+                        result.push('\n');
+                    }
+                }
+            }
+
             result.push_str(&elem_indent);
             result.push_str(elem);
 
@@ -202,6 +253,12 @@ impl<'a> Formatter<'a> {
                 result.push(',');
             }
             result.push('\n');
+        }
+
+        if let Some(lines) = elem_lines
+            && let Some(&last) = lines.last()
+        {
+            self.line_offset = Some(last);
         }
 
         result.push_str(&" ".repeat(self.base_indent));

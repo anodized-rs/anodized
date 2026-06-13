@@ -13,10 +13,29 @@ static TEMPLATE: OnceLock<Template> = OnceLock::new();
 /// Build a template for the following fragment:
 ///
 ///     #[spec(
-///         // precondition
-///         requires: x > 0,
-///         // postcondition
-///         ensures: *output > 0,
+///         // preconditions
+///         requires: [
+///             // precond 1
+///             x > 0,
+///             // precond 2
+///             y < 2 * z
+///         ],
+///         // invariants
+///         maintains: x + y == z,
+///         // captures
+///         captures: [
+///             // capture 1
+///             values as [first , second , third],
+///             state.clone() as State { active , count },
+///         ],
+///         // return value binding
+///         binds: ret_val,
+///         // postconditions
+///         ensures: [
+///             *output > x,
+///             // postcond 2
+///             *output < 100,
+///         ],
 ///     )]
 ///     fn func(x: i32) -> i32 { todo!() }
 ///
@@ -24,10 +43,35 @@ static TEMPLATE: OnceLock<Template> = OnceLock::new();
 fn make_template() -> Template {
     Template::new()
         .fixed("#[spec(\n")
-        .z().fixed("// precondition\n")
-        .z().tokens("requires : x > 0 ,").fixed("\n")
-        .z().fixed("// postcondition\n")
-        .z().tokens("ensures : * output > 0 ,").fixed("\n")
+
+        .z().fixed("// preconditions\n")
+        .z().tokens("requires : [").fixed("\n")
+        .z().fixed("// precond 1\n")
+        .z().tokens("x > 0 ,").fixed("\n")
+        .z().fixed("// precond 2\n")
+        .z().tokens("y < 2 * x").fixed("\n")
+        .z().tokens("] ,").fixed("\n")
+
+        .z().fixed("// invariants\n")
+        .z().tokens("maintains : x + y == z ,").fixed("\n")
+
+        .z().fixed("// captures\n")
+        .z().tokens("captures : [").fixed("\n")
+        .z().fixed("// capture 1\n")
+        .z().fixed("values").p().tokens("as [ first , second , third ] ,").fixed("\n")
+        .z().tokens("state . clone ( ) as").p().tokens("State { active , count } ,").fixed("\n")
+        .z().tokens("] ,").fixed("\n")
+
+        .z().fixed("// return value binding\n")
+        .z().tokens("binds : ret_val ,").fixed("\n")
+
+        .z().fixed("// postconditions\n")
+        .z().tokens("ensures : [").fixed("\n")
+        .z().tokens("* output > x ,").fixed("\n")
+        .z().fixed("// postcond 2\n")
+        .z().tokens("* output < 100 ,").fixed("\n")
+        .z().tokens("] ,").fixed("\n")
+
         .z().fixed(")]\n")
         .fixed("fn func(x: i32) -> i32 { todo!() }\n")
 }
