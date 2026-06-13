@@ -23,11 +23,11 @@ static TEMPLATE: OnceLock<Template> = OnceLock::new();
 #[rustfmt::skip]
 fn make_template() -> Template {
     Template::new()
-        .fixed("#[spec(")
-        //.line_comment(" precondition")
-        .z().code("requires : x > 0 ,")
-        //.line_comment(" postcondition")
-        .z().code("ensures : * output > 0 ,")
+        .fixed("#[spec(\n")
+        .z().fixed("// precondition\n")
+        .z().tokens("requires : x > 0 ,").fixed("\n")
+        .z().fixed("// postcondition\n")
+        .z().tokens("ensures : * output > 0 ,").fixed("\n")
         .z().fixed(")]\n")
         .fixed("fn func(x: i32) -> i32 { todo!() }\n")
 }

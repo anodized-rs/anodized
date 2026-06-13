@@ -41,15 +41,8 @@ impl Template {
         self
     }
 
-    /// Add a line comment.
-    pub fn line_comment(mut self: Self, text: &str) -> Self {
-        assert!(text.chars().all(|c| c != '\n'));
-        self.0.push(Span::F(format!("//{text}\n")));
-        self
-    }
-
-    /// Add code, replacing each span of whitespace with a `.z()`.
-    pub fn code(mut self: Self, text: &str) -> Self {
+    /// Add tokens, replacing each internal span of whitespace with a `.z()`.
+    pub fn tokens(mut self: Self, text: &str) -> Self {
         for (i, non_whitespace) in text.split_whitespace().enumerate() {
             if i > 0 {
                 self.0.push(Span::Z);
