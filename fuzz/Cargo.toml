@@ -15,8 +15,8 @@ libfuzzer-sys = "0.4"
 pretty_assertions = "1"
 
 [[bin]]
-name = "fmt_whitespace"
-path = "fuzz_targets/fmt_whitespace.rs"
+name = "fmt_ws_invariant"
+path = "fuzz_targets/fmt_ws_invariant.rs"
 test = false
 doc = false
 bench = false
