@@ -441,20 +441,22 @@ fn interpret_capture_expr_as_capture(capture_expr: CaptureExpr) -> Result<Captur
     }
 }
 
-/// Interpret expression as a zero-parameter closure, wrapping if necessary.
-/// Used for preconditions which don't need access to the return value.
+/// Interpret expression as precondition, i.e. a closure that returns `bool` and takes no inputs.
 fn interpret_expr_as_precondition(expr: Expr) -> Result<syn::ExprClosure> {
     match expr {
-        // Already a closure, validate it has no arguments.
+        // Already a closure.
         Expr::Closure(closure) => {
-            if closure.inputs.is_empty() {
-                Ok(closure)
+            // Ensure it returns `bool`.
+            let predicate = interpret_closure_as_predicate(closure)?;
+            // Ensure it takes no inputs.
+            if predicate.inputs.is_empty() {
+                Ok(predicate)
             } else {
                 Err(Error::new_spanned(
-                    closure.or1_token,
+                    predicate.or1_token,
                     format!(
                         "precondition closure must have no arguments, found {}",
-                        closure.inputs.len()
+                        predicate.inputs.len()
                     ),
                 ))
             }
@@ -470,27 +472,28 @@ fn interpret_expr_as_precondition(expr: Expr) -> Result<syn::ExprClosure> {
             or1_token: Default::default(),
             inputs: syn::punctuated::Punctuated::new(),
             or2_token: Default::default(),
-            output: syn::ReturnType::Default,
+            output: parse_quote!(-> bool),
             body: Box::new(expr),
         }),
     }
 }
 
-/// Interpret expression as a closure with a single argument (eg the list of
-/// aliases and function result), wrapping if necessary.
-/// Used for postconditions which take the return value as an argument.
+/// Interpret expression as postcondition, i.e. a closure that returns `bool` and takes one input.
 fn interpret_expr_as_postcondition(expr: Expr, default_binding: Pat) -> Result<syn::ExprClosure> {
     match expr {
-        // Already a closure, validate it has exactly one argument.
+        // Already a closure.
         Expr::Closure(closure) => {
-            if closure.inputs.len() == 1 {
-                Ok(closure)
+            // Ensure it returns `bool`.
+            let predicate = interpret_closure_as_predicate(closure)?;
+            // Ensure it takes exactly one input.
+            if predicate.inputs.len() == 1 {
+                Ok(predicate)
             } else {
                 Err(Error::new_spanned(
-                    closure.or1_token,
+                    predicate.or1_token,
                     format!(
                         "postcondition closure must have exactly one argument, found {}",
-                        closure.inputs.len()
+                        predicate.inputs.len()
                     ),
                 ))
             }
@@ -506,9 +509,25 @@ fn interpret_expr_as_postcondition(expr: Expr, default_binding: Pat) -> Result<s
             or1_token: Default::default(),
             inputs: syn::punctuated::Punctuated::from_iter([default_binding]),
             or2_token: Default::default(),
-            output: syn::ReturnType::Default,
+            output: parse_quote!(-> bool),
             body: Box::new(expr),
         }),
+    }
+}
+
+fn interpret_closure_as_predicate(mut closure: syn::ExprClosure) -> Result<syn::ExprClosure> {
+    match &closure.output {
+        syn::ReturnType::Default => {
+            closure.output = parse_quote!(-> bool);
+            Ok(closure)
+        }
+        syn::ReturnType::Type(_, ty) if matches!(ty.as_ref(), syn::Type::Path(path) if path.qself.is_none() && path.path.is_ident("bool")) => {
+            Ok(closure)
+        }
+        syn::ReturnType::Type(_, ty) => Err(Error::new_spanned(
+            ty,
+            "predicate must return `bool`".to_string(),
+        )),
     }
 }
 
