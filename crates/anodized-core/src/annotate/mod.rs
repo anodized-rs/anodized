@@ -526,7 +526,7 @@ fn interpret_closure_as_predicate(mut closure: syn::ExprClosure) -> Result<syn::
         }
         syn::ReturnType::Type(_, ty) => Err(Error::new_spanned(
             ty,
-            format!("predicate must return `bool`"),
+            "predicate must return `bool`".to_string(),
         )),
     }
 }
