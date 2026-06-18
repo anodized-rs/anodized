@@ -141,12 +141,13 @@ impl Config {
             } else {
                 // Otherwise add a type annotation.
                 let body = &closure.body;
+                let output = &closure.output;
                 match &return_type {
                     ReturnType::Default => {
-                        parse_quote! { let _ = |#output_binder: &()| #body; }
+                        parse_quote! { let _ = |#output_binder: &()| #output { #body }; }
                     }
                     ReturnType::Type(_, ty) => {
-                        parse_quote! { let _ = |#output_binder: &#ty| #body; }
+                        parse_quote! { let _ = |#output_binder: &#ty| #output { #body }; }
                     }
                 }
             };
@@ -271,11 +272,15 @@ impl Config {
                 );
 
                 let expr = quote! { (#closure)(&#output_ident) };
+                let inputs = &postcondition.closure.inputs;
+                let body = &postcondition.closure.body;
+                // Omit the closure's return type for brevity.
+                let repr = quote! { |#inputs| #body };
                 build_check(
                     postcondition.cfg.as_ref(),
                     &expr,
                     "Postcondition failed: {}",
-                    &postcondition.closure.to_token_stream(),
+                    &repr,
                 )
             }));
 

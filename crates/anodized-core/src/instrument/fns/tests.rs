@@ -40,26 +40,26 @@ fn embed_spec_item_fn() {
         #[doc(hidden)]
         #[allow(warnings)]
         fn __anodized_fn_requires_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
-            let _ = | | COND_1;
-            let _ = | | COND_2;
-            let _ = | | COND_3;
+            let _ = | | -> bool { COND_1 };
+            let _ = | | -> bool { COND_2 };
+            let _ = | | -> bool { COND_3 };
         }
 
         #[doc(hidden)]
         #[allow(warnings)]
         fn __anodized_fn_maintains_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
-            let _ = | | COND_4;
-            let _ = | | COND_5;
-            let _ = | | COND_6;
+            let _ = | | -> bool { COND_4 };
+            let _ = | | -> bool { COND_5 };
+            let _ = | | -> bool { COND_6 };
         }
 
         #[doc(hidden)]
         #[allow(warnings)]
         fn __anodized_fn_ensures_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
             let (ALIAS_1, (ALIAS_2, ALIAS_3)) = ((| | EXPR_1)(), (| | EXPR_2)());
-            let _ = |PAT_1: &RET_TYPE| COND_7;
-            let _ = |PAT_1: &RET_TYPE| COND_8;
-            let _ = |PAT_2: TYPE| COND_9;
+            let _ = |PAT_1: &RET_TYPE| -> bool { COND_7 };
+            let _ = |PAT_1: &RET_TYPE| -> bool { COND_8 };
+            let _ = |PAT_2: TYPE| -> bool { COND_9 };
         }
 
         fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
@@ -96,7 +96,7 @@ fn simple_requires() {
 
     let expected: Block = parse_quote! {
         {
-            assert!((| | CONDITION_1)(), "Precondition failed: {}", "CONDITION_1");
+            assert!((| | -> bool { CONDITION_1 })(), "Precondition failed: {}", "CONDITION_1");
             let (__anodized_output): (#ret_type) = ((|| #body)());
             __anodized_output
         }
@@ -135,7 +135,7 @@ fn requires_no_panic_runtime() {
 
     let expected: Block = parse_quote! {
         {
-            if !((| | CONDITION_1)()) {
+            if !((| | -> bool { CONDITION_1 })()) {
                 eprintln!("Precondition failed: {}", "CONDITION_1");
             }
             let (__anodized_output): (#ret_type) = ((|| #body)());
@@ -160,9 +160,9 @@ fn simple_maintains() {
 
     let expected: Block = parse_quote! {
         {
-            assert!((| | CONDITION_1)(), "Pre-invariant failed: {}", "CONDITION_1");
+            assert!((| | -> bool { CONDITION_1 })(), "Pre-invariant failed: {}", "CONDITION_1");
             let (__anodized_output): (#ret_type) = ((|| #body)());
-            assert!((| | CONDITION_1)(), "Post-invariant failed: {}", "CONDITION_1");
+            assert!((| | -> bool { CONDITION_1 })(), "Post-invariant failed: {}", "CONDITION_1");
             __anodized_output
         }
     };
@@ -185,7 +185,7 @@ fn simple_ensures() {
     let expected: Block = parse_quote! {
         {
             let (__anodized_output): (#ret_type) = ((|| #body)());
-            assert!((|output: &#ret_type| CONDITION_1)(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_1");
+            assert!((|output: &#ret_type| -> bool { CONDITION_1 })(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_1");
             __anodized_output
         }
     };
@@ -208,10 +208,10 @@ fn simple_requires_and_maintains() {
 
     let expected: Block = parse_quote! {
         {
-            assert!((| | CONDITION_1)(), "Precondition failed: {}", "CONDITION_1");
-            assert!((| | CONDITION_2)(), "Pre-invariant failed: {}", "CONDITION_2");
+            assert!((| | -> bool { CONDITION_1 })(), "Precondition failed: {}", "CONDITION_1");
+            assert!((| | -> bool { CONDITION_2 })(), "Pre-invariant failed: {}", "CONDITION_2");
             let (__anodized_output): (#ret_type) = ((|| #body)());
-            assert!((| | CONDITION_2)(), "Post-invariant failed: {}", "CONDITION_2");
+            assert!((| | -> bool { CONDITION_2 })(), "Post-invariant failed: {}", "CONDITION_2");
             __anodized_output
         }
     };
@@ -234,9 +234,9 @@ fn simple_requires_and_ensures() {
 
     let expected: Block = parse_quote! {
         {
-            assert!((| | CONDITION_1)(), "Precondition failed: {}", "CONDITION_1");
+            assert!((| | -> bool { CONDITION_1 })(), "Precondition failed: {}", "CONDITION_1");
             let (__anodized_output): (#ret_type) = ((|| #body)());
-            assert!((|output: &#ret_type| CONDITION_2)(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_2");
+            assert!((|output: &#ret_type| -> bool { CONDITION_2 })(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_2");
             __anodized_output
         }
     };
@@ -259,10 +259,10 @@ fn simple_maintains_and_ensures() {
 
     let expected: Block = parse_quote! {
         {
-            assert!((| | CONDITION_1)(), "Pre-invariant failed: {}", "CONDITION_1");
+            assert!((| | -> bool { CONDITION_1 })(), "Pre-invariant failed: {}", "CONDITION_1");
             let (__anodized_output): (#ret_type) = ((|| #body)());
-            assert!((| | CONDITION_1)(), "Post-invariant failed: {}", "CONDITION_1");
-            assert!((|output: &#ret_type| CONDITION_2)(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_2");
+            assert!((| | -> bool { CONDITION_1 })(), "Post-invariant failed: {}", "CONDITION_1");
+            assert!((|output: &#ret_type| -> bool { CONDITION_2 })(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_2");
             __anodized_output
         }
     };
@@ -286,11 +286,11 @@ fn simple_requires_maintains_and_ensures() {
 
     let expected: Block = parse_quote! {
         {
-            assert!((| | CONDITION_1)(), "Precondition failed: {}", "CONDITION_1");
-            assert!((| | CONDITION_2)(), "Pre-invariant failed: {}", "CONDITION_2");
+            assert!((| | -> bool { CONDITION_1 })(), "Precondition failed: {}", "CONDITION_1");
+            assert!((| | -> bool { CONDITION_2 })(), "Pre-invariant failed: {}", "CONDITION_2");
             let (__anodized_output): (#ret_type) = ((|| #body)());
-            assert!((| | CONDITION_2)(), "Post-invariant failed: {}", "CONDITION_2");
-            assert!((|output: &#ret_type| CONDITION_3)(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_3");
+            assert!((| | -> bool { CONDITION_2 })(), "Post-invariant failed: {}", "CONDITION_2");
+            assert!((|output: &#ret_type| -> bool { CONDITION_3 })(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_3");
             __anodized_output
         }
     };
@@ -314,11 +314,11 @@ fn simple_async_requires_maintains_and_ensures() {
 
     let expected: Block = parse_quote! {
         {
-            assert!((| | CONDITION_1)(), "Precondition failed: {}", "CONDITION_1");
-            assert!((| | CONDITION_2)(), "Pre-invariant failed: {}", "CONDITION_2");
+            assert!((| | -> bool { CONDITION_1 })(), "Precondition failed: {}", "CONDITION_1");
+            assert!((| | -> bool { CONDITION_2 })(), "Pre-invariant failed: {}", "CONDITION_2");
             let (__anodized_output): (#ret_type) = ((async || #body)().await);
-            assert!((| | CONDITION_2)(), "Post-invariant failed: {}", "CONDITION_2");
-            assert!((|output: &#ret_type| CONDITION_3)(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_3");
+            assert!((| | -> bool { CONDITION_2 })(), "Post-invariant failed: {}", "CONDITION_2");
+            assert!((|output: &#ret_type| -> bool { CONDITION_3 })(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_3");
             __anodized_output
         }
     };
@@ -342,15 +342,15 @@ fn multiple_conditions_in_clauses() {
 
     let expected: Block = parse_quote! {
         {
-            assert!((| | CONDITION_1)(), "Precondition failed: {}", "CONDITION_1");
-            assert!((| | CONDITION_2)(), "Precondition failed: {}", "CONDITION_2");
-            assert!((| | CONDITION_3)(), "Pre-invariant failed: {}", "CONDITION_3");
-            assert!((| | CONDITION_4)(), "Pre-invariant failed: {}", "CONDITION_4");
+            assert!((| | -> bool { CONDITION_1 })(), "Precondition failed: {}", "CONDITION_1");
+            assert!((| | -> bool { CONDITION_2 })(), "Precondition failed: {}", "CONDITION_2");
+            assert!((| | -> bool { CONDITION_3 })(), "Pre-invariant failed: {}", "CONDITION_3");
+            assert!((| | -> bool { CONDITION_4 })(), "Pre-invariant failed: {}", "CONDITION_4");
             let (__anodized_output): (#ret_type) = ((|| #body)());
-            assert!((| | CONDITION_3)(), "Post-invariant failed: {}", "CONDITION_3");
-            assert!((| | CONDITION_4)(), "Post-invariant failed: {}", "CONDITION_4");
-            assert!((|output: &#ret_type| CONDITION_5)(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_5");
-            assert!((|output: &#ret_type| CONDITION_6)(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_6");
+            assert!((| | -> bool { CONDITION_3 })(), "Post-invariant failed: {}", "CONDITION_3");
+            assert!((| | -> bool { CONDITION_4 })(), "Post-invariant failed: {}", "CONDITION_4");
+            assert!((|output: &#ret_type| -> bool { CONDITION_5 })(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_5");
+            assert!((|output: &#ret_type| -> bool { CONDITION_6 })(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_6");
             __anodized_output
         }
     };
@@ -374,7 +374,7 @@ fn binds_parameter() {
     let expected: Block = parse_quote! {
         {
             let (__anodized_output): (#ret_type) = ((|| #body)());
-            assert!((|OUTPUT_PATTERN: &#ret_type| CONDITION_1)(&__anodized_output), "Postcondition failed: {}", "| OUTPUT_PATTERN | CONDITION_1");
+            assert!((|OUTPUT_PATTERN: &#ret_type| -> bool { CONDITION_1 })(&__anodized_output), "Postcondition failed: {}", "| OUTPUT_PATTERN | CONDITION_1");
             __anodized_output
         }
     };
@@ -402,10 +402,10 @@ fn ensures_with_mixed_conditions() {
     let expected: Block = parse_quote! {
         {
             let (__anodized_output): (#ret_type) = ((|| #body)());
-            assert!((|output: &#ret_type| CONDITION_1)(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_1");
-            assert!((|PATTERN_1: &#ret_type| CONDITION_2)(&__anodized_output), "Postcondition failed: {}", "| PATTERN_1 | CONDITION_2");
-            assert!((|output: &#ret_type| CONDITION_3)(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_3");
-            assert!((|PATTERN_2: &#ret_type| CONDITION_4)(&__anodized_output), "Postcondition failed: {}", "| PATTERN_2 | CONDITION_4");
+            assert!((|output: &#ret_type| -> bool { CONDITION_1 })(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_1");
+            assert!((|PATTERN_1: &#ret_type| -> bool { CONDITION_2 })(&__anodized_output), "Postcondition failed: {}", "| PATTERN_1 | CONDITION_2");
+            assert!((|output: &#ret_type| -> bool { CONDITION_3 })(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_3");
+            assert!((|PATTERN_2: &#ret_type| -> bool { CONDITION_4 })(&__anodized_output), "Postcondition failed: {}", "| PATTERN_2 | CONDITION_4");
             __anodized_output
         }
     };
@@ -433,17 +433,17 @@ fn cfg_attributes() {
     let expected: Block = parse_quote! {
         {
             if cfg!(SETTING_1) {
-                assert!((| | CONDITION_1)(), "Precondition failed: {}", "CONDITION_1");
+                assert!((| | -> bool { CONDITION_1 })(), "Precondition failed: {}", "CONDITION_1");
             }
             if cfg!(SETTING_2) {
-                assert!((| | CONDITION_2)(), "Pre-invariant failed: {}", "CONDITION_2");
+                assert!((| | -> bool { CONDITION_2 })(), "Pre-invariant failed: {}", "CONDITION_2");
             }
             let (__anodized_output): (#ret_type) = ((|| #body)());
             if cfg!(SETTING_2) {
-                assert!((| | CONDITION_2)(), "Post-invariant failed: {}", "CONDITION_2");
+                assert!((| | -> bool { CONDITION_2 })(), "Post-invariant failed: {}", "CONDITION_2");
             }
             if cfg!(SETTING_3) {
-                assert!((|output: &#ret_type| CONDITION_3)(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_3");
+                assert!((|output: &#ret_type| -> bool { CONDITION_3 })(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_3");
             }
             __anodized_output
         }
@@ -471,18 +471,18 @@ fn cfg_on_single_and_list_conditions() {
     let expected: Block = parse_quote! {
         {
             if cfg!(SETTING_1) {
-                assert!((| | CONDITION_1)(), "Precondition failed: {}", "CONDITION_1");
+                assert!((| | -> bool { CONDITION_1 })(), "Precondition failed: {}", "CONDITION_1");
             }
-            assert!((| | CONDITION_2)(), "Pre-invariant failed: {}", "CONDITION_2");
-            assert!((| | CONDITION_3)(), "Pre-invariant failed: {}", "CONDITION_3");
+            assert!((| | -> bool { CONDITION_2 })(), "Pre-invariant failed: {}", "CONDITION_2");
+            assert!((| | -> bool { CONDITION_3 })(), "Pre-invariant failed: {}", "CONDITION_3");
             let (__anodized_output): (#ret_type) = ((|| #body)());
-            assert!((| | CONDITION_2)(), "Post-invariant failed: {}", "CONDITION_2");
-            assert!((| | CONDITION_3)(), "Post-invariant failed: {}", "CONDITION_3");
+            assert!((| | -> bool { CONDITION_2 })(), "Post-invariant failed: {}", "CONDITION_2");
+            assert!((| | -> bool { CONDITION_3 })(), "Post-invariant failed: {}", "CONDITION_3");
             if cfg!(SETTING_2) {
-                assert!((|output: &#ret_type| CONDITION_4)(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_4");
+                assert!((|output: &#ret_type| -> bool { CONDITION_4 })(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_4");
             }
             if cfg!(SETTING_2) {
-                assert!((|output: &#ret_type| CONDITION_5)(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_5");
+                assert!((|output: &#ret_type| -> bool { CONDITION_5 })(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_5");
             }
             __anodized_output
         }
@@ -513,30 +513,30 @@ fn complex_mixed_conditions() {
 
     let expected: Block = parse_quote! {
         {
-            assert!((| | CONDITION_1)(), "Precondition failed: {}", "CONDITION_1");
+            assert!((| | -> bool { CONDITION_1 })(), "Precondition failed: {}", "CONDITION_1");
             if cfg!(SETTING_1) {
-                assert!((| | CONDITION_2)(), "Precondition failed: {}", "CONDITION_2");
+                assert!((| | -> bool { CONDITION_2 })(), "Precondition failed: {}", "CONDITION_2");
             }
             if cfg!(SETTING_1) {
-                assert!((| | CONDITION_3)(), "Precondition failed: {}", "CONDITION_3");
+                assert!((| | -> bool { CONDITION_3 })(), "Precondition failed: {}", "CONDITION_3");
             }
-            assert!((| | CONDITION_4)(), "Pre-invariant failed: {}", "CONDITION_4");
-            assert!((| | CONDITION_5)(), "Pre-invariant failed: {}", "CONDITION_5");
+            assert!((| | -> bool { CONDITION_4 })(), "Pre-invariant failed: {}", "CONDITION_4");
+            assert!((| | -> bool { CONDITION_5 })(), "Pre-invariant failed: {}", "CONDITION_5");
             if cfg!(SETTING_2) {
-                assert!((| | CONDITION_6)(), "Pre-invariant failed: {}", "CONDITION_6");
+                assert!((| | -> bool { CONDITION_6 })(), "Pre-invariant failed: {}", "CONDITION_6");
             }
             let (__anodized_output): (#ret_type) = ((|| #body)());
-            assert!((| | CONDITION_4)(), "Post-invariant failed: {}", "CONDITION_4");
-            assert!((| | CONDITION_5)(), "Post-invariant failed: {}", "CONDITION_5");
+            assert!((| | -> bool { CONDITION_4 })(), "Post-invariant failed: {}", "CONDITION_4");
+            assert!((| | -> bool { CONDITION_5 })(), "Post-invariant failed: {}", "CONDITION_5");
             if cfg!(SETTING_2) {
-                assert!((| | CONDITION_6)(), "Post-invariant failed: {}", "CONDITION_6");
+                assert!((| | -> bool { CONDITION_6 })(), "Post-invariant failed: {}", "CONDITION_6");
             }
-            assert!((|output: &#ret_type| CONDITION_7)(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_7");
+            assert!((|output: &#ret_type| -> bool { CONDITION_7 })(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_7");
             if cfg!(SETTING_3) {
-                assert!((|output: &#ret_type| CONDITION_8)(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_8");
+                assert!((|output: &#ret_type| -> bool { CONDITION_8 })(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_8");
             }
             if cfg!(SETTING_3) {
-                assert!((|PATTERN_1: &#ret_type| CONDITION_9)(&__anodized_output), "Postcondition failed: {}", "| PATTERN_1 | CONDITION_9");
+                assert!((|PATTERN_1: &#ret_type| -> bool { CONDITION_9 })(&__anodized_output), "Postcondition failed: {}", "| PATTERN_1 | CONDITION_9");
             }
             __anodized_output
         }
@@ -567,10 +567,10 @@ fn captures() {
 
     let expected: Block = parse_quote! {
         {
-            assert!((| | CONDITION_1)(), "Precondition failed: {}", "CONDITION_1");
+            assert!((| | -> bool { CONDITION_1 })(), "Precondition failed: {}", "CONDITION_1");
             let (ALIAS_1, ALIAS_2, __anodized_output): (_, _, #ret_type) = ((| | EXPR_1) (), (| | EXPR_2) (), (|| #body)());
-            assert!((|output: &#ret_type| CONDITION_2)(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_2");
-            assert!((|output: &#ret_type| CONDITION_3)(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_3");
+            assert!((|output: &#ret_type| -> bool { CONDITION_2 })(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_2");
+            assert!((|output: &#ret_type| -> bool { CONDITION_3 })(&__anodized_output), "Postcondition failed: {}", "| output | CONDITION_3");
             __anodized_output
         }
     };
