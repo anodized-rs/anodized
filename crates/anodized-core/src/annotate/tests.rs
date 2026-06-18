@@ -310,7 +310,7 @@ fn ensures_with_explicit_closure() {
 }
 
 #[test]
-fn explicit_bool_return_types_are_preserved() {
+fn condition_closure_explicit_return_type_is_preserved() {
     let spec: Spec = parse_quote! {
         requires: || -> bool { x > 0 },
         ensures: |result| -> bool { result > x },
