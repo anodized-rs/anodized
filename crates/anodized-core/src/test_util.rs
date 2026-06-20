@@ -1,10 +1,26 @@
 use crate::{Capture, PostCondition, PreCondition, Spec};
-use quote::ToTokens;
+use pretty_assertions::assert_eq;
+use quote::{ToTokens, quote};
 
 pub fn assert_tokens_eq(left: &impl ToTokens, right: &impl ToTokens) {
-    let left_str = left.to_token_stream().to_string();
-    let right_str = right.to_token_stream().to_string();
+    let left_str = pretty_print_tokens(left.to_token_stream());
+    let right_str = pretty_print_tokens(right.to_token_stream());
     assert_eq!(left_str, right_str);
+}
+
+fn pretty_print_tokens(ts: proc_macro2::TokenStream) -> String {
+    let file: syn::File = syn::parse2(ts.clone())
+        .or_else(|_| {
+            // Token stream cannot be parsed as top-level items; wrap in function
+            let wrapped: proc_macro2::TokenStream = quote! {
+                fn main() {
+                    #ts
+                }
+            };
+            syn::parse2(wrapped)
+        })
+        .expect("wrap tokens in a file");
+    prettyplease::unparse(&file)
 }
 
 pub fn assert_spec_eq(left: &Spec, right: &Spec) {

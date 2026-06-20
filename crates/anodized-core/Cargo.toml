@@ -17,3 +17,7 @@ bitflags = "2.11.1"
 proc-macro2.workspace = true
 quote.workspace = true
 syn.workspace = true
+
+[dev-dependencies]
+pretty_assertions.workspace = true
+prettyplease.workspace = true
