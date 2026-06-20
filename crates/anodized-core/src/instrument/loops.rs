@@ -1,5 +1,6 @@
 #[cfg(test)]
-mod tests;
+#[path = "loops_tests.rs"]
+mod loops_tests;
 
 use syn::{
     Block, Error, ExprClosure, ExprForLoop, ExprWhile, ItemFn, Result, Stmt, parse_quote,

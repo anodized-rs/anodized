@@ -15,7 +15,8 @@ pub mod syntax;
 use syntax::{Captures, Keyword};
 
 #[cfg(test)]
-mod tests;
+#[path = "annotate_tests.rs"]
+mod annotate_tests;
 
 impl Parse for Spec {
     fn parse(input: ParseStream) -> Result<Self> {
