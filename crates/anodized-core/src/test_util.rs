@@ -10,15 +10,13 @@ pub fn assert_tokens_eq(left: &impl ToTokens, right: &impl ToTokens) {
 
 fn pretty_print_tokens(ts: proc_macro2::TokenStream) -> String {
     let file: syn::File = syn::parse2(ts.clone())
-        .or_else(|_| {
+        .or_else(|_|
             // Token stream cannot be parsed as top-level items; wrap in function
-            let wrapped: proc_macro2::TokenStream = quote! {
+            syn::parse2(quote! {
                 fn main() {
                     #ts
                 }
-            };
-            syn::parse2(wrapped)
-        })
+            }))
         .expect("wrap tokens in a file");
     prettyplease::unparse(&file)
 }
