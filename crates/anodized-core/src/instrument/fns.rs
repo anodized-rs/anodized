@@ -2,18 +2,18 @@
 #[path = "fns_tests.rs"]
 mod fns_tests;
 
-use crate::{
-    Capture, PostCondition, PreCondition, Spec,
-    instrument::{Config, build_assert, build_eprint},
-    qualifiers::FnQualifiers,
-};
-
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
     Attribute, Block, Expr, Ident, Pat, PatIdent, Path, ReturnType, Signature, Stmt, Type,
     parse::{Parse, Result},
     parse_quote,
+};
+
+use crate::{
+    Capture, PostCondition, PreCondition, Spec,
+    instrument::{Config, build_assert, build_eprint},
+    qualifiers::FnQualifiers,
 };
 
 impl Config {
