@@ -1,5 +1,6 @@
 #[cfg(test)]
-mod tests;
+#[path = "traits_tests.rs"]
+mod traits_tests;
 
 use quote::quote;
 use syn::{

@@ -5,7 +5,8 @@ use syn::{ItemEnum, ItemImpl, ItemStruct, Result, parse_quote};
 use crate::{DataSpec, instrument::Config};
 
 #[cfg(test)]
-mod tests;
+#[path = "data_tests.rs"]
+mod data_tests;
 
 impl Config {
     pub fn instrument_item_struct(

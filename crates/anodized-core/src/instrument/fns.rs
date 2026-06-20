@@ -1,5 +1,6 @@
 #[cfg(test)]
-mod tests;
+#[path = "fns_tests.rs"]
+mod fns_tests;
 
 use crate::{
     Capture, PostCondition, PreCondition, Spec,
