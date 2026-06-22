@@ -37,7 +37,7 @@ impl Config {
         Ok(())
     }
 
-    pub fn build_requires_fn_sig(prefix: &str, sig: &Signature) -> Signature {
+    pub fn build_precondition_fn_sig(prefix: &str, sig: &Signature) -> Signature {
         Signature {
             constness: sig.constness,
             asyncness: sig.asyncness,
@@ -53,7 +53,7 @@ impl Config {
         }
     }
 
-    pub fn build_ensures_fn_sig(prefix: &str, sig: &Signature) -> Signature {
+    pub fn build_postcondition_fn_sig(prefix: &str, sig: &Signature) -> Signature {
         let mut inputs = sig.inputs.clone();
         let output_binder = match &sig.output {
             ReturnType::Type(_, return_type) => parse_quote!(__anodized_output: &#return_type),

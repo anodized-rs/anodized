@@ -39,7 +39,7 @@ impl Config {
             let spec_requires_fn = ItemFn {
                 attrs: attrs.to_vec(),
                 vis: syn::Visibility::Inherited,
-                sig: Self::build_requires_fn_sig("__anodized_fn_requires", &item_fn.sig),
+                sig: Self::build_precondition_fn_sig("__anodized_fn_requires", &item_fn.sig),
                 block: Box::new(Self::build_precondition_fn_body(
                     &spec.requires,
                     &spec.maintains,
@@ -48,7 +48,7 @@ impl Config {
             let spec_ensures_fn = ItemFn {
                 attrs: attrs.to_vec(),
                 vis: syn::Visibility::Inherited,
-                sig: Self::build_ensures_fn_sig("__anodized_fn_ensures", &item_fn.sig),
+                sig: Self::build_postcondition_fn_sig("__anodized_fn_ensures", &item_fn.sig),
                 block: Box::new(Self::build_postcondition_fn_body(
                     &spec.maintains,
                     &spec.captures,
