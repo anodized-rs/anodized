@@ -73,13 +73,10 @@ impl Config {
                         let spec_requires_fn = TraitItemFn {
                             attrs: attrs.to_vec(),
                             sig: Self::build_spec_fn_sig("__anodized_fn_requires", &func.sig),
-                            default: Some(Self::build_precondition_fn_body(&fn_spec.requires)),
-                            semi_token: None,
-                        };
-                        let spec_maintains_fn = TraitItemFn {
-                            attrs: attrs.to_vec(),
-                            sig: Self::build_spec_fn_sig("__anodized_fn_maintains", &func.sig),
-                            default: Some(Self::build_precondition_fn_body(&fn_spec.maintains)),
+                            default: Some(Self::build_precondition_fn_body(
+                                &fn_spec.requires,
+                                &fn_spec.maintains,
+                            )),
                             semi_token: None,
                         };
                         let spec_ensures_fn = TraitItemFn {
@@ -96,7 +93,6 @@ impl Config {
                         new_trait_items.push(TraitItem::Const(spec_trait_qualifiers_const));
                         new_trait_items.push(TraitItem::Const(spec_qualifiers_const));
                         new_trait_items.push(TraitItem::Fn(spec_requires_fn));
-                        new_trait_items.push(TraitItem::Fn(spec_maintains_fn));
                         new_trait_items.push(TraitItem::Fn(spec_ensures_fn));
                     }
 
@@ -218,14 +214,10 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         let spec_requires_fn = ImplItemFn {
                             attrs: attrs.to_vec(),
                             sig: Self::build_spec_fn_sig("__anodized_fn_requires", &func.sig),
-                            block: Self::build_precondition_fn_body(&fn_spec.requires),
-                            vis: Visibility::Inherited,
-                            defaultness: None,
-                        };
-                        let spec_maintains_fn = ImplItemFn {
-                            attrs: attrs.to_vec(),
-                            sig: Self::build_spec_fn_sig("__anodized_fn_maintains", &func.sig),
-                            block: Self::build_precondition_fn_body(&fn_spec.maintains),
+                            block: Self::build_precondition_fn_body(
+                                &fn_spec.requires,
+                                &fn_spec.maintains,
+                            ),
                             vis: Visibility::Inherited,
                             defaultness: None,
                         };
@@ -243,7 +235,6 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
 
                         new_items.push(ImplItem::Const(spec_qualifiers_const));
                         new_items.push(ImplItem::Fn(spec_requires_fn));
-                        new_items.push(ImplItem::Fn(spec_maintains_fn));
                         new_items.push(ImplItem::Fn(spec_ensures_fn));
                     }
 

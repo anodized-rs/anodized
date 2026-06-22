@@ -29,7 +29,7 @@ impl Config {
 
     fn instrument_loop_body(&self, spec: LoopSpec, stmts: &mut Vec<Stmt>) {
         if self.embed_spec {
-            let maintains_block = Self::build_precondition_fn_body(&spec.maintains);
+            let maintains_block = Self::build_precondition_fn_body(&[], &spec.maintains);
             stmts.insert(
                 0,
                 parse_quote! {

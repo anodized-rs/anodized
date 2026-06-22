@@ -49,7 +49,7 @@ impl Config {
             paren_token: sig.paren_token,
             inputs: sig.inputs.clone(),
             variadic: sig.variadic.clone(),
-            output: syn::ReturnType::Default,
+            output: parse_quote!(-> bool),
         }
     }
 
@@ -98,14 +98,28 @@ impl Config {
         }
     }
 
-    pub fn build_precondition_fn_body(conditions: &[PreCondition]) -> Block {
-        let statements = conditions.iter().map(|condition| -> Stmt {
+    pub fn build_precondition_fn_body(
+        requires: &[PreCondition],
+        maintains: &[PreCondition],
+    ) -> Block {
+        let conditions = requires.iter().chain(maintains);
+
+        let mut statements: Vec<Stmt> = vec![];
+        let mut clauses: Vec<Expr> = vec![];
+        for (i, condition) in conditions.enumerate() {
+            let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
             let closure = &condition.closure;
-            parse_quote! { let _ = #closure; }
-        });
+            statements.push(parse_quote! { let #name = #closure; });
+            clauses.push(parse_quote! { #name() });
+        }
+        if clauses.is_empty() {
+            clauses.push(parse_quote!(true));
+        }
+
         parse_quote! {
             {
                 #(#statements)*
+                #(#clauses)&&*
             }
         }
     }

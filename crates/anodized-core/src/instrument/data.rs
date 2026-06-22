@@ -18,7 +18,7 @@ impl Config {
 
         let ident = &item_struct.ident;
         let (impl_generics, ty_generics, where_clause) = item_struct.generics.split_for_impl();
-        let statements = Self::build_precondition_fn_body(&spec.maintains).stmts;
+        let statements = Self::build_precondition_fn_body(&[], &spec.maintains).stmts;
 
         item_struct.to_tokens(&mut tokens);
 
@@ -27,7 +27,7 @@ impl Config {
                 #[doc(hidden)]
                 #[allow(warnings)]
                 impl #impl_generics #ident #ty_generics #where_clause {
-                    fn __anodized_data_maintains(&self) {
+                    fn __anodized_data_maintains(&self) -> bool {
                         #(#statements)*
                     }
                 }
@@ -43,7 +43,7 @@ impl Config {
 
         let ident = &item_enum.ident;
         let (impl_generics, ty_generics, where_clause) = item_enum.generics.split_for_impl();
-        let statements = Self::build_precondition_fn_body(&spec.maintains).stmts;
+        let statements = Self::build_precondition_fn_body(&[], &spec.maintains).stmts;
 
         item_enum.to_tokens(&mut tokens);
 
@@ -52,7 +52,7 @@ impl Config {
                 #[doc(hidden)]
                 #[allow(warnings)]
                 impl #impl_generics #ident #ty_generics #where_clause {
-                    fn __anodized_data_maintains(&self) {
+                    fn __anodized_data_maintains(&self) -> bool {
                         // Bring all variants into scope for convenience.
                         use #ident::*;
                         #(#statements)*
