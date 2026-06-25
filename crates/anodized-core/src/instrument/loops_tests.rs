@@ -21,9 +21,9 @@ fn embed_spec_expr_while() {
     let expected: TokenStream = parse_quote! {
         while WHILE_COND {
             let __anodized_loop_maintains = {
-                let __anodized_clause_1 = | | -> bool { INVAR_1 };
-                let __anodized_clause_2 = | | -> bool { INVAR_2 };
-                __anodized_clause_1() && __anodized_clause_2()
+                let __anodized_clause_1 = (| | -> bool { INVAR_1 })();
+                let __anodized_clause_2 = (| | -> bool { INVAR_2 })();
+                __anodized_clause_1 && __anodized_clause_2
             };
             let __anodized_loop_decreases = {
                 let _ = | | DECREASES_1;
@@ -55,9 +55,9 @@ fn embed_spec_expr_for() {
     let expected: TokenStream = parse_quote! {
         for FOR_VAR in FOR_EXPR {
             let __anodized_loop_maintains = {
-                let __anodized_clause_1 = | | -> bool { INVAR_1 };
-                let __anodized_clause_2 = | | -> bool { INVAR_2 };
-                __anodized_clause_1() && __anodized_clause_2()
+                let __anodized_clause_1 = (| | -> bool { INVAR_1 })();
+                let __anodized_clause_2 = (| | -> bool { INVAR_2 })();
+                __anodized_clause_1 && __anodized_clause_2
             };
             let __anodized_loop_decreases = {};
             LOOP_BODY
