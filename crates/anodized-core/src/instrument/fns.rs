@@ -132,8 +132,8 @@ impl Config {
             let i = clauses.len();
             let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
             let closure = &condition.closure;
-            statements.push(parse_quote! { let #name = #closure; });
-            clauses.push(parse_quote! { #name() });
+            statements.push(parse_quote! { let #name = (#closure)(); });
+            clauses.push(parse_quote! { #name });
         }
 
         if clauses.is_empty() {
@@ -161,8 +161,8 @@ impl Config {
             let i = clauses.len();
             let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
             let closure = &condition.closure;
-            statements.push(parse_quote! { let #name = #closure; });
-            clauses.push(parse_quote! { #name() });
+            statements.push(parse_quote! { let #name = (#closure)(); });
+            clauses.push(parse_quote! { #name });
         }
 
         {
@@ -185,14 +185,14 @@ impl Config {
             let closure = &condition.closure;
             let input = closure.inputs.first().expect("valid postcondition");
             if let Pat::Type(_) = input {
-                statements.push(parse_quote! { let #name = #closure; });
+                statements.push(parse_quote! { let #name = (#closure)(__anodized_output); });
             } else {
                 let body = &closure.body;
                 statements.push(parse_quote! {
-                    let #name = | #input: &#output_type | -> bool { #body };
+                    let #name = (| #input: &#output_type | -> bool { #body })(__anodized_output);
                 });
             }
-            clauses.push(parse_quote! { #name(__anodized_output) });
+            clauses.push(parse_quote! { #name });
         }
 
         if clauses.is_empty() {
