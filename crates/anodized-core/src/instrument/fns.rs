@@ -181,16 +181,18 @@ impl Config {
         });
 
         // --- Generate Precondition Checks ---
-        let precondition_clauses =
-            spec.requires
-                .iter()
-                .chain(&spec.maintains)
-                .map(|condition| -> Expr {
-                    let closure = &condition.closure;
-                    let expr = parse_quote! { (#closure)() };
-                    let repr = condition.closure.body.to_token_stream().to_string();
-                    self.build_clause_eval(&expr, &format!("Precondition clause failed: {repr}"))
-                });
+        let mut precondition_clauses: Vec<Expr> = vec![];
+        for condition in spec.requires.iter().chain(&spec.maintains) {
+            let closure = &condition.closure;
+            let expr = parse_quote! { (#closure)() };
+            let repr = condition.closure.body.to_token_stream().to_string();
+            let clause =
+                self.build_clause_eval(&expr, &format!("Precondition clause failed: {repr}"));
+            precondition_clauses.push(clause);
+        }
+        if precondition_clauses.is_empty() {
+            precondition_clauses.push(parse_quote!(true));
+        }
 
         // --- Generate Combined Body and Capture Statement ---
         // Capture values and execute body in a single tuple assignment
@@ -231,27 +233,30 @@ impl Config {
         };
 
         // --- Generate Postcondition Checks ---
-        let postcondition_clauses = spec
-            .maintains
-            .iter()
-            .map(|condition| -> Expr {
-                let closure = condition.closure.to_token_stream();
-                let expr = parse_quote! { (#closure)() };
-                let repr = condition.closure.body.to_token_stream().to_string();
-                self.build_clause_eval(&expr, &format!("Postcondition failed: {repr}"))
-            })
-            .chain(spec.ensures.iter().map(|postcondition| -> Expr {
-                let closure = annotate_postcondition_closure_argument(
-                    postcondition.closure.clone(),
-                    return_type.clone(),
-                );
-                let expr = parse_quote! { (#closure)(&#output_ident) };
-                let inputs = &postcondition.closure.inputs;
-                let body = &postcondition.closure.body;
-                // Omit the closure's return type for brevity.
-                let repr = quote! { |#inputs| #body }.to_string();
-                self.build_clause_eval(&expr, &format!("Postcondition failed: {repr}"))
-            }));
+        let mut postcondition_clauses: Vec<Expr> = vec![];
+        for condition in &spec.maintains {
+            let closure = condition.closure.to_token_stream();
+            let expr = parse_quote! { (#closure)() };
+            let repr = condition.closure.body.to_token_stream().to_string();
+            let clause = self.build_clause_eval(&expr, &format!("Postcondition failed: {repr}"));
+            postcondition_clauses.push(clause);
+        }
+        for postcondition in &spec.ensures {
+            let closure = annotate_postcondition_closure_argument(
+                postcondition.closure.clone(),
+                return_type.clone(),
+            );
+            let expr = parse_quote! { (#closure)(&#output_ident) };
+            let inputs = &postcondition.closure.inputs;
+            let body = &postcondition.closure.body;
+            // Omit the closure's return type for brevity.
+            let repr = quote! { |#inputs| #body }.to_string();
+            let clause = self.build_clause_eval(&expr, &format!("Postcondition failed: {repr}"));
+            postcondition_clauses.push(clause);
+        }
+        if postcondition_clauses.is_empty() {
+            postcondition_clauses.push(parse_quote!(true));
+        }
 
         let do_run_checks = self.emit_print || self.emit_panic;
         let precond_check =
