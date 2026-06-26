@@ -2,10 +2,11 @@
 #[path = "fns_tests.rs"]
 mod fns_tests;
 
-use proc_macro2::Span;
+use proc_macro2::{Span, TokenStream};
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Block, Expr, Ident, Pat, PatIdent, Path, ReturnType, Signature, Stmt, Type,
+    Attribute, Block, Expr, Ident, LitStr, Meta, Pat, PatIdent, Path, ReturnType, Signature, Stmt,
+    Type,
     parse::{Parse, Result},
     parse_quote,
 };
@@ -170,13 +171,6 @@ impl Config {
         is_async: bool,
         return_type: &syn::Type,
     ) -> Result<Block> {
-        let build_check = match (self.emit_print, self.emit_panic) {
-            (true, true) => build_assert,
-            (true, false) => build_eprint,
-            (false, true) => build_assert,
-            (false, false) => return Ok(original_body.clone()),
-        };
-
         // The identifier for the return value binding.
         let output_ident = Pat::Ident(PatIdent {
             attrs: vec![],
@@ -187,31 +181,16 @@ impl Config {
         });
 
         // --- Generate Precondition Checks ---
-        let precondition_checks = spec
-            .requires
-            .iter()
-            .map(|condition| {
-                let closure = condition.closure.to_token_stream();
-                let expr = quote! { (#closure)() };
-                let repr = condition.closure.body.to_token_stream();
-                build_check(
-                    condition.cfg.as_ref(),
-                    &expr,
-                    "Precondition failed: {}",
-                    &repr,
-                )
-            })
-            .chain(spec.maintains.iter().map(|condition| {
-                let closure = condition.closure.to_token_stream();
-                let expr = quote! { (#closure)() };
-                let repr = condition.closure.body.to_token_stream();
-                build_check(
-                    condition.cfg.as_ref(),
-                    &expr,
-                    "Pre-invariant failed: {}",
-                    &repr,
-                )
-            }));
+        let precondition_clauses =
+            spec.requires
+                .iter()
+                .chain(&spec.maintains)
+                .map(|condition| -> Expr {
+                    let closure = condition.closure.to_token_stream();
+                    let expr = parse_quote! { (#closure)() };
+                    let repr = condition.closure.body.to_token_stream().to_string();
+                    self.build_clause_eval(&expr, &format!("Precondition clause failed"))
+                });
 
         // --- Generate Combined Body and Capture Statement ---
         // Capture values and execute body in a single tuple assignment
@@ -252,47 +231,66 @@ impl Config {
         };
 
         // --- Generate Postcondition Checks ---
-        let postcondition_checks = spec
+        let postcondition_clauses = spec
             .maintains
             .iter()
-            .map(|condition| {
+            .map(|condition| -> Expr {
                 let closure = condition.closure.to_token_stream();
-                let expr = quote! { (#closure)() };
-                let repr = condition.closure.body.to_token_stream();
-                build_check(
-                    condition.cfg.as_ref(),
-                    &expr,
-                    "Post-invariant failed: {}",
-                    &repr,
-                )
+                let expr = parse_quote! { (#closure)() };
+                let repr = condition.closure.body.to_token_stream().to_string();
+                self.build_clause_eval(&expr, &format!("Postcondition failed"))
             })
-            .chain(spec.ensures.iter().map(|postcondition| {
+            .chain(spec.ensures.iter().map(|postcondition| -> Expr {
                 let closure = annotate_postcondition_closure_argument(
                     postcondition.closure.clone(),
                     return_type.clone(),
                 );
-
-                let expr = quote! { (#closure)(&#output_ident) };
+                let expr = parse_quote! { (#closure)(&#output_ident) };
                 let inputs = &postcondition.closure.inputs;
                 let body = &postcondition.closure.body;
                 // Omit the closure's return type for brevity.
-                let repr = quote! { |#inputs| #body };
-                build_check(
-                    postcondition.cfg.as_ref(),
-                    &expr,
-                    "Postcondition failed: {}",
-                    &repr,
-                )
+                let repr = quote! { |#inputs| #body }.to_string();
+                self.build_clause_eval(&expr, &format!("Postcondition failed"))
             }));
+
+        let checks_enabled = self.emit_print || self.emit_panic;
+        let precond_check =
+            self.build_condition_check(parse_quote!(__anodized_precond), "Precondition failed");
+        let postcond_check =
+            self.build_condition_check(parse_quote!(__anodized_postcond), "Postcondition failed");
 
         Ok(parse_quote! {
             {
-                #(#precondition_checks)*
+                if #checks_enabled {
+                    let __anodized_precond = true;//#(#precondition_clauses &&)*;
+                    #precond_check;
+                }
                 #body_and_captures
-                #(#postcondition_checks)*
+                if #checks_enabled {
+                    let __anodized_postcond = true;//#(#postcondition_clauses &&)*;
+                    #postcond_check;
+                }
                 #output_ident
             }
         })
+    }
+
+    fn build_clause_eval(&self, expr: &Expr, message: &str) -> Expr {
+        let message = LitStr::new(message, Span::mixed_site());
+        if self.emit_print {
+            parse_quote!(if #expr { true } else { eprintln!("dang"); false })
+        } else {
+            expr.clone()
+        }
+    }
+
+    fn build_condition_check(&self, ident: Ident, message: &str) -> Expr {
+        let message = LitStr::new(message, Span::mixed_site());
+        if self.emit_panic {
+            parse_quote!(if !#ident { panic!("dang"); })
+        } else {
+            parse_quote!(())
+        }
     }
 }
 
