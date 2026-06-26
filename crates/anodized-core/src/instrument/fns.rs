@@ -186,10 +186,10 @@ impl Config {
                 .iter()
                 .chain(&spec.maintains)
                 .map(|condition| -> Expr {
-                    let closure = condition.closure.to_token_stream();
+                    let closure = &condition.closure;
                     let expr = parse_quote! { (#closure)() };
                     let repr = condition.closure.body.to_token_stream().to_string();
-                    self.build_clause_eval(&expr, &format!("Precondition clause failed"))
+                    self.build_clause_eval(&expr, &format!("Precondition clause failed: {repr}"))
                 });
 
         // --- Generate Combined Body and Capture Statement ---
@@ -238,7 +238,7 @@ impl Config {
                 let closure = condition.closure.to_token_stream();
                 let expr = parse_quote! { (#closure)() };
                 let repr = condition.closure.body.to_token_stream().to_string();
-                self.build_clause_eval(&expr, &format!("Postcondition failed"))
+                self.build_clause_eval(&expr, &format!("Postcondition failed: {repr}"))
             })
             .chain(spec.ensures.iter().map(|postcondition| -> Expr {
                 let closure = annotate_postcondition_closure_argument(
@@ -250,10 +250,10 @@ impl Config {
                 let body = &postcondition.closure.body;
                 // Omit the closure's return type for brevity.
                 let repr = quote! { |#inputs| #body }.to_string();
-                self.build_clause_eval(&expr, &format!("Postcondition failed"))
+                self.build_clause_eval(&expr, &format!("Postcondition failed: {repr}"))
             }));
 
-        let checks_enabled = self.emit_print || self.emit_panic;
+        let do_run_checks = self.emit_print || self.emit_panic;
         let precond_check =
             self.build_condition_check(parse_quote!(__anodized_precond), "Precondition failed");
         let postcond_check =
@@ -261,14 +261,14 @@ impl Config {
 
         Ok(parse_quote! {
             {
-                if #checks_enabled {
-                    let __anodized_precond = true;//#(#precondition_clauses &&)*;
-                    #precond_check;
+                if #do_run_checks {
+                    let __anodized_precond = #(#precondition_clauses)&&*;
+                    #precond_check
                 }
                 #body_and_captures
-                if #checks_enabled {
-                    let __anodized_postcond = true;//#(#postcondition_clauses &&)*;
-                    #postcond_check;
+                if #do_run_checks {
+                    let __anodized_postcond = #(#postcondition_clauses)&&*;
+                    #postcond_check
                 }
                 #output_ident
             }
@@ -278,7 +278,7 @@ impl Config {
     fn build_clause_eval(&self, expr: &Expr, message: &str) -> Expr {
         let message = LitStr::new(message, Span::mixed_site());
         if self.emit_print {
-            parse_quote!(if #expr { true } else { eprintln!("dang"); false })
+            parse_quote!(if #expr { true } else { eprintln!(#message); false })
         } else {
             expr.clone()
         }
@@ -287,7 +287,7 @@ impl Config {
     fn build_condition_check(&self, ident: Ident, message: &str) -> Expr {
         let message = LitStr::new(message, Span::mixed_site());
         if self.emit_panic {
-            parse_quote!(if !#ident { panic!("dang"); })
+            parse_quote!(if !#ident { panic!(#message); })
         } else {
             parse_quote!(())
         }
