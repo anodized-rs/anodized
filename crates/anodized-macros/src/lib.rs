@@ -12,6 +12,7 @@ const CONFIG: Config = Config {
     embed_spec: cfg!(not(anodized_discard_specs)),
     emit_print: cfg!(anodized_print),
     emit_panic: cfg!(anodized_panic),
+    make_fuzzy: cfg!(anodized_fuzz),
 };
 
 /// Attaches a specification to supported program elements.
