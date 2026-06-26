@@ -2,19 +2,16 @@
 #[path = "fns_tests.rs"]
 mod fns_tests;
 
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Block, Expr, Ident, LitStr, Meta, Pat, PatIdent, Path, ReturnType, Signature, Stmt,
-    Type,
+    Attribute, Block, Expr, Ident, LitStr, Pat, PatIdent, Path, ReturnType, Signature, Stmt, Type,
     parse::{Parse, Result},
     parse_quote,
 };
 
 use crate::{
-    Capture, PostCondition, PreCondition, Spec,
-    instrument::{Config, build_assert, build_eprint},
-    qualifiers::FnQualifiers,
+    Capture, PostCondition, PreCondition, Spec, instrument::Config, qualifiers::FnQualifiers,
 };
 
 impl Config {
@@ -180,7 +177,7 @@ impl Config {
             subpat: None,
         });
 
-        // --- Generate Precondition Checks ---
+        // --- Generate Precondition Clauses ---
         let mut precondition_clauses: Vec<Expr> = vec![];
         for condition in spec.requires.iter().chain(&spec.maintains) {
             let closure = &condition.closure;
@@ -232,7 +229,7 @@ impl Config {
             let (#(#aliases),*): (#(#types),*) = (#(#exprs),*);
         };
 
-        // --- Generate Postcondition Checks ---
+        // --- Generate Postcondition Clauses ---
         let mut postcondition_clauses: Vec<Expr> = vec![];
         for condition in &spec.maintains {
             let closure = condition.closure.to_token_stream();

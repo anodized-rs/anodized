@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
-use quote::{ToTokens, quote};
-use syn::{Attribute, ItemConst, ItemFn, ItemImpl, ItemTrait, Meta, Result, parse_quote};
+use quote::ToTokens;
+use syn::{Attribute, ItemConst, ItemFn, ItemImpl, ItemTrait, Result, parse_quote};
 
 use crate::{DataSpec, Spec};
 
@@ -149,38 +149,4 @@ fn find_spec_attr(attrs: Vec<Attribute>) -> syn::Result<(Option<Attribute>, Vec<
     }
 
     Ok((spec_attr, other_attrs))
-}
-
-fn build_assert(
-    cfg: Option<&Meta>,
-    expr: &TokenStream,
-    message: &str,
-    repr: &TokenStream,
-) -> TokenStream {
-    let repr_str = repr.to_string();
-    let check = quote! { assert!(#expr, #message, #repr_str); };
-    guard_check(cfg, check)
-}
-
-fn build_eprint(
-    cfg: Option<&Meta>,
-    expr: &TokenStream,
-    message: &str,
-    repr: &TokenStream,
-) -> TokenStream {
-    let repr_str = repr.to_string();
-    let check = quote! {
-        if !(#expr) {
-            eprintln!(#message, #repr_str);
-        }
-    };
-    guard_check(cfg, check)
-}
-
-fn guard_check(cfg: Option<&Meta>, check: TokenStream) -> TokenStream {
-    if let Some(cfg) = cfg {
-        quote! { if cfg!(#cfg) { #check } }
-    } else {
-        check
-    }
 }
