@@ -285,11 +285,11 @@ impl Config {
         }
     }
 
-    fn build_condition_check(&self, ident: Ident, message: &str) -> Expr {
+    fn build_condition_check(&self, ident: Ident, message: &str) -> Option<Expr> {
         if self.emit_panic {
-            parse_quote!(if !#ident { panic!("{}", #message); })
+            Some(parse_quote!(if !#ident { panic!("{}", #message); }))
         } else {
-            parse_quote!(())
+            None
         }
     }
 }
