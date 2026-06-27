@@ -5,7 +5,7 @@ mod fns_tests;
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Block, Expr, Ident, LitStr, Pat, PatIdent, Path, ReturnType, Signature, Stmt, Type,
+    Attribute, Block, Expr, Ident, Pat, PatIdent, Path, ReturnType, Signature, Stmt, Type,
     parse::{Parse, Result},
     parse_quote,
 };
@@ -278,18 +278,16 @@ impl Config {
     }
 
     fn build_clause_eval(&self, expr: &Expr, message: &str) -> Expr {
-        let message = LitStr::new(message, Span::mixed_site());
         if self.emit_print {
-            parse_quote!(if #expr { true } else { eprintln!(#message); false })
+            parse_quote!(if #expr { true } else { eprintln!("{}", #message); false })
         } else {
             expr.clone()
         }
     }
 
     fn build_condition_check(&self, ident: Ident, message: &str) -> Expr {
-        let message = LitStr::new(message, Span::mixed_site());
         if self.emit_panic {
-            parse_quote!(if !#ident { panic!(#message); })
+            parse_quote!(if !#ident { panic!("{}", #message); })
         } else {
             parse_quote!(())
         }
