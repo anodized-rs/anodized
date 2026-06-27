@@ -13,12 +13,11 @@ pub struct Config {
     pub embed_spec: bool,
     pub emit_print: bool,
     pub emit_panic: bool,
-    pub split_func: bool,
 }
 
 impl Config {
     pub fn has_effect(&self) -> bool {
-        self.embed_spec || self.emit_print || self.emit_panic || self.split_func
+        self.embed_spec || self.emit_print || self.emit_panic
     }
 
     pub fn instrument_item_fn(&self, spec: Spec, mut item_fn: ItemFn) -> Result<TokenStream> {
@@ -98,21 +97,18 @@ impl Config {
         embed_spec: true,
         emit_print: false,
         emit_panic: false,
-        split_func: false,
     };
 
     pub(crate) const PRINT: Config = Config {
         embed_spec: true,
         emit_print: true,
         emit_panic: false,
-        split_func: false,
     };
 
     pub(crate) const PANIC: Config = Config {
         embed_spec: true,
         emit_print: true,
         emit_panic: true,
-        split_func: false,
     };
 }
 
