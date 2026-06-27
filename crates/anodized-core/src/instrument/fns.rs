@@ -264,12 +264,12 @@ impl Config {
         Ok(parse_quote! {
             {
                 if #do_run_checks {
-                    let __anodized_precond = #(#precondition_clauses)&&*;
+                    let __anodized_precond = #(#precondition_clauses)&*;
                     #precond_check
                 }
                 #body_and_captures
                 if #do_run_checks {
-                    let __anodized_postcond = #(#postcondition_clauses)&&*;
+                    let __anodized_postcond = #(#postcondition_clauses)&*;
                     #postcond_check
                 }
                 #output_ident
