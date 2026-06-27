@@ -255,8 +255,8 @@ impl Config {
         }
 
         let do_run_checks = self.emit_print || self.emit_panic;
-        let precond_fail_action = self.build_fail_action("Precondition failed");
-        let postcond_fail_action = self.build_fail_action("Postcondition failed");
+        let precond_fail_action = self.build_fail_action("precondition failed");
+        let postcond_fail_action = self.build_fail_action("postcondition failed");
 
         Ok(parse_quote! {
             {
@@ -281,8 +281,8 @@ impl Config {
     }
 
     fn build_clause_eval(&self, expr: &Expr, repr: &str) -> Expr {
-        if self.emit_print || self.emit_panic {
-            let fmt_str = format!("\n    {}", repr);
+        if self.emit_print {
+            let fmt_str = format!("\n    {repr}");
             parse_quote!(if #expr { true } else { errors.push_str(#fmt_str); false })
         } else {
             expr.clone()
@@ -290,13 +290,12 @@ impl Config {
     }
 
     fn build_fail_action(&self, message: &str) -> Option<Stmt> {
-        let fmt_str = format!("{message}:{{errors}}");
-        if self.emit_panic {
-            Some(parse_quote! { panic!(#fmt_str); })
-        } else if self.emit_print {
-            Some(parse_quote! { eprintln!(#fmt_str); })
-        } else {
-            None
+        let fmt_str = format!("{message}\n{{errors}}");
+        match (self.emit_print, self.emit_panic) {
+            (true, true) => Some(parse_quote! { panic!(#fmt_str); }),
+            (true, false) => Some(parse_quote! { eprintln!(#fmt_str); }),
+            (false, true) => Some(parse_quote! { panic!(); }),
+            (false, false) => None,
         }
     }
 }
