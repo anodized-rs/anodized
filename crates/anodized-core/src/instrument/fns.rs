@@ -261,7 +261,6 @@ impl Config {
         Ok(parse_quote! {
             {
                 if #do_run_checks {
-                    use std::fmt::Write;
                     let mut errors = String::new();
                     let __anodized_precond = #(#precondition_clauses)&*;
                     if !__anodized_precond {
@@ -270,7 +269,6 @@ impl Config {
                 }
                 #body_and_captures
                 if #do_run_checks {
-                    use std::fmt::Write;
                     let mut errors = String::new();
                     let __anodized_postcond = #(#postcondition_clauses)&*;
                     if !__anodized_postcond {
