@@ -183,8 +183,7 @@ impl Config {
             let closure = &condition.closure;
             let expr = parse_quote! { (#closure)() };
             let repr = condition.closure.body.to_token_stream().to_string();
-            let clause =
-                self.build_clause_eval(&expr, &format!("Precondition clause failed: {repr}"));
+            let clause = self.build_clause_eval(&expr, &repr);
             precondition_clauses.push(clause);
         }
         if precondition_clauses.is_empty() {
@@ -235,7 +234,7 @@ impl Config {
             let closure = condition.closure.to_token_stream();
             let expr = parse_quote! { (#closure)() };
             let repr = condition.closure.body.to_token_stream().to_string();
-            let clause = self.build_clause_eval(&expr, &format!("Postcondition failed: {repr}"));
+            let clause = self.build_clause_eval(&expr, &repr);
             postcondition_clauses.push(clause);
         }
         for postcondition in &spec.ensures {
@@ -248,7 +247,7 @@ impl Config {
             let body = &postcondition.closure.body;
             // Omit the closure's return type for brevity.
             let repr = quote! { |#inputs| #body }.to_string();
-            let clause = self.build_clause_eval(&expr, &format!("Postcondition failed: {repr}"));
+            let clause = self.build_clause_eval(&expr, &repr);
             postcondition_clauses.push(clause);
         }
         if postcondition_clauses.is_empty() {
@@ -256,38 +255,48 @@ impl Config {
         }
 
         let do_run_checks = self.emit_print || self.emit_panic;
-        let precond_check =
-            self.build_condition_check(parse_quote!(__anodized_precond), "Precondition failed");
-        let postcond_check =
-            self.build_condition_check(parse_quote!(__anodized_postcond), "Postcondition failed");
+        let precond_fail_action = self.build_fail_action("Precondition failed");
+        let postcond_fail_action = self.build_fail_action("Postcondition failed");
 
         Ok(parse_quote! {
             {
                 if #do_run_checks {
+                    use std::fmt::Write;
+                    let mut errors = String::new();
                     let __anodized_precond = #(#precondition_clauses)&*;
-                    #precond_check
+                    if !__anodized_precond {
+                        #precond_fail_action
+                    }
                 }
                 #body_and_captures
                 if #do_run_checks {
+                    use std::fmt::Write;
+                    let mut errors = String::new();
                     let __anodized_postcond = #(#postcondition_clauses)&*;
-                    #postcond_check
+                    if !__anodized_postcond {
+                        #postcond_fail_action
+                    }
                 }
                 #output_ident
             }
         })
     }
 
-    fn build_clause_eval(&self, expr: &Expr, message: &str) -> Expr {
-        if self.emit_print {
-            parse_quote!(if #expr { true } else { eprintln!("{}", #message); false })
+    fn build_clause_eval(&self, expr: &Expr, repr: &str) -> Expr {
+        if self.emit_print || self.emit_panic {
+            let fmt_str = format!("\n    {}", repr);
+            parse_quote!(if #expr { true } else { errors.push_str(#fmt_str); false })
         } else {
             expr.clone()
         }
     }
 
-    fn build_condition_check(&self, ident: Ident, message: &str) -> Option<Expr> {
+    fn build_fail_action(&self, message: &str) -> Option<Stmt> {
+        let fmt_str = format!("{message}:{{errors}}");
         if self.emit_panic {
-            Some(parse_quote!(if !#ident { panic!("{}", #message); }))
+            Some(parse_quote! { panic!(#fmt_str); })
+        } else if self.emit_print {
+            Some(parse_quote! { eprintln!(#fmt_str); })
         } else {
             None
         }
