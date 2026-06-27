@@ -5,7 +5,7 @@ mod fns_tests;
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Block, Expr, Ident, Pat, PatIdent, Path, ReturnType, Signature, Stmt, Type,
+    Attribute, Block, Expr, Ident, Meta, Pat, PatIdent, Path, ReturnType, Signature, Stmt, Type,
     parse::{Parse, Result},
     parse_quote,
 };
@@ -188,7 +188,7 @@ impl Config {
             let closure = &condition.closure;
             let expr = parse_quote! { (#closure)() };
             let repr = condition.closure.body.to_token_stream().to_string();
-            let clause = self.build_clause_eval(&expr, &repr);
+            let clause = self.build_clause_eval(condition.cfg.as_ref(), &expr, &repr);
             precondition_clauses.push(clause);
         }
         if precondition_clauses.is_empty() {
@@ -239,7 +239,7 @@ impl Config {
             let closure = condition.closure.to_token_stream();
             let expr = parse_quote! { (#closure)() };
             let repr = condition.closure.body.to_token_stream().to_string();
-            let clause = self.build_clause_eval(&expr, &repr);
+            let clause = self.build_clause_eval(condition.cfg.as_ref(), &expr, &repr);
             postcondition_clauses.push(clause);
         }
         for postcondition in &spec.ensures {
@@ -252,7 +252,7 @@ impl Config {
             let body = &postcondition.closure.body;
             // Omit the closure's return type for brevity.
             let repr = quote! { |#inputs| #body }.to_string();
-            let clause = self.build_clause_eval(&expr, &repr);
+            let clause = self.build_clause_eval(postcondition.cfg.as_ref(), &expr, &repr);
             postcondition_clauses.push(clause);
         }
         if postcondition_clauses.is_empty() {
@@ -285,10 +285,14 @@ impl Config {
         })
     }
 
-    fn build_clause_eval(&self, expr: &Expr, repr: &str) -> Expr {
+    fn build_clause_eval(&self, cfg: Option<&Meta>, expr: &Expr, repr: &str) -> Expr {
         if self.emit_print {
             let fmt_str = format!("\n    {repr}");
-            parse_quote!(if #expr { true } else { __anodized_errors.push_str(#fmt_str); false })
+            let cfg_guard = match cfg {
+                Some(meta) => quote! { !cfg!(#meta) || },
+                None => quote!(),
+            };
+            parse_quote! { #cfg_guard #expr || __anodized_errors.push_str(#fmt_str) != () }
         } else {
             expr.clone()
         }
