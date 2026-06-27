@@ -299,7 +299,7 @@ impl Config {
         match (self.emit_print, self.emit_panic) {
             (true, true) => Some(parse_quote! { panic!(#fmt_str); }),
             (true, false) => Some(parse_quote! { eprintln!(#fmt_str); }),
-            (false, true) => Some(parse_quote! { panic!("{message}"); }),
+            (false, true) => Some(parse_quote! { panic!(#message); }),
             (false, false) => None,
         }
     }
