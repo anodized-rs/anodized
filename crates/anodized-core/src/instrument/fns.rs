@@ -266,7 +266,7 @@ impl Config {
         Ok(parse_quote! {
             {
                 if #do_run_checks {
-                    let mut errors = String::new();
+                    let mut __anodized_errors = String::new();
                     let __anodized_precond = #(#precondition_clauses)&*;
                     if !__anodized_precond {
                         #precond_fail_action
@@ -274,7 +274,7 @@ impl Config {
                 }
                 #body_and_captures
                 if #do_run_checks {
-                    let mut errors = String::new();
+                    let mut __anodized_errors = String::new();
                     let __anodized_postcond = #(#postcondition_clauses)&*;
                     if !__anodized_postcond {
                         #postcond_fail_action
@@ -288,14 +288,14 @@ impl Config {
     fn build_clause_eval(&self, expr: &Expr, repr: &str) -> Expr {
         if self.emit_print {
             let fmt_str = format!("\n    {repr}");
-            parse_quote!(if #expr { true } else { errors.push_str(#fmt_str); false })
+            parse_quote!(if #expr { true } else { __anodized_errors.push_str(#fmt_str); false })
         } else {
             expr.clone()
         }
     }
 
     fn build_fail_action(&self, message: &str) -> Option<Stmt> {
-        let fmt_str = format!("{message}:{{errors}}");
+        let fmt_str = format!("{message}:{{__anodized_errors}}");
         match (self.emit_print, self.emit_panic) {
             (true, true) => Some(parse_quote! { panic!(#fmt_str); }),
             (true, false) => Some(parse_quote! { eprintln!(#fmt_str); }),
