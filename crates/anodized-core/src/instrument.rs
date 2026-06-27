@@ -17,8 +17,8 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn emit_anything(&self) -> bool {
-        self.emit_print || self.emit_panic || self.split_func
+    pub fn has_effect(&self) -> bool {
+        self.embed_spec || self.emit_print || self.emit_panic || self.split_func
     }
 
     pub fn instrument_item_fn(&self, spec: Spec, mut item_fn: ItemFn) -> Result<TokenStream> {

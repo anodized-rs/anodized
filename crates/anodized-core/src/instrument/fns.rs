@@ -168,6 +168,11 @@ impl Config {
         is_async: bool,
         return_type: &syn::Type,
     ) -> Result<Block> {
+        // Exit early when all instrumentation is off.
+        if !self.has_effect() {
+            return Ok(original_body.clone());
+        }
+
         // The identifier for the return value binding.
         let output_ident = Pat::Ident(PatIdent {
             attrs: vec![],
