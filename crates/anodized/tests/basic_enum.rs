@@ -29,9 +29,10 @@ fn job_start_success() {
     job.start();
 }
 
-#[cfg(anodized_panic)]
+#[cfg(all(anodized_print, anodized_panic))]
 #[test]
-#[should_panic(expected = "Precondition failed: matches! (self.state, State::Idle)")]
+#[should_panic(expected = "precondition failed:\n\
+    matches! (self.state, State::Idle)")]
 fn job_start_panics_if_not_idle() {
     let mut job = Job {
         state: State::Running,

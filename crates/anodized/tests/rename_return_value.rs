@@ -34,9 +34,10 @@ fn calculate_odd_result(output: i32) -> i32 {
     }
 }
 
-#[cfg(anodized_panic)]
+#[cfg(all(anodized_print, anodized_panic))]
 #[test]
-#[should_panic(expected = "Postcondition failed: | result | * result % 2 == 0")]
+#[should_panic(expected = "postcondition failed:\n\
+    | result | * result % 2 == 0")]
 fn rename_panics_if_not_even() {
     // Returns 5, violating the postcondition.
     calculate_odd_result(4);

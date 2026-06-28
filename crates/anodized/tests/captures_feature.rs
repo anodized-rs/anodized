@@ -117,9 +117,9 @@ fn captures_with_preconditions() {
     assert_eq!(container.counter, 51);
 }
 
-#[cfg(anodized_panic)]
+#[cfg(all(anodized_panic))]
 #[test]
-#[should_panic(expected = "Postcondition failed")]
+#[should_panic(expected = "postcondition failed")]
 fn capture_postcondition_failure() {
     #[spec(
         captures: *value as old_value,
@@ -134,9 +134,9 @@ fn capture_postcondition_failure() {
     bad_increment(&mut val);
 }
 
-#[cfg(anodized_panic)]
+#[cfg(all(anodized_panic))]
 #[test]
-#[should_panic(expected = "Precondition failed")]
+#[should_panic(expected = "precondition failed")]
 fn precondition_runs_before_captures() {
     struct TestStruct {
         counter: u32,
