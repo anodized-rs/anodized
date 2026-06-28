@@ -243,15 +243,19 @@ impl Config {
             postcondition_clauses.push(clause);
         }
         for postcondition in &spec.ensures {
-            let closure = annotate_postcondition_closure_argument(
-                postcondition.closure.clone(),
-                return_type.clone(),
-            );
-            let expr = parse_quote! { (#closure)(&#output_ident) };
-            let inputs = &postcondition.closure.inputs;
-            let body = &postcondition.closure.body;
+            let closure = &postcondition.closure;
+            let input = &closure.inputs.first().unwrap();
+            let output = &closure.output;
+            let body = &closure.body;
+            let expr = match input {
+                Pat::Type(_) => parse_quote! { (#closure)(&#output_ident) },
+                // If the closure's input doesn't have a type ascription, add one.
+                _ => parse_quote! {
+                    (|#input: &#return_type| #output { #body })(&#output_ident)
+                },
+            };
             // Omit the closure's return type for brevity.
-            let repr = quote! { |#inputs| #body }.to_string();
+            let repr = quote! { |#input| #body }.to_string();
             let clause = self.build_clause_eval(postcondition.cfg.as_ref(), &expr, &repr);
             postcondition_clauses.push(clause);
         }
@@ -307,27 +311,4 @@ impl Config {
             (false, false) => None,
         }
     }
-}
-
-fn annotate_postcondition_closure_argument(
-    mut closure: syn::ExprClosure,
-    return_type: syn::Type,
-) -> syn::ExprClosure {
-    // Add type annotation: convert |param| to |param: &ReturnType|.
-    if let Some(first_input) = closure.inputs.first_mut() {
-        // Wrap the pattern with a type annotation
-        let pattern = first_input.clone();
-        *first_input = syn::Pat::Type(syn::PatType {
-            attrs: vec![],
-            pat: Box::new(pattern),
-            colon_token: Default::default(),
-            ty: Box::new(syn::Type::Reference(syn::TypeReference {
-                and_token: Default::default(),
-                lifetime: None,
-                mutability: None,
-                elem: Box::new(return_type),
-            })),
-        });
-    }
-    closure
 }
