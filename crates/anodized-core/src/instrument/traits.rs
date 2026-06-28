@@ -100,7 +100,7 @@ impl Config {
                         new_trait_items.push(TraitItem::Fn(spec_ensures_fn));
                     }
 
-                    if self.emit_anything() {
+                    if self.has_effect() {
                         let mangled_ident = mangle_ident(&func.sig.ident);
 
                         let mut mangled_fn = func.clone();
@@ -261,7 +261,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         );
                     }
 
-                    if self.emit_anything() {
+                    if self.has_effect() {
                         func.sig.ident = mangle_ident(&func.sig.ident);
 
                         // Add a default `#[inline]` attribute unless one is already there.

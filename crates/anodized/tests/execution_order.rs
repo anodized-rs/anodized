@@ -75,7 +75,7 @@ fn func_all_conditions_fail(log: &mut Vec<&'static str>) {
     return;
 }
 
-#[cfg(anodized_print)]
+#[cfg(all(anodized_print, not(anodized_panic)))]
 #[test]
 fn execution_order_print_only() {
     let mut log = Vec::new();

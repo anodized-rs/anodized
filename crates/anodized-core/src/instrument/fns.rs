@@ -5,15 +5,13 @@ mod fns_tests;
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Block, Expr, Ident, Pat, PatIdent, Path, ReturnType, Signature, Stmt, Type,
+    Attribute, Block, Expr, Ident, Meta, Pat, PatIdent, Path, ReturnType, Signature, Stmt, Type,
     parse::{Parse, Result},
     parse_quote,
 };
 
 use crate::{
-    Capture, PostCondition, PreCondition, Spec,
-    instrument::{Config, build_assert, build_eprint},
-    qualifiers::FnQualifiers,
+    Capture, PostCondition, PreCondition, Spec, instrument::Config, qualifiers::FnQualifiers,
 };
 
 impl Config {
@@ -170,12 +168,10 @@ impl Config {
         is_async: bool,
         return_type: &syn::Type,
     ) -> Result<Block> {
-        let build_check = match (self.emit_print, self.emit_panic) {
-            (true, true) => build_assert,
-            (true, false) => build_eprint,
-            (false, true) => build_assert,
-            (false, false) => return Ok(original_body.clone()),
-        };
+        // Exit early when all instrumentation is off.
+        if !self.has_effect() {
+            return Ok(original_body.clone());
+        }
 
         // The identifier for the return value binding.
         let output_ident = Pat::Ident(PatIdent {
@@ -186,32 +182,18 @@ impl Config {
             subpat: None,
         });
 
-        // --- Generate Precondition Checks ---
-        let precondition_checks = spec
-            .requires
-            .iter()
-            .map(|condition| {
-                let closure = condition.closure.to_token_stream();
-                let expr = quote! { (#closure)() };
-                let repr = condition.closure.body.to_token_stream();
-                build_check(
-                    condition.cfg.as_ref(),
-                    &expr,
-                    "Precondition failed: {}",
-                    &repr,
-                )
-            })
-            .chain(spec.maintains.iter().map(|condition| {
-                let closure = condition.closure.to_token_stream();
-                let expr = quote! { (#closure)() };
-                let repr = condition.closure.body.to_token_stream();
-                build_check(
-                    condition.cfg.as_ref(),
-                    &expr,
-                    "Pre-invariant failed: {}",
-                    &repr,
-                )
-            }));
+        // --- Generate Precondition Clauses ---
+        let mut precondition_clauses: Vec<Expr> = vec![];
+        for condition in spec.requires.iter().chain(&spec.maintains) {
+            let closure = &condition.closure;
+            let expr = parse_quote! { (#closure)() };
+            let repr = condition.closure.body.to_token_stream().to_string();
+            let clause = self.build_clause_eval(condition.cfg.as_ref(), &expr, &repr);
+            precondition_clauses.push(clause);
+        }
+        if precondition_clauses.is_empty() {
+            precondition_clauses.push(parse_quote!(true));
+        }
 
         // --- Generate Combined Body and Capture Statement ---
         // Capture values and execute body in a single tuple assignment
@@ -251,48 +233,79 @@ impl Config {
             let (#(#aliases),*): (#(#types),*) = (#(#exprs),*);
         };
 
-        // --- Generate Postcondition Checks ---
-        let postcondition_checks = spec
-            .maintains
-            .iter()
-            .map(|condition| {
-                let closure = condition.closure.to_token_stream();
-                let expr = quote! { (#closure)() };
-                let repr = condition.closure.body.to_token_stream();
-                build_check(
-                    condition.cfg.as_ref(),
-                    &expr,
-                    "Post-invariant failed: {}",
-                    &repr,
-                )
-            })
-            .chain(spec.ensures.iter().map(|postcondition| {
-                let closure = annotate_postcondition_closure_argument(
-                    postcondition.closure.clone(),
-                    return_type.clone(),
-                );
+        // --- Generate Postcondition Clauses ---
+        let mut postcondition_clauses: Vec<Expr> = vec![];
+        for condition in &spec.maintains {
+            let closure = condition.closure.to_token_stream();
+            let expr = parse_quote! { (#closure)() };
+            let repr = condition.closure.body.to_token_stream().to_string();
+            let clause = self.build_clause_eval(condition.cfg.as_ref(), &expr, &repr);
+            postcondition_clauses.push(clause);
+        }
+        for postcondition in &spec.ensures {
+            let closure = annotate_postcondition_closure_argument(
+                postcondition.closure.clone(),
+                return_type.clone(),
+            );
+            let expr = parse_quote! { (#closure)(&#output_ident) };
+            let inputs = &postcondition.closure.inputs;
+            let body = &postcondition.closure.body;
+            // Omit the closure's return type for brevity.
+            let repr = quote! { |#inputs| #body }.to_string();
+            let clause = self.build_clause_eval(postcondition.cfg.as_ref(), &expr, &repr);
+            postcondition_clauses.push(clause);
+        }
+        if postcondition_clauses.is_empty() {
+            postcondition_clauses.push(parse_quote!(true));
+        }
 
-                let expr = quote! { (#closure)(&#output_ident) };
-                let inputs = &postcondition.closure.inputs;
-                let body = &postcondition.closure.body;
-                // Omit the closure's return type for brevity.
-                let repr = quote! { |#inputs| #body };
-                build_check(
-                    postcondition.cfg.as_ref(),
-                    &expr,
-                    "Postcondition failed: {}",
-                    &repr,
-                )
-            }));
+        let do_run_checks = self.emit_print || self.emit_panic;
+        let precond_fail_action = self.build_fail_action("precondition failed");
+        let postcond_fail_action = self.build_fail_action("postcondition failed");
 
         Ok(parse_quote! {
             {
-                #(#precondition_checks)*
+                if #do_run_checks {
+                    let mut __anodized_errors = String::new();
+                    let __anodized_precond = #(#precondition_clauses)&*;
+                    if !__anodized_precond {
+                        #precond_fail_action
+                    }
+                }
                 #body_and_captures
-                #(#postcondition_checks)*
+                if #do_run_checks {
+                    let mut __anodized_errors = String::new();
+                    let __anodized_postcond = #(#postcondition_clauses)&*;
+                    if !__anodized_postcond {
+                        #postcond_fail_action
+                    }
+                }
                 #output_ident
             }
         })
+    }
+
+    fn build_clause_eval(&self, cfg: Option<&Meta>, expr: &Expr, repr: &str) -> Expr {
+        if self.emit_print {
+            let br_and_repr = format!("\n    {repr}");
+            let cfg_guard = match cfg {
+                Some(meta) => quote! { !cfg!(#meta) || },
+                None => quote!(),
+            };
+            parse_quote! { ( #cfg_guard #expr || __anodized_errors.push_str(#br_and_repr) != () ) }
+        } else {
+            expr.clone()
+        }
+    }
+
+    fn build_fail_action(&self, message: &str) -> Option<Stmt> {
+        let message_and_errors = format!("{message}:{{__anodized_errors}}");
+        match (self.emit_print, self.emit_panic) {
+            (true, true) => Some(parse_quote! { panic!(#message_and_errors); }),
+            (true, false) => Some(parse_quote! { eprintln!(#message_and_errors); }),
+            (false, true) => Some(parse_quote! { panic!(#message); }),
+            (false, false) => None,
+        }
     }
 }
 
