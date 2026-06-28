@@ -287,22 +287,22 @@ impl Config {
 
     fn build_clause_eval(&self, cfg: Option<&Meta>, expr: &Expr, repr: &str) -> Expr {
         if self.emit_print {
-            let fmt_str = format!("\n    {repr}");
+            let br_and_repr = format!("\n    {repr}");
             let cfg_guard = match cfg {
                 Some(meta) => quote! { !cfg!(#meta) || },
                 None => quote!(),
             };
-            parse_quote! { ( #cfg_guard #expr || __anodized_errors.push_str(#fmt_str) != () ) }
+            parse_quote! { ( #cfg_guard #expr || __anodized_errors.push_str(#br_and_repr) != () ) }
         } else {
             expr.clone()
         }
     }
 
     fn build_fail_action(&self, message: &str) -> Option<Stmt> {
-        let fmt_str = format!("{message}:{{__anodized_errors}}");
+        let message_and_errors = format!("{message}:{{__anodized_errors}}");
         match (self.emit_print, self.emit_panic) {
-            (true, true) => Some(parse_quote! { panic!(#fmt_str); }),
-            (true, false) => Some(parse_quote! { eprintln!(#fmt_str); }),
+            (true, true) => Some(parse_quote! { panic!(#message_and_errors); }),
+            (true, false) => Some(parse_quote! { eprintln!(#message_and_errors); }),
             (false, true) => Some(parse_quote! { panic!(#message); }),
             (false, false) => None,
         }
