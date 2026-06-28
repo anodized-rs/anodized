@@ -33,8 +33,8 @@ fn get_element_success() {
 
 #[cfg(all(anodized_print, anodized_panic))]
 #[test]
-#[should_panic(expected = "precondition failed:\n\
-    ! self.locked")]
+#[should_panic(expected = "precondition failed:\
+\n    ! self.locked")]
 fn get_element_panics_when_locked() {
     let buffer = SafeBuffer {
         items: vec![10, 20, 30],
@@ -46,8 +46,8 @@ fn get_element_panics_when_locked() {
 
 #[cfg(all(anodized_print, anodized_panic))]
 #[test]
-#[should_panic(expected = "precondition failed:\n\
-    index < self.items.len()")]
+#[should_panic(expected = "precondition failed:\
+\n    index < self.items.len()")]
 fn get_element_panics_on_out_of_bounds() {
     let buffer = SafeBuffer {
         items: vec![10, 20, 30],

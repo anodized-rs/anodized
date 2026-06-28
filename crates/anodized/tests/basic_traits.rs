@@ -68,8 +68,8 @@ fn should_succeed() {
 
 #[cfg(all(anodized_print, anodized_panic))]
 #[test]
-#[should_panic(expected = "Precondition failed:\n\
-    x > 0")]
+#[should_panic(expected = "precondition failed:\
+\n    x > 0")]
 fn should_fail_add_to() {
     let test = TestStruct(3);
     assert_eq!(test.add_to(0), 3);
@@ -77,8 +77,8 @@ fn should_fail_add_to() {
 
 #[cfg(all(anodized_print, anodized_panic))]
 #[test]
-#[should_panic(expected = "Postcondition failed:\n\
-    | output | * output > old_val")]
+#[should_panic(expected = "postcondition failed:\
+\n    | output | * output > old_val")]
 fn should_fail_negative_mul_by() {
     let test = TestStruct(-3);
     assert_eq!(test.mul_by(1), 3);

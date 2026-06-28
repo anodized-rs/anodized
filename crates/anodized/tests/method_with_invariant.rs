@@ -26,8 +26,8 @@ fn increment_success() {
 
 #[cfg(all(anodized_print, anodized_panic))]
 #[test]
-#[should_panic(expected = "Poscondition failed:\n\
-    self.count <= self.capacity")]
+#[should_panic(expected = "postcondition failed:\
+\n    self.count <= self.capacity")]
 fn increment_violates_invariant() {
     let mut c = Counter {
         count: 10,
@@ -39,8 +39,8 @@ fn increment_violates_invariant() {
 
 #[cfg(all(anodized_print, anodized_panic))]
 #[test]
-#[should_panic(expected = "precondition failed:\n\
-    self.count <= self.capacity")]
+#[should_panic(expected = "precondition failed:\
+\n    self.count <= self.capacity")]
 fn increment_violates_pre_invariant() {
     let mut c = Counter {
         count: 11,

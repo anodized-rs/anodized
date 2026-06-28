@@ -16,8 +16,8 @@ fn divide_success() {
 
 #[cfg(all(anodized_print, anodized_panic))]
 #[test]
-#[should_panic(expected = "precondition failed:\n\
-    divisor != 0")]
+#[should_panic(expected = "precondition failed:\
+\n    divisor != 0")]
 fn divide_by_zero_panics() {
     checked_divide(10, 0);
 }
