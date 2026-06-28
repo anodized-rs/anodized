@@ -292,7 +292,7 @@ impl Config {
                 Some(meta) => quote! { !cfg!(#meta) || },
                 None => quote!(),
             };
-            parse_quote! { #cfg_guard #expr || __anodized_errors.push_str(#fmt_str) != () }
+            parse_quote! { ( #cfg_guard #expr || __anodized_errors.push_str(#fmt_str) != () ) }
         } else {
             expr.clone()
         }
