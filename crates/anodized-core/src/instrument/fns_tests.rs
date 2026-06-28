@@ -125,8 +125,8 @@ fn simple_requires() {
         {
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_precond = (|| -> bool { CONDITION_1 })()
-                    || __anodized_errors.push_str("\n    CONDITION_1") != ();
+                let __anodized_precond = ((|| -> bool { CONDITION_1 })()
+                    || __anodized_errors.push_str("\n    CONDITION_1") != ());
                 if !__anodized_precond {
                     panic!("precondition failed:{__anodized_errors}");
                 }
@@ -193,8 +193,8 @@ fn requires_no_panic_runtime() {
         {
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_precond = (|| -> bool { CONDITION_1 })()
-                    || __anodized_errors.push_str("\n    CONDITION_1") != ();
+                let __anodized_precond = ((|| -> bool { CONDITION_1 })()
+                    || __anodized_errors.push_str("\n    CONDITION_1") != ());
                 if !__anodized_precond {
                     eprintln!("precondition failed:{__anodized_errors}");
                 }
@@ -230,8 +230,8 @@ fn simple_maintains() {
         {
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_precond = (|| -> bool { CONDITION_1 })()
-                    || __anodized_errors.push_str("\n    CONDITION_1") != ();
+                let __anodized_precond = ((|| -> bool { CONDITION_1 })()
+                    || __anodized_errors.push_str("\n    CONDITION_1") != ());
                 if !__anodized_precond {
                     panic!("precondition failed:{__anodized_errors}");
                 }
@@ -239,8 +239,8 @@ fn simple_maintains() {
             let (__anodized_output): (#ret_type) = ((|| #body)());
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_postcond = (|| -> bool { CONDITION_1 })()
-                    || __anodized_errors.push_str("\n    CONDITION_1") != ();
+                let __anodized_postcond = ((|| -> bool { CONDITION_1 })()
+                    || __anodized_errors.push_str("\n    CONDITION_1") != ());
                 if !__anodized_postcond {
                     panic!("postcondition failed:{__anodized_errors}");
                 }
@@ -276,8 +276,8 @@ fn simple_ensures() {
             let (__anodized_output): (#ret_type) = ((|| #body)());
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_postcond = (|output: &#ret_type| -> bool { CONDITION_1 })(&__anodized_output)
-                    || __anodized_errors.push_str("\n    | output | CONDITION_1") != ();
+                let __anodized_postcond = ((|output: &#ret_type| -> bool { CONDITION_1 })(&__anodized_output)
+                    || __anodized_errors.push_str("\n    | output | CONDITION_1") != ());
                 if !__anodized_postcond {
                     panic!("postcondition failed:{__anodized_errors}");
                 }
@@ -306,10 +306,10 @@ fn simple_requires_and_maintains() {
         {
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_precond = (|| -> bool { CONDITION_1 })()
-                    || __anodized_errors.push_str("\n    CONDITION_1") != ()
-                        & (|| -> bool { CONDITION_2 })()
-                    || __anodized_errors.push_str("\n    CONDITION_2") != ();
+                let __anodized_precond = ((|| -> bool { CONDITION_1 })()
+                    || __anodized_errors.push_str("\n    CONDITION_1") != ())
+                    & ((|| -> bool { CONDITION_2 })()
+                        || __anodized_errors.push_str("\n    CONDITION_2") != ());
                 if !__anodized_precond {
                     panic!("precondition failed:{__anodized_errors}");
                 }
@@ -317,8 +317,8 @@ fn simple_requires_and_maintains() {
             let (__anodized_output): (#ret_type) = ((|| #body)());
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_postcond = (|| -> bool { CONDITION_2 })()
-                    || __anodized_errors.push_str("\n    CONDITION_2") != ();
+                let __anodized_postcond = ((|| -> bool { CONDITION_2 })()
+                    || __anodized_errors.push_str("\n    CONDITION_2") != ());
                 if !__anodized_postcond {
                     panic!("postcondition failed:{__anodized_errors}");
                 }
@@ -347,8 +347,8 @@ fn simple_requires_and_ensures() {
         {
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_precond = (|| -> bool { CONDITION_1 })()
-                    || __anodized_errors.push_str("\n    CONDITION_1") != ();
+                let __anodized_precond = ((|| -> bool { CONDITION_1 })()
+                    || __anodized_errors.push_str("\n    CONDITION_1") != ());
                 if !__anodized_precond {
                     panic!("precondition failed:{__anodized_errors}");
                 }
@@ -356,8 +356,8 @@ fn simple_requires_and_ensures() {
             let (__anodized_output): (#ret_type) = ((|| #body)());
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_postcond = (|output: &#ret_type| -> bool { CONDITION_2 })(&__anodized_output)
-                    || __anodized_errors.push_str("\n    | output | CONDITION_2") != ();
+                let __anodized_postcond = ((|output: &#ret_type| -> bool { CONDITION_2 })(&__anodized_output)
+                    || __anodized_errors.push_str("\n    | output | CONDITION_2") != ());
                 if !__anodized_postcond {
                     panic!("postcondition failed:{__anodized_errors}");
                 }
@@ -386,8 +386,8 @@ fn simple_maintains_and_ensures() {
         {
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_precond = (|| -> bool { CONDITION_1 })()
-                    || __anodized_errors.push_str("\n    CONDITION_1") != ();
+                let __anodized_precond = ((|| -> bool { CONDITION_1 })()
+                    || __anodized_errors.push_str("\n    CONDITION_1") != ());
                 if !__anodized_precond {
                     panic!("precondition failed:{__anodized_errors}");
                 }
@@ -395,10 +395,10 @@ fn simple_maintains_and_ensures() {
             let (__anodized_output): (#ret_type) = ((|| #body)());
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_postcond = (|| -> bool { CONDITION_1 })()
-                    || __anodized_errors.push_str("\n    CONDITION_1") != ()
-                        & (|output: &#ret_type| -> bool { CONDITION_2 })(&__anodized_output)
-                    || __anodized_errors.push_str("\n    | output | CONDITION_2") != ();
+                let __anodized_postcond = ((|| -> bool { CONDITION_1 })()
+                    || __anodized_errors.push_str("\n    CONDITION_1") != ())
+                    & ((|output: &#ret_type| -> bool { CONDITION_2 })(&__anodized_output)
+                        || __anodized_errors.push_str("\n    | output | CONDITION_2") != ());
                 if !__anodized_postcond {
                     panic!("postcondition failed:{__anodized_errors}");
                 }
@@ -428,10 +428,10 @@ fn simple_requires_maintains_and_ensures() {
         {
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_precond = (|| -> bool { CONDITION_1 })()
-                    || __anodized_errors.push_str("\n    CONDITION_1") != ()
-                        & (|| -> bool { CONDITION_2 })()
-                    || __anodized_errors.push_str("\n    CONDITION_2") != ();
+                let __anodized_precond = ((|| -> bool { CONDITION_1 })()
+                    || __anodized_errors.push_str("\n    CONDITION_1") != ())
+                    & ((|| -> bool { CONDITION_2 })()
+                        || __anodized_errors.push_str("\n    CONDITION_2") != ());
                 if !__anodized_precond {
                     panic!("precondition failed:{__anodized_errors}");
                 }
@@ -439,10 +439,10 @@ fn simple_requires_maintains_and_ensures() {
             let (__anodized_output): (#ret_type) = ((|| #body)());
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_postcond = (|| -> bool { CONDITION_2 })()
-                    || __anodized_errors.push_str("\n    CONDITION_2") != ()
-                        & (|output: &#ret_type| -> bool { CONDITION_3 })(&__anodized_output)
-                    || __anodized_errors.push_str("\n    | output | CONDITION_3") != ();
+                let __anodized_postcond = ((|| -> bool { CONDITION_2 })()
+                    || __anodized_errors.push_str("\n    CONDITION_2") != ())
+                    & ((|output: &#ret_type| -> bool { CONDITION_3 })(&__anodized_output)
+                        || __anodized_errors.push_str("\n    | output | CONDITION_3") != ());
                 if !__anodized_postcond {
                     panic!("postcondition failed:{__anodized_errors}");
                 }
@@ -472,10 +472,10 @@ fn simple_async_requires_maintains_and_ensures() {
         {
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_precond = (|| -> bool { CONDITION_1 })()
-                    || __anodized_errors.push_str("\n    CONDITION_1") != ()
-                        & (|| -> bool { CONDITION_2 })()
-                    || __anodized_errors.push_str("\n    CONDITION_2") != ();
+                let __anodized_precond = ((|| -> bool { CONDITION_1 })()
+                    || __anodized_errors.push_str("\n    CONDITION_1") != ())
+                    & ((|| -> bool { CONDITION_2 })()
+                        || __anodized_errors.push_str("\n    CONDITION_2") != ());
                 if !__anodized_precond {
                     panic!("precondition failed:{__anodized_errors}");
                 }
@@ -483,10 +483,10 @@ fn simple_async_requires_maintains_and_ensures() {
             let (__anodized_output): (#ret_type) = ((async || #body)().await);
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_postcond = (|| -> bool { CONDITION_2 })()
-                    || __anodized_errors.push_str("\n    CONDITION_2") != ()
-                        & (|output: &#ret_type| -> bool { CONDITION_3 })(&__anodized_output)
-                    || __anodized_errors.push_str("\n    | output | CONDITION_3") != ();
+                let __anodized_postcond = ((|| -> bool { CONDITION_2 })()
+                    || __anodized_errors.push_str("\n    CONDITION_2") != ())
+                    & ((|output: &#ret_type| -> bool { CONDITION_3 })(&__anodized_output)
+                        || __anodized_errors.push_str("\n    | output | CONDITION_3") != ());
                 if !__anodized_postcond {
                     panic!("postcondition failed:{__anodized_errors}");
                 }
@@ -516,14 +516,14 @@ fn multiple_conditions_in_clauses() {
         {
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_precond = (|| -> bool { CONDITION_1 })()
-                    || __anodized_errors.push_str("\n    CONDITION_1") != ()
-                        & (|| -> bool { CONDITION_2 })()
-                    || __anodized_errors.push_str("\n    CONDITION_2") != ()
-                        & (|| -> bool { CONDITION_3 })()
-                    || __anodized_errors.push_str("\n    CONDITION_3") != ()
-                        & (|| -> bool { CONDITION_4 })()
-                    || __anodized_errors.push_str("\n    CONDITION_4") != ();
+                let __anodized_precond = ((|| -> bool { CONDITION_1 })()
+                    || __anodized_errors.push_str("\n    CONDITION_1") != ())
+                    & ((|| -> bool { CONDITION_2 })()
+                        || __anodized_errors.push_str("\n    CONDITION_2") != ())
+                    & ((|| -> bool { CONDITION_3 })()
+                        || __anodized_errors.push_str("\n    CONDITION_3") != ())
+                    & ((|| -> bool { CONDITION_4 })()
+                        || __anodized_errors.push_str("\n    CONDITION_4") != ());
                 if !__anodized_precond {
                     panic!("precondition failed:{__anodized_errors}");
                 }
@@ -531,14 +531,14 @@ fn multiple_conditions_in_clauses() {
             let (__anodized_output): (#ret_type) = ((|| #body)());
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_postcond = (|| -> bool { CONDITION_3 })()
-                    || __anodized_errors.push_str("\n    CONDITION_3") != ()
-                        & (|| -> bool { CONDITION_4 })()
-                    || __anodized_errors.push_str("\n    CONDITION_4") != ()
-                        & (|output: &#ret_type| -> bool { CONDITION_5 })(&__anodized_output)
-                    || __anodized_errors.push_str("\n    | output | CONDITION_5") != ()
-                        & (|output: &#ret_type| -> bool { CONDITION_6 })(&__anodized_output)
-                    || __anodized_errors.push_str("\n    | output | CONDITION_6") != ();
+                let __anodized_postcond = ((|| -> bool { CONDITION_3 })()
+                    || __anodized_errors.push_str("\n    CONDITION_3") != ())
+                    & ((|| -> bool { CONDITION_4 })()
+                        || __anodized_errors.push_str("\n    CONDITION_4") != ())
+                    & ((|output: &#ret_type| -> bool { CONDITION_5 })(&__anodized_output)
+                        || __anodized_errors.push_str("\n    | output | CONDITION_5") != ())
+                    & ((|output: &#ret_type| -> bool { CONDITION_6 })(&__anodized_output)
+                        || __anodized_errors.push_str("\n    | output | CONDITION_6") != ());
                 if !__anodized_postcond {
                     panic!("postcondition failed:{__anodized_errors}");
                 }
@@ -575,8 +575,8 @@ fn binds_parameter() {
             let (__anodized_output): (#ret_type) = ((|| #body)());
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_postcond = (|OUTPUT_PATTERN: &#ret_type| -> bool { CONDITION_1 })(&__anodized_output)
-                    || __anodized_errors.push_str("\n    | OUTPUT_PATTERN | CONDITION_1") != ();
+                let __anodized_postcond = ((|OUTPUT_PATTERN: &#ret_type| -> bool { CONDITION_1 })(&__anodized_output)
+                    || __anodized_errors.push_str("\n    | OUTPUT_PATTERN | CONDITION_1") != ());
                 if !__anodized_postcond {
                     panic!("postcondition failed:{__anodized_errors}");
                 }
@@ -617,14 +617,14 @@ fn ensures_with_mixed_conditions() {
             let (__anodized_output): (#ret_type) = ((|| #body)());
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_postcond = (|output: &#ret_type| -> bool { CONDITION_1 })(&__anodized_output)
-                    || __anodized_errors.push_str("\n    | output | CONDITION_1") != ()
-                        & (|PATTERN_1: &#ret_type| -> bool { CONDITION_2 })(&__anodized_output)
-                    || __anodized_errors.push_str("\n    | PATTERN_1 | CONDITION_2") != ()
-                        & (|output: &#ret_type| -> bool { CONDITION_3 })(&__anodized_output)
-                    || __anodized_errors.push_str("\n    | output | CONDITION_3") != ()
-                        & (|PATTERN_2: &#ret_type| -> bool { CONDITION_4 })(&__anodized_output)
-                    || __anodized_errors.push_str("\n    | PATTERN_2 | CONDITION_4") != ();
+                let __anodized_postcond = ((|output: &#ret_type| -> bool { CONDITION_1 })(&__anodized_output)
+                    || __anodized_errors.push_str("\n    | output | CONDITION_1") != ())
+                    & ((|PATTERN_1: &#ret_type| -> bool { CONDITION_2 })(&__anodized_output)
+                        || __anodized_errors.push_str("\n    | PATTERN_1 | CONDITION_2") != ())
+                    & ((|output: &#ret_type| -> bool { CONDITION_3 })(&__anodized_output)
+                        || __anodized_errors.push_str("\n    | output | CONDITION_3") != ())
+                    & ((|PATTERN_2: &#ret_type| -> bool { CONDITION_4 })(&__anodized_output)
+                        || __anodized_errors.push_str("\n    | PATTERN_2 | CONDITION_4") != ());
                 if !__anodized_postcond {
                     panic!("postcondition failed:{__anodized_errors}");
                 }
@@ -657,10 +657,10 @@ fn cfg_attributes() {
         {
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_precond = !cfg!(SETTING_1) || (|| -> bool { CONDITION_1 })()
-                    || __anodized_errors.push_str("\n    CONDITION_1") != () & !cfg!(SETTING_2)
-                    || (|| -> bool { CONDITION_2 })()
-                    || __anodized_errors.push_str("\n    CONDITION_2") != ();
+                let __anodized_precond = (!cfg!(SETTING_1) || (|| -> bool { CONDITION_1 })()
+                    || __anodized_errors.push_str("\n    CONDITION_1") != ())
+                    & (!cfg!(SETTING_2) || (|| -> bool { CONDITION_2 })()
+                        || __anodized_errors.push_str("\n    CONDITION_2") != ());
                 if !__anodized_precond {
                     panic!("precondition failed:{__anodized_errors}");
                 }
@@ -668,10 +668,11 @@ fn cfg_attributes() {
             let (__anodized_output): (#ret_type) = ((|| #body)());
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_postcond = !cfg!(SETTING_2) || (|| -> bool { CONDITION_2 })()
-                    || __anodized_errors.push_str("\n    CONDITION_2") != () & !cfg!(SETTING_3)
-                    || (|output: &#ret_type| -> bool { CONDITION_3 })(&__anodized_output)
-                    || __anodized_errors.push_str("\n    | output | CONDITION_3") != ();
+                let __anodized_postcond = (!cfg!(SETTING_2) || (|| -> bool { CONDITION_2 })()
+                    || __anodized_errors.push_str("\n    CONDITION_2") != ())
+                    & (!cfg!(SETTING_3)
+                        || (|output: &#ret_type| -> bool { CONDITION_3 })(&__anodized_output)
+                        || __anodized_errors.push_str("\n    | output | CONDITION_3") != ());
                 if !__anodized_postcond {
                     panic!("postcondition failed:{__anodized_errors}");
                 }
@@ -703,12 +704,12 @@ fn cfg_on_single_and_list_conditions() {
         {
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_precond = !cfg!(SETTING_1) || (|| -> bool { CONDITION_1 })()
-                    || __anodized_errors.push_str("\n    CONDITION_1") != ()
-                        & (|| -> bool { CONDITION_2 })()
-                    || __anodized_errors.push_str("\n    CONDITION_2") != ()
-                        & (|| -> bool { CONDITION_3 })()
-                    || __anodized_errors.push_str("\n    CONDITION_3") != ();
+                let __anodized_precond = (!cfg!(SETTING_1) || (|| -> bool { CONDITION_1 })()
+                    || __anodized_errors.push_str("\n    CONDITION_1") != ())
+                    & ((|| -> bool { CONDITION_2 })()
+                        || __anodized_errors.push_str("\n    CONDITION_2") != ())
+                    & ((|| -> bool { CONDITION_3 })()
+                        || __anodized_errors.push_str("\n    CONDITION_3") != ());
                 if !__anodized_precond {
                     panic!("precondition failed:{__anodized_errors}");
                 }
@@ -716,15 +717,16 @@ fn cfg_on_single_and_list_conditions() {
             let (__anodized_output): (#ret_type) = ((|| #body)());
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_postcond = (|| -> bool { CONDITION_2 })()
-                    || __anodized_errors.push_str("\n    CONDITION_2") != ()
-                        & (|| -> bool { CONDITION_3 })()
-                    || __anodized_errors.push_str("\n    CONDITION_3") != () & !cfg!(SETTING_2)
-                    || (|output: &#ret_type| -> bool { CONDITION_4 })(&__anodized_output)
-                    || __anodized_errors.push_str("\n    | output | CONDITION_4") != ()
-                        & !cfg!(SETTING_2)
-                    || (|output: &#ret_type| -> bool { CONDITION_5 })(&__anodized_output)
-                    || __anodized_errors.push_str("\n    | output | CONDITION_5") != ();
+                let __anodized_postcond = ((|| -> bool { CONDITION_2 })()
+                    || __anodized_errors.push_str("\n    CONDITION_2") != ())
+                    & ((|| -> bool { CONDITION_3 })()
+                        || __anodized_errors.push_str("\n    CONDITION_3") != ())
+                    & (!cfg!(SETTING_2)
+                        || (|output: &#ret_type| -> bool { CONDITION_4 })(&__anodized_output)
+                        || __anodized_errors.push_str("\n    | output | CONDITION_4") != ())
+                    & (!cfg!(SETTING_2)
+                        || (|output: &#ret_type| -> bool { CONDITION_5 })(&__anodized_output)
+                        || __anodized_errors.push_str("\n    | output | CONDITION_5") != ());
                 if !__anodized_postcond {
                     panic!("postcondition failed:{__anodized_errors}");
                 }
@@ -760,20 +762,18 @@ fn complex_mixed_conditions() {
         {
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_precond = (|| -> bool { CONDITION_1 })()
-                    || __anodized_errors.push_str("\n    CONDITION_1") != ()
-                        & !cfg!(SETTING_1)
-                    || (|| -> bool { CONDITION_2 })()
-                    || __anodized_errors.push_str("\n    CONDITION_2") != ()
-                        & !cfg!(SETTING_1)
-                    || (|| -> bool { CONDITION_3 })()
-                    || __anodized_errors.push_str("\n    CONDITION_3") != ()
-                        & (|| -> bool { CONDITION_4 })()
-                    || __anodized_errors.push_str("\n    CONDITION_4") != ()
-                        & (|| -> bool { CONDITION_5 })()
-                    || __anodized_errors.push_str("\n    CONDITION_5") != () & !cfg!(SETTING_2)
-                    || (|| -> bool { CONDITION_6 })()
-                    || __anodized_errors.push_str("\n    CONDITION_6") != ();
+                let __anodized_precond = ((|| -> bool { CONDITION_1 })()
+                    || __anodized_errors.push_str("\n    CONDITION_1") != ())
+                    & (!cfg!(SETTING_1) || (|| -> bool { CONDITION_2 })()
+                        || __anodized_errors.push_str("\n    CONDITION_2") != ())
+                    & (!cfg!(SETTING_1) || (|| -> bool { CONDITION_3 })()
+                        || __anodized_errors.push_str("\n    CONDITION_3") != ())
+                    & ((|| -> bool { CONDITION_4 })()
+                        || __anodized_errors.push_str("\n    CONDITION_4") != ())
+                    & ((|| -> bool { CONDITION_5 })()
+                        || __anodized_errors.push_str("\n    CONDITION_5") != ())
+                    & (!cfg!(SETTING_2) || (|| -> bool { CONDITION_6 })()
+                        || __anodized_errors.push_str("\n    CONDITION_6") != ());
                 if !__anodized_precond {
                     panic!("precondition failed:{__anodized_errors}");
                 }
@@ -781,20 +781,20 @@ fn complex_mixed_conditions() {
             let (__anodized_output): (#ret_type) = ((|| #body)());
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_postcond = (|| -> bool { CONDITION_4 })()
-                    || __anodized_errors.push_str("\n    CONDITION_4") != ()
-                        & (|| -> bool { CONDITION_5 })()
-                    || __anodized_errors.push_str("\n    CONDITION_5") != () & !cfg!(SETTING_2)
-                    || (|| -> bool { CONDITION_6 })()
-                    || __anodized_errors.push_str("\n    CONDITION_6") != ()
-                        & (|output: &#ret_type| -> bool { CONDITION_7 })(&__anodized_output)
-                    || __anodized_errors.push_str("\n    | output | CONDITION_7") != ()
-                        & !cfg!(SETTING_3)
-                    || (|output: &#ret_type| -> bool { CONDITION_8 })(&__anodized_output)
-                    || __anodized_errors.push_str("\n    | output | CONDITION_8") != ()
-                        & !cfg!(SETTING_3)
-                    || (|PATTERN_1: &#ret_type| -> bool { CONDITION_9 })(&__anodized_output)
-                    || __anodized_errors.push_str("\n    | PATTERN_1 | CONDITION_9") != ();
+                let __anodized_postcond = ((|| -> bool { CONDITION_4 })()
+                    || __anodized_errors.push_str("\n    CONDITION_4") != ())
+                    & ((|| -> bool { CONDITION_5 })()
+                        || __anodized_errors.push_str("\n    CONDITION_5") != ())
+                    & (!cfg!(SETTING_2) || (|| -> bool { CONDITION_6 })()
+                        || __anodized_errors.push_str("\n    CONDITION_6") != ())
+                    & ((|output: &#ret_type| -> bool { CONDITION_7 })(&__anodized_output)
+                        || __anodized_errors.push_str("\n    | output | CONDITION_7") != ())
+                    & (!cfg!(SETTING_3)
+                        || (|output: &#ret_type| -> bool { CONDITION_8 })(&__anodized_output)
+                        || __anodized_errors.push_str("\n    | output | CONDITION_8") != ())
+                    & (!cfg!(SETTING_3)
+                        || (|PATTERN_1: &#ret_type| -> bool { CONDITION_9 })(&__anodized_output)
+                        || __anodized_errors.push_str("\n    | PATTERN_1 | CONDITION_9") != ());
                 if !__anodized_postcond {
                     panic!("postcondition failed:{__anodized_errors}");
                 }
@@ -830,8 +830,8 @@ fn captures() {
         {
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_precond = (|| -> bool { CONDITION_1 })()
-                    || __anodized_errors.push_str("\n    CONDITION_1") != ();
+                let __anodized_precond = ((|| -> bool { CONDITION_1 })()
+                    || __anodized_errors.push_str("\n    CONDITION_1") != ());
                 if !__anodized_precond {
                     panic!("precondition failed:{__anodized_errors}");
                 }
@@ -839,10 +839,10 @@ fn captures() {
             let (ALIAS_1, ALIAS_2, __anodized_output): (_, _, #ret_type) = ((| | EXPR_1) (), (| | EXPR_2) (), (|| #body)());
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_postcond = (|output: &#ret_type| -> bool { CONDITION_2 })(&__anodized_output)
-                    || __anodized_errors.push_str("\n    | output | CONDITION_2") != ()
-                        & (|output: &#ret_type| -> bool { CONDITION_3 })(&__anodized_output)
-                    || __anodized_errors.push_str("\n    | output | CONDITION_3") != ();
+                let __anodized_postcond = ((|output: &#ret_type| -> bool { CONDITION_2 })(&__anodized_output)
+                    || __anodized_errors.push_str("\n    | output | CONDITION_2") != ())
+                    & ((|output: &#ret_type| -> bool { CONDITION_3 })(&__anodized_output)
+                        || __anodized_errors.push_str("\n    | output | CONDITION_3") != ());
                 if !__anodized_postcond {
                     panic!("postcondition failed:{__anodized_errors}");
                 }
