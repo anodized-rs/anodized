@@ -49,8 +49,28 @@ fn embed_spec_item_trait() {
                 __anodized_clause_1 && __anodized_clause_2
             }
 
-            fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
+            #[doc(hidden)]
+            fn __anodized_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
                 BODY
+            }
+
+            fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
+                if false {
+                    let mut __anodized_errors = String::new();
+                    let __anodized_precond = (|| -> bool { COND_1 })()
+                        & (|| -> bool { COND_2 })();
+                    if !__anodized_precond {}
+                }
+                let (__anodized_output): (RET_TYPE) = ((|| {
+                    Self::__anodized_FUNC(self, PARAM_1, PARAM_2)
+                })());
+                if false {
+                    let mut __anodized_errors = String::new();
+                    let __anodized_postcond = (|| -> bool { COND_2 })()
+                        & (|PAT_1: &RET_TYPE| -> bool { COND_3 })(&__anodized_output);
+                    if !__anodized_postcond {}
+                }
+                __anodized_output
             }
         }
     };
@@ -102,7 +122,8 @@ fn embed_spec_item_impl_trait() {
                 __anodized_clause_1 && __anodized_clause_2
             }
 
-            fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
+            #[inline]
+            fn __anodized_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
                 const {
                     assert!(
                         Self::__anodized_fn_qualifiers_FUNC ==
@@ -111,7 +132,22 @@ fn embed_spec_item_impl_trait() {
                         "the qualifiers on the impl `IMPL_TYPE::FUNC` cannot be weaker than the qualifiers on the trait `TRAIT::FUNC`",
                     );
                 };
-                BODY
+                if false {
+                    let mut __anodized_errors = String::new();
+                    let __anodized_precond = (|| -> bool { COND_1 })()
+                        & (|| -> bool { COND_2 })();
+                    if !__anodized_precond {}
+                }
+                let (__anodized_output): (RET_TYPE) = ((|| {
+                    BODY
+                })());
+                if false {
+                    let mut __anodized_errors = String::new();
+                    let __anodized_postcond = (|| -> bool { COND_2 })()
+                        & (|PAT_1: &RET_TYPE| -> bool { COND_3 })(&__anodized_output);
+                    if !__anodized_postcond {}
+                }
+                __anodized_output
             }
         }
     };
