@@ -249,8 +249,8 @@ impl Config {
             let body = &closure.body;
             let expr = match input {
                 Pat::Type(_) => parse_quote! { (#closure)(&#output_ident) },
-                // If the closure's input doesn't have a type ascription, add one.
                 _ => parse_quote! {
+                    // If the closure's input doesn't have a type ascription, add one.
                     (|#input: &#return_type| #output { #body })(&#output_ident)
                 },
             };
