@@ -22,7 +22,7 @@ fn embed_spec_item_fn() {
         #[cfg(META_3)]
         ensures: [
             COND_8,
-            |PAT_2| COND_9,
+            |PAT_2: TYPE| COND_9,
         ],
     };
     let item_fn: ItemFn = parse_quote! {
@@ -89,7 +89,7 @@ fn embed_spec_item_fn() {
                     & (|| -> bool { COND_6 })()
                     & (|PAT_1: &RET_TYPE| -> bool { COND_7 })(&__anodized_output)
                     & (|PAT_1: &RET_TYPE| -> bool { COND_8 })(&__anodized_output)
-                    & (|PAT_2: &RET_TYPE| -> bool { COND_9 })(&__anodized_output);
+                    & (|PAT_2: TYPE| -> bool { COND_9 })(&__anodized_output);
                 if !__anodized_postcond {}
             }
             __anodized_output
