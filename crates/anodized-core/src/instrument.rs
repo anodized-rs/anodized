@@ -93,17 +93,22 @@ impl Config {
 
 #[cfg(test)]
 impl Config {
-    pub(crate) const DEFAULT: RuntimeConfig = RuntimeConfig {
+    pub(crate) const DEFAULT: Self = Self::Dynamic(RuntimeConfig::DEFAULT);
+}
+
+#[cfg(test)]
+impl RuntimeConfig {
+    pub(crate) const DEFAULT: Self = Self {
         does_print: false,
         does_panic: false,
     };
 
-    pub(crate) const PRINT: RuntimeConfig = RuntimeConfig {
+    pub(crate) const PRINT: Self = Self {
         does_print: true,
         does_panic: false,
     };
 
-    pub(crate) const PRINT_AND_PANIC: RuntimeConfig = RuntimeConfig {
+    pub(crate) const PRINT_AND_PANIC: Self = Self {
         does_print: true,
         does_panic: true,
     };
