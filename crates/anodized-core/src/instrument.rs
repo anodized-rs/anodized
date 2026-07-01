@@ -23,54 +23,55 @@ pub struct RuntimeConfig {
 }
 
 impl Config {
-    pub fn has_effect(&self) -> bool {
-        !matches!(self, Self::Nothing)
-    }
-
     pub fn instrument_item_fn(&self, spec: Spec, mut item_fn: ItemFn) -> Result<TokenStream> {
         let mut tokens = TokenStream::new();
 
-        if let Config::Static = self {
-            let attrs: [Attribute; 2] = [
-                parse_quote!(#[doc(hidden)]),
-                parse_quote!(#[allow(warnings)]),
-            ];
+        match self {
+            Self::Nothing => {}
+            Self::Dynamic(_) => {
+                // Instrument function body.
+                self.instrument_fn(&spec, &item_fn.sig, &mut item_fn.block)?;
+            }
+            Self::Static => {
+                // Embed `spec` elements as `__anodized_fn_*` items.
+                let attrs: [Attribute; 2] = [
+                    parse_quote!(#[doc(hidden)]),
+                    parse_quote!(#[allow(warnings)]),
+                ];
 
-            // Embed `spec` elements as `__anodized_fn_*` items.
-            let spec_qualifiers_const: ItemConst = Self::build_qualifier_const_item(
-                &attrs,
-                "__anodized_fn_qualifiers",
-                spec.qualifiers,
-                &item_fn.sig.ident,
-            );
-            let spec_requires_fn = ItemFn {
-                attrs: attrs.to_vec(),
-                vis: syn::Visibility::Inherited,
-                sig: Self::build_precondition_fn_sig("__anodized_fn_requires", &item_fn.sig),
-                block: Box::new(Self::build_precondition_fn_body(
-                    &spec.requires,
-                    &spec.maintains,
-                )),
-            };
-            let spec_ensures_fn = ItemFn {
-                attrs: attrs.to_vec(),
-                vis: syn::Visibility::Inherited,
-                sig: Self::build_postcondition_fn_sig("__anodized_fn_ensures", &item_fn.sig),
-                block: Box::new(Self::build_postcondition_fn_body(
-                    &spec.maintains,
-                    &spec.captures,
-                    &spec.ensures,
-                    &item_fn.sig.output,
-                )?),
-            };
+                let spec_qualifiers_const: ItemConst = Self::build_qualifier_const_item(
+                    &attrs,
+                    "__anodized_fn_qualifiers",
+                    spec.qualifiers,
+                    &item_fn.sig.ident,
+                );
+                let spec_requires_fn = ItemFn {
+                    attrs: attrs.to_vec(),
+                    vis: syn::Visibility::Inherited,
+                    sig: Self::build_precondition_fn_sig("__anodized_fn_requires", &item_fn.sig),
+                    block: Box::new(Self::build_precondition_fn_body(
+                        &spec.requires,
+                        &spec.maintains,
+                    )),
+                };
+                let spec_ensures_fn = ItemFn {
+                    attrs: attrs.to_vec(),
+                    vis: syn::Visibility::Inherited,
+                    sig: Self::build_postcondition_fn_sig("__anodized_fn_ensures", &item_fn.sig),
+                    block: Box::new(Self::build_postcondition_fn_body(
+                        &spec.maintains,
+                        &spec.captures,
+                        &spec.ensures,
+                        &item_fn.sig.output,
+                    )?),
+                };
 
-            spec_qualifiers_const.to_tokens(&mut tokens);
-            spec_requires_fn.to_tokens(&mut tokens);
-            spec_ensures_fn.to_tokens(&mut tokens);
+                spec_qualifiers_const.to_tokens(&mut tokens);
+                spec_requires_fn.to_tokens(&mut tokens);
+                spec_ensures_fn.to_tokens(&mut tokens);
+            }
         }
 
-        // Instrument function body.
-        self.instrument_fn(&spec, &item_fn.sig, &mut item_fn.block)?;
         item_fn.to_tokens(&mut tokens);
 
         Ok(tokens)
