@@ -97,22 +97,19 @@ impl Config {
 
 #[cfg(test)]
 impl Config {
-    pub(crate) const DEFAULT: Config = Config {
-        embed_spec: true,
-        emit_print: false,
-        emit_panic: false,
+    pub(crate) const DEFAULT: RuntimeConfig = RuntimeConfig {
+        does_print: false,
+        does_panic: false,
     };
 
-    pub(crate) const PRINT: Config = Config {
-        embed_spec: true,
-        emit_print: true,
-        emit_panic: false,
+    pub(crate) const PRINT: RuntimeConfig = RuntimeConfig {
+        does_print: true,
+        does_panic: false,
     };
 
-    pub(crate) const PANIC: Config = Config {
-        embed_spec: true,
-        emit_print: true,
-        emit_panic: true,
+    pub(crate) const PRINT_AND_PANIC: RuntimeConfig = RuntimeConfig {
+        does_print: true,
+        does_panic: true,
     };
 }
 
