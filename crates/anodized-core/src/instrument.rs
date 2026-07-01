@@ -9,21 +9,28 @@ pub mod fns;
 pub mod loops;
 pub mod traits;
 
-pub struct Config {
-    pub embed_spec: bool,
-    pub emit_print: bool,
-    pub emit_panic: bool,
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Config {
+    Nothing,
+    Dynamic(Check),
+    Static,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Check {
+    pub does_print: bool,
+    pub does_panic: bool,
 }
 
 impl Config {
     pub fn has_effect(&self) -> bool {
-        self.embed_spec || self.emit_print || self.emit_panic
+        !matches!(self, Self::Nothing)
     }
 
     pub fn instrument_item_fn(&self, spec: Spec, mut item_fn: ItemFn) -> Result<TokenStream> {
         let mut tokens = TokenStream::new();
 
-        if self.embed_spec {
+        if let Config::Static = self {
             let attrs: [Attribute; 2] = [
                 parse_quote!(#[doc(hidden)]),
                 parse_quote!(#[allow(warnings)]),
