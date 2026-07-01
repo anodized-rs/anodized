@@ -39,27 +39,29 @@ fn embed_spec_item_fn() {
 
         #[doc(hidden)]
         #[allow(warnings)]
-        fn __anodized_fn_requires_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
-            let _ = | | -> bool { COND_1 };
-            let _ = | | -> bool { COND_2 };
-            let _ = | | -> bool { COND_3 };
+        fn __anodized_fn_requires_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> bool {
+            let __anodized_clause_1 = (| | -> bool { COND_1 })();
+            let __anodized_clause_2 = (| | -> bool { COND_2 })();
+            let __anodized_clause_3 = (| | -> bool { COND_3 })();
+            let __anodized_clause_4 = (| | -> bool { COND_4 })();
+            let __anodized_clause_5 = (| | -> bool { COND_5 })();
+            let __anodized_clause_6 = (| | -> bool { COND_6 })();
+            __anodized_clause_1 && __anodized_clause_2 && __anodized_clause_3
+                && __anodized_clause_4 && __anodized_clause_5 && __anodized_clause_6
         }
 
         #[doc(hidden)]
         #[allow(warnings)]
-        fn __anodized_fn_maintains_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
-            let _ = | | -> bool { COND_4 };
-            let _ = | | -> bool { COND_5 };
-            let _ = | | -> bool { COND_6 };
-        }
-
-        #[doc(hidden)]
-        #[allow(warnings)]
-        fn __anodized_fn_ensures_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) {
+        fn __anodized_fn_ensures_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2, __anodized_output: &RET_TYPE) -> bool {
+            let __anodized_clause_1 = (| | -> bool { COND_4 })();
+            let __anodized_clause_2 = (| | -> bool { COND_5 })();
+            let __anodized_clause_3 = (| | -> bool { COND_6 })();
             let (ALIAS_1, (ALIAS_2, ALIAS_3)) = ((| | EXPR_1)(), (| | EXPR_2)());
-            let _ = |PAT_1: &RET_TYPE| -> bool { COND_7 };
-            let _ = |PAT_1: &RET_TYPE| -> bool { COND_8 };
-            let _ = |PAT_2: TYPE| -> bool { COND_9 };
+            let __anodized_clause_4 = (|PAT_1: &RET_TYPE| -> bool { COND_7 })(__anodized_output);
+            let __anodized_clause_5 = (|PAT_1: &RET_TYPE| -> bool { COND_8 })(__anodized_output);
+            let __anodized_clause_6 = (|PAT_2: TYPE| -> bool { COND_9 })(__anodized_output);
+            __anodized_clause_1 && __anodized_clause_2 && __anodized_clause_3
+                && __anodized_clause_4 && __anodized_clause_5 && __anodized_clause_6
         }
 
         fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {

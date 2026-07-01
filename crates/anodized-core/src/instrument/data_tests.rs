@@ -38,9 +38,10 @@ fn embed_spec_item_struct() {
         where
             'LT_1: 'LT_2,
         {
-            fn __anodized_data_maintains(&self) {
-                let _ = | | -> bool { COND_1 };
-                let _ = | | -> bool { COND_2 };
+            fn __anodized_data_maintains(&self) -> bool {
+                let __anodized_clause_1 = (| | -> bool { COND_1 })();
+                let __anodized_clause_2 = (| | -> bool { COND_2 })();
+                __anodized_clause_1 && __anodized_clause_2
             }
         }
     };
@@ -88,10 +89,11 @@ fn embed_spec_item_enum() {
         where
             'LT_1: 'LT_2,
         {
-            fn __anodized_data_maintains(&self) {
+            fn __anodized_data_maintains(&self) -> bool {
                 use ENUM::*;
-                let _ = | | -> bool { COND_1 };
-                let _ = | | -> bool { COND_2 };
+                let __anodized_clause_1 = (| | -> bool { COND_1 })();
+                let __anodized_clause_2 = (| | -> bool { COND_2 })();
+                __anodized_clause_1 && __anodized_clause_2
             }
         }
     };

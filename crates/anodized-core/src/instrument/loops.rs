@@ -2,8 +2,10 @@
 #[path = "loops_tests.rs"]
 mod loops_tests;
 
+use proc_macro2::Span;
 use syn::{
-    Block, Error, ExprClosure, ExprForLoop, ExprWhile, ItemFn, Result, Stmt, parse_quote,
+    Block, Error, Expr, ExprClosure, ExprForLoop, ExprWhile, Ident, ItemFn, Result, Stmt,
+    parse_quote,
     visit_mut::{self, VisitMut},
 };
 
@@ -29,25 +31,35 @@ impl Config {
 
     fn instrument_loop_body(&self, spec: LoopSpec, stmts: &mut Vec<Stmt>) {
         if self.embed_spec {
-            let maintains_block = Self::build_precondition_fn_body(&spec.maintains);
+            let maintains_block = Self::build_precondition_fn_body(&[], &spec.maintains);
             stmts.insert(
                 0,
                 parse_quote! {
-                    let __anodized_loop_maintains = #maintains_block;
+                    let __anodized_loop_maintains = || -> bool #maintains_block;
                 },
             );
 
-            let let_decreases: Option<Stmt> = spec.decreases.map(|loop_variant| {
-                let expr = loop_variant.expr;
-                parse_quote! {
-                    let _ = || #expr;
-                }
-            });
+            let mut variant_stmts: Vec<Stmt> = Vec::new();
+            let mut variant_names: Vec<Ident> = Vec::new();
+            if let Some(loop_variant) = &spec.decreases {
+                let i = variant_names.len();
+                let name = Ident::new(&format!("__anodized_value_{}", i + 1), Span::mixed_site());
+                let expr = &loop_variant.expr;
+                variant_stmts.push(parse_quote! { let #name = (|| #expr)(); });
+                variant_names.push(name);
+            }
+            let variant_expr: Option<Expr> = if !variant_names.is_empty() {
+                Some(parse_quote! { (#(#variant_names),*) })
+            } else {
+                None
+            };
+
             stmts.insert(
                 1,
                 parse_quote! {
-                    let __anodized_loop_decreases = {
-                        #let_decreases
+                    let __anodized_loop_decreases = || {
+                        #(#variant_stmts)*
+                        #variant_expr
                     };
                 },
             );

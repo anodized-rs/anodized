@@ -35,7 +35,7 @@ impl Config {
         Ok(())
     }
 
-    pub fn build_spec_fn_sig(prefix: &str, sig: &Signature) -> Signature {
+    pub fn build_precondition_fn_sig(prefix: &str, sig: &Signature) -> Signature {
         Signature {
             constness: sig.constness,
             asyncness: sig.asyncness,
@@ -47,7 +47,30 @@ impl Config {
             paren_token: sig.paren_token,
             inputs: sig.inputs.clone(),
             variadic: sig.variadic.clone(),
-            output: syn::ReturnType::Default,
+            output: parse_quote!(-> bool),
+        }
+    }
+
+    pub fn build_postcondition_fn_sig(prefix: &str, sig: &Signature) -> Signature {
+        let mut inputs = sig.inputs.clone();
+        let output_binder = match &sig.output {
+            ReturnType::Type(_, return_type) => parse_quote!(__anodized_output: &#return_type),
+            ReturnType::Default => parse_quote!(__anodized_output: &()),
+        };
+        inputs.push(output_binder);
+
+        Signature {
+            constness: sig.constness,
+            asyncness: sig.asyncness,
+            unsafety: sig.unsafety,
+            abi: sig.abi.clone(),
+            fn_token: sig.fn_token,
+            ident: syn::Ident::new(&format!("{prefix}_{}", sig.ident), sig.ident.span()),
+            generics: sig.generics.clone(),
+            paren_token: sig.paren_token,
+            inputs,
+            variadic: sig.variadic.clone(),
+            output: parse_quote!(-> bool),
         }
     }
 
@@ -96,67 +119,88 @@ impl Config {
         }
     }
 
-    pub fn build_precondition_fn_body(conditions: &[PreCondition]) -> Block {
-        let statements = conditions.iter().map(|condition| -> Stmt {
+    pub fn build_precondition_fn_body(
+        requires: &[PreCondition],
+        maintains: &[PreCondition],
+    ) -> Block {
+        let mut statements: Vec<Stmt> = vec![];
+        let mut clauses: Vec<Expr> = vec![];
+
+        for condition in requires.iter().chain(maintains) {
+            let i = clauses.len();
+            let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
             let closure = &condition.closure;
-            parse_quote! { let _ = #closure; }
-        });
+            statements.push(parse_quote! { let #name = (#closure)(); });
+            clauses.push(parse_quote! { #name });
+        }
+
+        if clauses.is_empty() {
+            clauses.push(parse_quote!(true));
+        }
+
         parse_quote! {
             {
                 #(#statements)*
+                #(#clauses)&&*
             }
         }
     }
 
-    pub fn build_poscondition_fn_body(
+    pub fn build_postcondition_fn_body(
+        maintains: &[PreCondition],
         captures: &[Capture],
-        conditions: &[PostCondition],
+        ensures: &[PostCondition],
         return_type: &ReturnType,
     ) -> Result<Block> {
-        let aliases = captures.iter().map(|capture| &capture.pat);
-        let capture_exprs = captures.iter().map(|capture| -> Expr {
-            let expr = &capture.expr;
-            // Wrap in closure to guard against `return`.
-            parse_quote! { (|| #expr)() }
-        });
+        let mut statements: Vec<Stmt> = vec![];
+        let mut clauses: Vec<Expr> = vec![];
 
-        let mut statements = vec![];
-
-        for condition in conditions {
+        for condition in maintains {
+            let i = clauses.len();
+            let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
             let closure = &condition.closure;
-            // TODO: This sort of validation should happen during parsing.
-            let output_binder = match closure.inputs.first() {
-                Some(output_binder) if closure.inputs.len() == 1 => output_binder,
-                _ => {
-                    return Err(syn::Error::new_spanned(
-                        &closure.inputs,
-                        "Postcondition closure must have exactly one parameter.",
-                    ));
-                }
-            };
-            let statement: Stmt = if let Pat::Type(_) = output_binder {
-                // If the output binder has a type annotation, use as-is.
-                parse_quote! { let _ = #closure; }
+            statements.push(parse_quote! { let #name = (#closure)(); });
+            clauses.push(parse_quote! { #name });
+        }
+
+        {
+            let aliases = captures.iter().map(|capture| &capture.pat);
+            let capture_exprs = captures.iter().map(|capture| -> Expr {
+                let expr = &capture.expr;
+                // Wrap in closure to guard against `return`.
+                parse_quote! { (|| #expr)() }
+            });
+            statements.push(parse_quote! { let (#(#aliases),*) = (#(#capture_exprs),*); });
+        }
+
+        let output_type = match return_type {
+            ReturnType::Type(_, return_type) => return_type.as_ref().clone(),
+            ReturnType::Default => parse_quote!(()),
+        };
+        for condition in ensures {
+            let i = clauses.len();
+            let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
+            let closure = &condition.closure;
+            let input = closure.inputs.first().expect("valid postcondition");
+            if let Pat::Type(_) = input {
+                statements.push(parse_quote! { let #name = (#closure)(__anodized_output); });
             } else {
-                // Otherwise add a type annotation.
                 let body = &closure.body;
-                let output = &closure.output;
-                match &return_type {
-                    ReturnType::Default => {
-                        parse_quote! { let _ = |#output_binder: &()| #output { #body }; }
-                    }
-                    ReturnType::Type(_, ty) => {
-                        parse_quote! { let _ = |#output_binder: &#ty| #output { #body }; }
-                    }
-                }
-            };
-            statements.push(statement);
+                statements.push(parse_quote! {
+                    let #name = (| #input: &#output_type | -> bool { #body })(__anodized_output);
+                });
+            }
+            clauses.push(parse_quote! { #name });
+        }
+
+        if clauses.is_empty() {
+            clauses.push(parse_quote!(true));
         }
 
         Ok(parse_quote! {
             {
-                let (#(#aliases),*) = (#(#capture_exprs),*);
                 #(#statements)*
+                #(#clauses)&&*
             }
         })
     }

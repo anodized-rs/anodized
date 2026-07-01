@@ -39,20 +39,18 @@ impl Config {
             let spec_requires_fn = ItemFn {
                 attrs: attrs.to_vec(),
                 vis: syn::Visibility::Inherited,
-                sig: Self::build_spec_fn_sig("__anodized_fn_requires", &item_fn.sig),
-                block: Box::new(Self::build_precondition_fn_body(&spec.requires)),
-            };
-            let spec_maintains_fn = ItemFn {
-                attrs: attrs.to_vec(),
-                vis: syn::Visibility::Inherited,
-                sig: Self::build_spec_fn_sig("__anodized_fn_maintains", &item_fn.sig),
-                block: Box::new(Self::build_precondition_fn_body(&spec.maintains)),
+                sig: Self::build_precondition_fn_sig("__anodized_fn_requires", &item_fn.sig),
+                block: Box::new(Self::build_precondition_fn_body(
+                    &spec.requires,
+                    &spec.maintains,
+                )),
             };
             let spec_ensures_fn = ItemFn {
                 attrs: attrs.to_vec(),
                 vis: syn::Visibility::Inherited,
-                sig: Self::build_spec_fn_sig("__anodized_fn_ensures", &item_fn.sig),
-                block: Box::new(Self::build_poscondition_fn_body(
+                sig: Self::build_postcondition_fn_sig("__anodized_fn_ensures", &item_fn.sig),
+                block: Box::new(Self::build_postcondition_fn_body(
+                    &spec.maintains,
                     &spec.captures,
                     &spec.ensures,
                     &item_fn.sig.output,
@@ -61,7 +59,6 @@ impl Config {
 
             spec_qualifiers_const.to_tokens(&mut tokens);
             spec_requires_fn.to_tokens(&mut tokens);
-            spec_maintains_fn.to_tokens(&mut tokens);
             spec_ensures_fn.to_tokens(&mut tokens);
         }
 
