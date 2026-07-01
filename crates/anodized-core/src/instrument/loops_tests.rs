@@ -60,7 +60,7 @@ fn embed_spec_expr_for() {
                 let __anodized_clause_2 = (| | -> bool { INVAR_2 })();
                 __anodized_clause_1 && __anodized_clause_2
             };
-            let __anodized_loop_decreases = || { () };
+            let __anodized_loop_decreases = || {};
             LOOP_BODY
         }
     };

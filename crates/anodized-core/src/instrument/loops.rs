@@ -4,7 +4,8 @@ mod loops_tests;
 
 use proc_macro2::Span;
 use syn::{
-    Block, Error, ExprClosure, ExprForLoop, ExprWhile, Ident, ItemFn, Result, Stmt, parse_quote,
+    Block, Error, Expr, ExprClosure, ExprForLoop, ExprWhile, Ident, ItemFn, Result, Stmt,
+    parse_quote,
     visit_mut::{self, VisitMut},
 };
 
@@ -40,7 +41,6 @@ impl Config {
 
             let mut variant_stmts: Vec<Stmt> = Vec::new();
             let mut variant_names: Vec<Ident> = Vec::new();
-
             if let Some(loop_variant) = &spec.decreases {
                 let i = variant_names.len();
                 let name = Ident::new(&format!("__anodized_value_{}", i + 1), Span::mixed_site());
@@ -48,13 +48,18 @@ impl Config {
                 variant_stmts.push(parse_quote! { let #name = (|| #expr)(); });
                 variant_names.push(name);
             }
+            let variant_expr: Option<Expr> = if !variant_names.is_empty() {
+                Some(parse_quote! { (#(#variant_names),*) })
+            } else {
+                None
+            };
 
             stmts.insert(
                 1,
                 parse_quote! {
                     let __anodized_loop_decreases = || {
                         #(#variant_stmts)*
-                        (#(#variant_names),*)
+                        #variant_expr
                     };
                 },
             );
