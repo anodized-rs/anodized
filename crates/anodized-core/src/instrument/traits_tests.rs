@@ -26,14 +26,6 @@ fn embed_spec_item_trait() {
         trait TRAIT {
             #[doc(hidden)]
             #[allow(warnings)]
-            const __anodized_fn_qualifiers_trait_FUNC: u32 = #qualifier_bits;
-
-            #[doc(hidden)]
-            #[allow(warnings)]
-            const __anodized_fn_qualifiers_FUNC: u32 = #qualifier_bits;
-
-            #[doc(hidden)]
-            #[allow(warnings)]
             fn __anodized_fn_requires_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> bool {
                 let __anodized_clause_1 = (| | -> bool { COND_1 })();
                 let __anodized_clause_2 = (| | -> bool { COND_2 })();
@@ -48,6 +40,14 @@ fn embed_spec_item_trait() {
                 let __anodized_clause_2 = (|PAT_1: &RET_TYPE| -> bool { COND_3 })(__anodized_output);
                 __anodized_clause_1 && __anodized_clause_2
             }
+
+            #[doc(hidden)]
+            #[allow(warnings)]
+            const __anodized_fn_qualifiers_trait_FUNC: u32 = #qualifier_bits;
+
+            #[doc(hidden)]
+            #[allow(warnings)]
+            const __anodized_fn_qualifiers_FUNC: u32 = #qualifier_bits;
 
             fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
                 BODY
@@ -83,10 +83,6 @@ fn embed_spec_item_impl_trait() {
         impl TRAIT for IMPL_TYPE {
             #[doc(hidden)]
             #[allow(warnings)]
-            const __anodized_fn_qualifiers_FUNC: u32 = #qualifier_bits;
-
-            #[doc(hidden)]
-            #[allow(warnings)]
             fn __anodized_fn_requires_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> bool {
                 let __anodized_clause_1 = (| | -> bool { COND_1 })();
                 let __anodized_clause_2 = (| | -> bool { COND_2 })();
@@ -101,6 +97,10 @@ fn embed_spec_item_impl_trait() {
                 let __anodized_clause_2 = (|PAT_1: &RET_TYPE| -> bool { COND_3 })(__anodized_output);
                 __anodized_clause_1 && __anodized_clause_2
             }
+
+            #[doc(hidden)]
+            #[allow(warnings)]
+            const __anodized_fn_qualifiers_FUNC: u32 = #qualifier_bits;
 
             fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
                 BODY
