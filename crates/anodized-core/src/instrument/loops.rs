@@ -30,7 +30,7 @@ impl Config {
     }
 
     fn instrument_loop_body(&self, spec: LoopSpec, stmts: &mut Vec<Stmt>) {
-        if self.embed_spec {
+        if let Self::Static = self {
             let maintains_block = Self::build_precondition_fn_body(&[], &spec.maintains);
             stmts.insert(
                 0,

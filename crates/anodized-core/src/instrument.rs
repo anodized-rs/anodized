@@ -12,12 +12,12 @@ pub mod traits;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Config {
     Nothing,
-    Dynamic(Check),
+    Dynamic(RuntimeConfig),
     Static,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Check {
+pub struct RuntimeConfig {
     pub does_print: bool,
     pub does_panic: bool,
 }

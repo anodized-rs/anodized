@@ -22,7 +22,7 @@ impl Config {
 
         item_struct.to_tokens(&mut tokens);
 
-        if self.embed_spec {
+        if let Self::Static = self {
             let spec_impl: ItemImpl = parse_quote! {
                 #[doc(hidden)]
                 #[allow(warnings)]
@@ -47,7 +47,7 @@ impl Config {
 
         item_enum.to_tokens(&mut tokens);
 
-        if self.embed_spec {
+        if let Self::Static = self {
             let spec_impl: ItemImpl = parse_quote! {
                 #[doc(hidden)]
                 #[allow(warnings)]

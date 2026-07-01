@@ -11,12 +11,18 @@ use syn::{
 };
 
 use crate::{
-    Capture, PostCondition, PreCondition, Spec, instrument::Config, qualifiers::FnQualifiers,
+    Capture, PostCondition, PreCondition, Spec,
+    instrument::{Config, RuntimeConfig},
+    qualifiers::FnQualifiers,
 };
 
 impl Config {
     pub fn instrument_fn(&self, spec: &Spec, sig: &Signature, body: &mut Block) -> syn::Result<()> {
         self.instrument_loops_in_fn_body(body)?;
+
+        let Self::Dynamic(check_config) = self else {
+            return Ok(());
+        };
 
         let is_async = sig.asyncness.is_some();
 
@@ -27,7 +33,7 @@ impl Config {
         };
 
         // Generate the new, instrumented function body.
-        let new_body = self.instrument_fn_body(spec, body, is_async, &return_type)?;
+        let new_body = check_config.instrument_fn_body(spec, body, is_async, &return_type)?;
 
         // Replace the old function body with the new one.
         *body = new_body;
@@ -204,7 +210,9 @@ impl Config {
             }
         })
     }
+}
 
+impl RuntimeConfig {
     fn instrument_fn_body(
         &self,
         spec: &Spec,
@@ -212,11 +220,6 @@ impl Config {
         is_async: bool,
         return_type: &syn::Type,
     ) -> Result<Block> {
-        // Exit early when all instrumentation is off.
-        if !self.has_effect() {
-            return Ok(original_body.clone());
-        }
-
         // The identifier for the return value binding.
         let output_ident = Pat::Ident(PatIdent {
             attrs: vec![],
@@ -307,7 +310,7 @@ impl Config {
             postcondition_clauses.push(parse_quote!(true));
         }
 
-        let do_run_checks = self.emit_print || self.emit_panic;
+        let do_run_checks = self.does_print || self.does_panic;
         let precond_fail_action = self.build_fail_action("precondition failed");
         let postcond_fail_action = self.build_fail_action("postcondition failed");
 
@@ -334,7 +337,7 @@ impl Config {
     }
 
     fn build_clause_eval(&self, cfg: Option<&Meta>, expr: &Expr, repr: &str) -> Expr {
-        if self.emit_print {
+        if self.does_print {
             let br_and_repr = format!("\n    {repr}");
             let cfg_guard = match cfg {
                 Some(meta) => quote! { !cfg!(#meta) || },
@@ -348,7 +351,7 @@ impl Config {
 
     fn build_fail_action(&self, message: &str) -> Option<Stmt> {
         let message_and_errors = format!("{message}:{{__anodized_errors}}");
-        match (self.emit_print, self.emit_panic) {
+        match (self.does_print, self.does_panic) {
             (true, true) => Some(parse_quote! { panic!(#message_and_errors); }),
             (true, false) => Some(parse_quote! { eprintln!(#message_and_errors); }),
             (false, true) => Some(parse_quote! { panic!(#message); }),

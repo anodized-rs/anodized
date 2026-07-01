@@ -51,7 +51,7 @@ impl Config {
                         None => Spec::empty(),
                     };
 
-                    if self.embed_spec {
+                    if let Self::Static = self {
                         let attrs: [Attribute; 2] = [
                             parse_quote!(#[doc(hidden)]),
                             parse_quote!(#[allow(warnings)]),
@@ -205,7 +205,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         None => Spec::empty(),
                     };
 
-                    if self.embed_spec {
+                    if let Self::Static = self {
                         let attrs: [Attribute; 2] = [
                             parse_quote!(#[doc(hidden)]),
                             parse_quote!(#[allow(warnings)]),
@@ -254,7 +254,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
 
                     self.instrument_fn(&fn_spec, &func.sig, &mut func.block)?;
 
-                    if self.embed_spec {
+                    if let Self::Static = self {
                         // Add a compile-time check to the body.
                         func.block.stmts.insert(
                             0,
