@@ -8,21 +8,25 @@
 
 > Harden your Rust with **specifications**.
 
-**The detailed reference is here: [The Anodized Reference](https://github.com/anodized-rs/anodized/blob/main/crates/anodized/REFERENCE.md).**
-
 # Anodized
 
-`anodized` is to specification what `serde` is to serialization: a common layer that connects your code to an ecosystem of tools.
+Anodized aims to be for specifications what [Serde](https://serde.rs) is for serialization: a common layer for writing specs once and validating them with many tools.
 
 Write preconditions, postconditions, loop invariants, and type refinements directly in standard Rust. Validate them with runtime checks, fuzzers, model checkers, or formal provers - without rewriting your specs when you switch or combine tools.
 
+In the verification landscape, Anodized is in the spirit of behavioral specification languages like
+[SPARK](<https://en.wikipedia.org/wiki/SPARK_(programming_language)>),
+[JML](https://en.wikipedia.org/wiki/Java_Modeling_Language), and
+[ACSL](https://en.wikipedia.org/wiki/ANSI/ISO_C_Specification_Language). Unlike JML and ACSL,
+Anodized specs are not comments but attributes, so they are checked by the Rust compiler for syntax, scoping, and types, and understood by tools like `rust-analyzer` out of the box.
+
 ## The `spec` Attribute
 
-- **highly expressive**: Write specs in the Rust you already know - call functions, use macros, write `if` and `match` expressions.
-- **deeply integrated**: Syntax-checked, type-checked, and understood by `rust-analyzer` out of the box. No special toolchain components needed.
-- **widely compatible**: Validate the same specs with any combination of runtime checks, fuzzers, model checkers, or formal provers.
-
 <img style="max-width:630px;" alt="editor integration demo" src="https://raw.githubusercontent.com/anodized-rs/anodized/main/assets/anodized-editor-integration.gif">
+
+- **highly expressive**: A condition is any Rust expression that evaluates to `bool`. Call functions, write `if` and `match` expressions, use macros, and so on.
+- **deeply integrated**: No special toolchain components needed. The ordinary Rust compiler checks your specs for syntax, scoping, and type errors, and `rust-analyzer` offers type hints, completion, and navigation inside them.
+- **widely compatible**: One spec, many enforcers. Start with the built-in runtime checks, then add fuzzers, model checkers, or formal provers for deeper assurance - in any combination, without rewriting anything.
 
 ## Quickstart
 
@@ -30,7 +34,7 @@ Write preconditions, postconditions, loop invariants, and type refinements direc
 
 ```toml
 [dependencies]
-anodized = { version = "0.5.1" }
+anodized = "0.5.1"
 ```
 
 **2. Extend your code with specs.**
