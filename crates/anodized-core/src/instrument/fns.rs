@@ -311,8 +311,20 @@ impl CheckSettings {
         }
 
         let do_run_checks = self.does_print || self.does_panic;
-        let precond_fail_action = self.build_fail_action("precondition failed");
-        let postcond_fail_action = self.build_fail_action("postcondition failed");
+
+        let (output_expr, precond_fail_action, postcond_fail_action) = if self.split_func {
+            (
+                quote! { Ok(#output_ident) },
+                Some(parse_quote! { return Err((false, __anodized_errors)); }),
+                Some(parse_quote! { return Err((true, __anodized_errors)); }),
+            )
+        } else {
+            (
+                quote! { #output_ident },
+                self.build_fail_action("precondition failed"),
+                self.build_fail_action("postcondition failed"),
+            )
+        };
 
         Ok(parse_quote! {
             {
@@ -331,7 +343,7 @@ impl CheckSettings {
                         #postcond_fail_action
                     }
                 }
-                #output_ident
+                #output_expr
             }
         })
     }

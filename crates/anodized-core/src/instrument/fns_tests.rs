@@ -150,12 +150,18 @@ fn split_instrument_item_fn() {
         {
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_precond = (|| -> bool { COND_1 })()
-                    & (|| -> bool { COND_2 })()
-                    & (|| -> bool { COND_3 })()
-                    & (|| -> bool { COND_4 })()
-                    & (|| -> bool { COND_5 })()
-                    & (|| -> bool { COND_6 })();
+                let __anodized_precond = ((|| -> bool { COND_1 })()
+                        || __anodized_errors.push_str("\n    COND_1") != ())
+                    & (!cfg!(META_1) || (|| -> bool { COND_2 })()
+                        || __anodized_errors.push_str("\n    COND_2") != ())
+                    & (!cfg!(META_1) || (|| -> bool { COND_3 })()
+                        || __anodized_errors.push_str("\n    COND_3") != ())
+                    & ((|| -> bool { COND_4 })()
+                        || __anodized_errors.push_str("\n    COND_4") != ())
+                    & ((|| -> bool { COND_5 })()
+                        || __anodized_errors.push_str("\n    COND_5") != ())
+                    & (!cfg!(META_2) || (|| -> bool { COND_6 })()
+                        || __anodized_errors.push_str("\n    COND_6") != ());
                 if !__anodized_precond {
                     return Err((false, __anodized_errors));
                 }
@@ -169,12 +175,19 @@ fn split_instrument_item_fn() {
             );
             if true {
                 let mut __anodized_errors = String::new();
-                let __anodized_postcond = (|| -> bool { COND_4 })()
-                    & (|| -> bool { COND_5 })()
-                    & (|| -> bool { COND_6 })()
-                    & (|PAT_1: &RET_TYPE| -> bool { COND_7 })(&__anodized_output)
-                    & (|PAT_1: &RET_TYPE| -> bool { COND_8 })(&__anodized_output)
-                    & (|PAT_2: TYPE| -> bool { COND_9 })(&__anodized_output);
+                let __anodized_postcond = ((|| -> bool { COND_4 })()
+                        || __anodized_errors.push_str("\n    COND_4") != ())
+                    & ((|| -> bool { COND_5 })()
+                        || __anodized_errors.push_str("\n    COND_5") != ())
+                    & (!cfg!(META_2) || (|| -> bool { COND_6 })()
+                        || __anodized_errors.push_str("\n    COND_6") != ())
+                    & ((|PAT_1: &RET_TYPE| -> bool { COND_7 })(&__anodized_output)
+                        || __anodized_errors.push_str("\n    | PAT_1 | COND_7") != ())
+                    & (!cfg!(META_3)
+                        || (|PAT_1: &RET_TYPE| -> bool { COND_8 })(&__anodized_output)
+                        || __anodized_errors.push_str("\n    | PAT_1 | COND_8") != ())
+                    & (!cfg!(META_3) || (|PAT_2: TYPE| -> bool { COND_9 })(&__anodized_output)
+                        || __anodized_errors.push_str("\n    | PAT_2 : TYPE | COND_9") != ());
                 if !__anodized_postcond {
                     return Err((true, __anodized_errors));
                 }
