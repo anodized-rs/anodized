@@ -6,9 +6,9 @@ use proc_macro2::TokenStream;
 use quote::ToTokens;
 use syn::{ItemEnum, ItemImpl, ItemStruct, Result, parse_quote};
 
-use crate::{DataSpec, instrument::Config};
+use crate::{DataSpec, instrument::Mode};
 
-impl Config {
+impl Mode {
     pub fn instrument_item_struct(
         &self,
         spec: DataSpec,
@@ -47,7 +47,7 @@ impl Config {
 
         item_enum.to_tokens(&mut tokens);
 
-        if let Self::EmbedSpecs = self {
+        if let Mode::EmbedSpecs = self {
             let spec_impl: ItemImpl = parse_quote! {
                 #[doc(hidden)]
                 #[allow(warnings)]

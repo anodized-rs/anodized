@@ -5,13 +5,13 @@ use syn::{Item, TraitItemFn, parse_macro_input};
 
 use anodized_core::{
     DataSpec, Spec,
-    instrument::{CheckConfig, Config, make_item_error},
+    instrument::{CheckSettings, Mode, make_item_error},
 };
 
-const CONFIG: Config = if cfg!(anodized_discard_specs) {
-    Config::ChangeNothing
+const CONFIG: Mode = if cfg!(anodized_discard_specs) {
+    Mode::ChangeNothing
 } else {
-    Config::InjectChecks(CheckConfig {
+    Mode::InjectChecks(CheckSettings {
         does_print: cfg!(anodized_print),
         does_panic: cfg!(anodized_panic),
     })

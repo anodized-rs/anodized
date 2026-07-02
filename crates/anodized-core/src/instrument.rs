@@ -10,24 +10,24 @@ pub mod loops;
 pub mod traits;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Config {
+pub enum Mode {
     /// Make no changes to the code.
     ChangeNothing,
     /// Inject code to enable compile-time and/or runtime checks.
-    InjectChecks(CheckConfig),
+    InjectChecks(CheckSettings),
     /// Embed spec elements as new items without changing existing code.
     EmbedSpecs,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct CheckConfig {
+pub struct CheckSettings {
     pub does_print: bool,
     pub does_panic: bool,
 }
 
-impl Config {
+impl Mode {
     pub fn changes_anything(&self) -> bool {
-        !matches!(self, Self::ChangeNothing)
+        !matches!(self, Mode::ChangeNothing)
     }
 
     pub fn instrument_item_fn(&self, spec: Spec, mut item_fn: ItemFn) -> Result<TokenStream> {
@@ -99,12 +99,12 @@ impl Config {
 }
 
 #[cfg(test)]
-impl Config {
-    pub(crate) const DEFAULT: Self = Self::InjectChecks(CheckConfig::DEFAULT);
+impl Mode {
+    pub(crate) const DEFAULT: Self = Mode::InjectChecks(CheckSettings::DEFAULT);
 }
 
 #[cfg(test)]
-impl CheckConfig {
+impl CheckSettings {
     pub(crate) const DEFAULT: Self = Self {
         does_print: false,
         does_panic: false,

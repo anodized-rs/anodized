@@ -55,7 +55,7 @@ fn embed_spec_item_trait() {
         }
     };
 
-    let observed = Config::EmbedSpecs
+    let observed = Mode::EmbedSpecs
         .instrument_item_trait(trait_spec, item_trait)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -115,7 +115,7 @@ fn default_instrument_item_trait() {
         }
     };
 
-    let observed = Config::DEFAULT
+    let observed = Mode::DEFAULT
         .instrument_item_trait(trait_spec, item_trait)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -168,7 +168,7 @@ fn embed_spec_item_impl_trait() {
         }
     };
 
-    let observed = Config::EmbedSpecs
+    let observed = Mode::EmbedSpecs
         .instrument_item_trait_impl(trait_spec, item_impl)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -228,7 +228,7 @@ fn default_instrument_item_impl_trait() {
         }
     };
 
-    let observed = Config::DEFAULT
+    let observed = Mode::DEFAULT
         .instrument_item_trait_impl(trait_spec, item_impl)
         .unwrap();
     assert_tokens_eq(&observed, &expected);

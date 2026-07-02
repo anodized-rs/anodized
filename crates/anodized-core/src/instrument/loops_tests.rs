@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use syn::{ExprForLoop, ExprWhile, parse_quote};
 
-use crate::{LoopSpec, instrument::Config, test_util::assert_tokens_eq};
+use crate::{LoopSpec, instrument::Mode, test_util::assert_tokens_eq};
 
 #[test]
 fn embed_spec_expr_while() {
@@ -33,7 +33,7 @@ fn embed_spec_expr_while() {
         }
     };
 
-    Config::EmbedSpecs.instrument_expr_while(while_spec, &mut expr_while);
+    Mode::EmbedSpecs.instrument_expr_while(while_spec, &mut expr_while);
     let observed = expr_while;
 
     assert_tokens_eq(&observed, &expected);
@@ -65,7 +65,7 @@ fn embed_spec_expr_for() {
         }
     };
 
-    Config::EmbedSpecs.instrument_expr_for_loop(for_spec, &mut expr_for_loop);
+    Mode::EmbedSpecs.instrument_expr_for_loop(for_spec, &mut expr_for_loop);
     let observed = expr_for_loop;
 
     assert_tokens_eq(&observed, &expected);

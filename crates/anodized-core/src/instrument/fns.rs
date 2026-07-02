@@ -12,15 +12,15 @@ use syn::{
 
 use crate::{
     Capture, PostCondition, PreCondition, Spec,
-    instrument::{CheckConfig, Config},
+    instrument::{CheckSettings, Mode},
     qualifiers::FnQualifiers,
 };
 
-impl Config {
+impl Mode {
     pub fn instrument_fn(&self, spec: &Spec, sig: &Signature, body: &mut Block) -> syn::Result<()> {
         self.instrument_loops_in_fn_body(body)?;
 
-        let Self::InjectChecks(check_config) = self else {
+        let Mode::InjectChecks(check_config) = self else {
             return Ok(());
         };
 
@@ -212,7 +212,7 @@ impl Config {
     }
 }
 
-impl CheckConfig {
+impl CheckSettings {
     fn instrument_fn_body(
         &self,
         spec: &Spec,

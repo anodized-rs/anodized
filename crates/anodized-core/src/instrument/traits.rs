@@ -10,10 +10,10 @@ use syn::{
 
 use crate::{
     DataSpec, Spec,
-    instrument::{Config, find_spec_attr, make_item_error},
+    instrument::{Mode, find_spec_attr, make_item_error},
 };
 
-impl Config {
+impl Mode {
     /// Expand trait items by mangling each method and adding a wrapper default impl.
     ///
     /// Mangling a function involves the following:
@@ -111,7 +111,7 @@ impl Config {
                         self.instrument_loops_in_fn_body(default_body)?;
                     }
 
-                    if let Self::InjectChecks(_) = self {
+                    if let Mode::InjectChecks(_) = self {
                         let mangled_ident = mangle_ident(&func.sig.ident);
 
                         let mut mangled_fn = func.clone();
@@ -260,7 +260,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         new_items.push(ImplItem::Const(spec_qualifiers_const));
                     }
 
-                    if let Self::InjectChecks(_) = self {
+                    if let Mode::InjectChecks(_) = self {
                         self.instrument_fn(&fn_spec, &func.sig, &mut func.block)?;
 
                         // Add a compile-time check to the body.
