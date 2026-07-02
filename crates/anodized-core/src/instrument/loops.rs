@@ -11,10 +11,10 @@ use syn::{
 
 use crate::{
     LoopSpec,
-    instrument::{Config, find_spec_attr},
+    instrument::{Mode, find_spec_attr},
 };
 
-impl Config {
+impl Mode {
     pub fn instrument_loops_in_fn_body(&self, body: &mut Block) -> Result<()> {
         let mut visitor = LoopSpecVisitor::new(self);
         visitor.visit_block_mut(body);
@@ -30,7 +30,7 @@ impl Config {
     }
 
     fn instrument_loop_body(&self, spec: LoopSpec, stmts: &mut Vec<Stmt>) {
-        if self.embed_spec {
+        if let Self::EmbedSpecs = self {
             let maintains_block = Self::build_precondition_fn_body(&[], &spec.maintains);
             stmts.insert(
                 0,
@@ -68,12 +68,12 @@ impl Config {
 }
 
 struct LoopSpecVisitor<'a> {
-    config: &'a Config,
+    config: &'a Mode,
     errors: Option<Error>,
 }
 
 impl<'a> LoopSpecVisitor<'a> {
-    fn new(config: &'a Config) -> Self {
+    fn new(config: &'a Mode) -> Self {
         Self {
             config,
             errors: None,

@@ -5,13 +5,16 @@ use syn::{Item, TraitItemFn, parse_macro_input};
 
 use anodized_core::{
     DataSpec, Spec,
-    instrument::{Config, make_item_error},
+    instrument::{CheckSettings, Mode, make_item_error},
 };
 
-const CONFIG: Config = Config {
-    embed_spec: cfg!(not(anodized_discard_specs)),
-    emit_print: cfg!(anodized_print),
-    emit_panic: cfg!(anodized_panic),
+const CONFIG: Mode = if cfg!(anodized_discard_specs) {
+    Mode::ChangeNothing
+} else {
+    Mode::InjectChecks(CheckSettings {
+        does_print: cfg!(anodized_print),
+        does_panic: cfg!(anodized_panic),
+    })
 };
 
 /// Attaches a specification to supported program elements.

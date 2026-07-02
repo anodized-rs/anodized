@@ -4,9 +4,8 @@ use super::*;
 use proc_macro2::TokenStream;
 use syn::{Block, ItemFn, Type, parse_quote};
 
-#[test]
-fn embed_spec_item_fn() {
-    let fn_spec: Spec = parse_quote! {
+fn make_complex_spec() -> Spec {
+    parse_quote! {
         requires: COND_1,
         #[cfg(META_1)]
         requires: [COND_2, COND_3],
@@ -24,7 +23,12 @@ fn embed_spec_item_fn() {
             COND_8,
             |PAT_2: TYPE| COND_9,
         ],
-    };
+    }
+}
+
+#[test]
+fn embed_spec_item_fn() {
+    let fn_spec = make_complex_spec();
     let item_fn: ItemFn = parse_quote! {
         fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
             BODY
@@ -65,6 +69,27 @@ fn embed_spec_item_fn() {
         }
 
         fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
+            BODY
+        }
+    };
+
+    let observed = Mode::EmbedSpecs
+        .instrument_item_fn(fn_spec, item_fn)
+        .unwrap();
+    assert_tokens_eq(&observed, &expected);
+}
+
+#[test]
+fn default_instrument_item_fn() {
+    let fn_spec = make_complex_spec();
+    let item_fn: ItemFn = parse_quote! {
+        fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
+            BODY
+        }
+    };
+
+    let expected: TokenStream = parse_quote! {
+        fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
             if false {
                 let mut __anodized_errors = String::new();
                 let __anodized_precond = (|| -> bool { COND_1 })()
@@ -96,9 +121,7 @@ fn embed_spec_item_fn() {
         }
     };
 
-    let observed = Config::DEFAULT
-        .instrument_item_fn(fn_spec, item_fn)
-        .unwrap();
+    let observed = Mode::DEFAULT.instrument_item_fn(fn_spec, item_fn).unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
@@ -145,7 +168,7 @@ fn simple_requires() {
         }
     };
 
-    let observed = Config::PANIC
+    let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -160,7 +183,7 @@ fn requires_disable_runtime_checks() {
     let ret_type = make_return_type();
     let is_async = false;
 
-    let observed = Config::DEFAULT
+    let observed = CheckSettings::DEFAULT
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     let expected: Block = parse_quote! {
@@ -213,7 +236,7 @@ fn requires_no_panic_runtime() {
         }
     };
 
-    let observed = Config::PRINT
+    let observed = CheckSettings::PRINT
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -251,7 +274,7 @@ fn simple_maintains() {
         }
     };
 
-    let observed = Config::PANIC
+    let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -288,7 +311,7 @@ fn simple_ensures() {
         }
     };
 
-    let observed = Config::PANIC
+    let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -329,7 +352,7 @@ fn simple_requires_and_maintains() {
         }
     };
 
-    let observed = Config::PANIC
+    let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -368,7 +391,7 @@ fn simple_requires_and_ensures() {
         }
     };
 
-    let observed = Config::PANIC
+    let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -409,7 +432,7 @@ fn simple_maintains_and_ensures() {
         }
     };
 
-    let observed = Config::PANIC
+    let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -453,7 +476,7 @@ fn simple_requires_maintains_and_ensures() {
         }
     };
 
-    let observed = Config::PANIC
+    let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -497,7 +520,7 @@ fn simple_async_requires_maintains_and_ensures() {
         }
     };
 
-    let observed = Config::PANIC
+    let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -549,7 +572,7 @@ fn multiple_conditions_in_clauses() {
         }
     };
 
-    let observed = Config::PANIC
+    let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -587,7 +610,7 @@ fn binds_parameter() {
         }
     };
 
-    let observed = Config::PANIC
+    let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -635,7 +658,7 @@ fn ensures_with_mixed_conditions() {
         }
     };
 
-    let observed = Config::PANIC
+    let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -683,7 +706,7 @@ fn cfg_attributes() {
         }
     };
 
-    let observed = Config::PANIC
+    let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -737,7 +760,7 @@ fn cfg_on_single_and_list_conditions() {
         }
     };
 
-    let observed = Config::PANIC
+    let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -805,7 +828,7 @@ fn complex_mixed_conditions() {
         }
     };
 
-    let observed = Config::PANIC
+    let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -853,7 +876,7 @@ fn captures() {
         }
     };
 
-    let observed = Config::PANIC
+    let observed = CheckSettings::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);

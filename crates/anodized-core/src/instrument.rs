@@ -9,27 +9,37 @@ pub mod fns;
 pub mod loops;
 pub mod traits;
 
-pub struct Config {
-    pub embed_spec: bool,
-    pub emit_print: bool,
-    pub emit_panic: bool,
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Mode {
+    /// Make no changes to the code.
+    ChangeNothing,
+    /// Inject code to enable compile-time and/or runtime checks.
+    InjectChecks(CheckSettings),
+    /// Embed spec elements as new items without changing existing code.
+    EmbedSpecs,
 }
 
-impl Config {
-    pub fn has_effect(&self) -> bool {
-        self.embed_spec || self.emit_print || self.emit_panic
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CheckSettings {
+    pub does_print: bool,
+    pub does_panic: bool,
+}
+
+impl Mode {
+    pub fn changes_anything(&self) -> bool {
+        !matches!(self, Mode::ChangeNothing)
     }
 
     pub fn instrument_item_fn(&self, spec: Spec, mut item_fn: ItemFn) -> Result<TokenStream> {
         let mut tokens = TokenStream::new();
 
-        if self.embed_spec {
+        if let Self::EmbedSpecs = self {
+            // Embed `spec` elements as `__anodized_fn_*` items.
             let attrs: [Attribute; 2] = [
                 parse_quote!(#[doc(hidden)]),
                 parse_quote!(#[allow(warnings)]),
             ];
 
-            // Embed `spec` elements as `__anodized_fn_*` items.
             let spec_qualifiers_const: ItemConst = Self::build_qualifier_const_item(
                 &attrs,
                 "__anodized_fn_qualifiers",
@@ -64,8 +74,8 @@ impl Config {
 
         // Instrument function body.
         self.instrument_fn(&spec, &item_fn.sig, &mut item_fn.block)?;
-        item_fn.to_tokens(&mut tokens);
 
+        item_fn.to_tokens(&mut tokens);
         Ok(tokens)
     }
 
@@ -89,23 +99,25 @@ impl Config {
 }
 
 #[cfg(test)]
-impl Config {
-    pub(crate) const DEFAULT: Config = Config {
-        embed_spec: true,
-        emit_print: false,
-        emit_panic: false,
+impl Mode {
+    pub(crate) const DEFAULT: Self = Mode::InjectChecks(CheckSettings::DEFAULT);
+}
+
+#[cfg(test)]
+impl CheckSettings {
+    pub(crate) const DEFAULT: Self = Self {
+        does_print: false,
+        does_panic: false,
     };
 
-    pub(crate) const PRINT: Config = Config {
-        embed_spec: true,
-        emit_print: true,
-        emit_panic: false,
+    pub(crate) const PRINT: Self = Self {
+        does_print: true,
+        does_panic: false,
     };
 
-    pub(crate) const PANIC: Config = Config {
-        embed_spec: true,
-        emit_print: true,
-        emit_panic: true,
+    pub(crate) const PRINT_AND_PANIC: Self = Self {
+        does_print: true,
+        does_panic: true,
     };
 }
 
