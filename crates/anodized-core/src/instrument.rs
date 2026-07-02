@@ -73,6 +73,32 @@ impl Mode {
             spec_ensures_fn.to_tokens(&mut tokens);
         }
 
+        if let Self::InjectChecks(settings) = self
+            && settings.split_func
+        {
+            // Split function into two entry points for e.g. fuzzing.
+            let mangled_ident = syn::Ident::new(
+                &format!("__anodized_split_{}", item_fn.sig.ident),
+                item_fn.sig.ident.span(),
+            );
+
+            let mut wrapper_fn = item_fn.clone();
+            wrapper_fn.block = parse_quote! {
+                {
+                    match #mangled_ident() {
+                        Ok(output) => output,
+                        Err((false, errors)) => panic!("precondition failed:{errors}"),
+                        Err((true, errors)) => panic!("postcondition failed:{errors}"),
+                    }
+                }
+            };
+            wrapper_fn.to_tokens(&mut tokens);
+
+            // Mangle the name and return type of the original function.
+            item_fn.sig.ident = mangled_ident;
+            item_fn.attrs = vec![parse_quote!(#[doc(hidden)]), parse_quote!(#[inline])];
+        }
+
         // Instrument function body.
         self.instrument_fn(&spec, &item_fn.sig, &mut item_fn.block)?;
 
