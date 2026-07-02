@@ -12,7 +12,9 @@
 
 # Anodized
 
-`anodized` is to specification what `serde` is to serialization: a common layer that connects your code to an ecosystem of tools.
+If you use Rust: Anodized is to specification what [Serde](https://serde.rs) is to serialization - a common layer that connects your code to an ecosystem of tools.
+
+If you use verification: Anodized aims to be for Rust what [SPARK](<https://en.wikipedia.org/wiki/SPARK_(programming_language)>) is for Ada, [JML](https://en.wikipedia.org/wiki/Java_Modeling_Language) is for Java, or [ACSL](https://en.wikipedia.org/wiki/ANSI/ISO_C_Specification_Language) is for C.
 
 Write preconditions, postconditions, loop invariants, and type refinements directly in standard Rust. Validate them with runtime checks, fuzzers, model checkers, or formal provers - without rewriting your specs when you switch or combine tools.
 
