@@ -18,7 +18,7 @@ impl Config {
 
         item_struct.to_tokens(&mut tokens);
 
-        if !matches!(self, Self::ChangeNothing) {
+        if self.changes_anything() {
             let ident = &item_struct.ident;
             let (impl_generics, ty_generics, where_clause) = item_struct.generics.split_for_impl();
             let statements = Self::build_precondition_fn_body(&[], &spec.maintains).stmts;

@@ -26,6 +26,10 @@ pub struct CheckConfig {
 }
 
 impl Config {
+    pub fn changes_anything(&self) -> bool {
+        !matches!(self, Self::ChangeNothing)
+    }
+
     pub fn instrument_item_fn(&self, spec: Spec, mut item_fn: ItemFn) -> Result<TokenStream> {
         let mut tokens = TokenStream::new();
 
