@@ -14,7 +14,7 @@
 
 Anodized aims to be for specifications what [Serde](https://serde.rs) is for serialization: a common layer for writing specs once and validating them with many tools.
 
-More broadly, Anodized is a specification layer for Rust in the spirit of
+In the verification landscape, Anodized is in the spirit of
 [SPARK](<https://en.wikipedia.org/wiki/SPARK_(programming_language)>),
 [JML](https://en.wikipedia.org/wiki/Java_Modeling_Language), and
 [ACSL](https://en.wikipedia.org/wiki/ANSI/ISO_C_Specification_Language).
