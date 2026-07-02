@@ -107,9 +107,8 @@ impl Config {
                     }
 
                     if let Some(default_body) = &mut func.default {
-                        // Handle loop specs in the body of the default impl, without any checks.
-                        let empty_spec = Spec::empty();
-                        self.instrument_fn(&empty_spec, &func.sig, default_body)?;
+                        // Handle loop specs in the body of the default impl.
+                        self.instrument_loops_in_fn_body(default_body)?;
                     }
 
                     if let Self::Dynamic(_) = self {
