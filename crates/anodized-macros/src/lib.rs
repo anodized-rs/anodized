@@ -14,6 +14,7 @@ const CONFIG: Mode = if cfg!(anodized_discard_specs) {
     Mode::InjectChecks(CheckSettings {
         does_print: cfg!(anodized_print),
         does_panic: cfg!(anodized_panic),
+        split_func: cfg!(anodized_split_func),
     })
 };
 

@@ -23,6 +23,7 @@ pub enum Mode {
 pub struct CheckSettings {
     pub does_print: bool,
     pub does_panic: bool,
+    pub split_func: bool,
 }
 
 impl Mode {
@@ -108,21 +109,25 @@ impl CheckSettings {
     pub(crate) const DEFAULT: Self = Self {
         does_print: false,
         does_panic: false,
+        split_func: false,
     };
 
     pub(crate) const PRINT: Self = Self {
         does_print: true,
         does_panic: false,
+        split_func: false,
     };
 
     pub(crate) const PRINT_AND_PANIC: Self = Self {
         does_print: true,
         does_panic: true,
+        split_func: false,
     };
 
     pub(crate) const PRINT_AND_SPLIT_PANIC: Self = Self {
         does_print: true,
         does_panic: true,
+        split_func: true,
     };
 }
 
