@@ -24,9 +24,9 @@ Anodized specs are not comments but attributes, so they are checked by the Rust 
 
 <img style="max-width:630px;" alt="editor integration demo" src="https://raw.githubusercontent.com/anodized-rs/anodized/main/assets/anodized-editor-integration.gif">
 
-- **highly expressive**: Write specs in the Rust you already know - call functions, use macros, write `if` and `match` expressions.
-- **deeply integrated**: Syntax-checked, type-checked, and understood by `rust-analyzer` out of the box. No special toolchain components needed.
-- **widely compatible**: Validate the same specs with any combination of runtime checks, fuzzers, model checkers, or formal provers.
+- **highly expressive**: A condition is any Rust expression that evaluates to `bool` - call functions, write `if` and `match` expressions, use macros, and so on.
+- **deeply integrated**: No special toolchain components needed. The ordinary Rust compiler checks your specs for syntax, scoping, and type errors, and `rust-analyzer` offers type hints, completion, and navigation inside them.
+- **widely compatible**: One spec, many enforcers. Start with the built-in runtime checks, then add fuzzers, model checkers, or formal provers for deeper assurance - in any combination, without rewriting anything.
 
 ## Quickstart
 
