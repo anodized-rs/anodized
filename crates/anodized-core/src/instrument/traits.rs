@@ -56,7 +56,7 @@ impl Config {
                         parse_quote!(#[allow(warnings)]),
                     ];
 
-                    if let Self::Static = self {
+                    if let Self::EmbedSpecs = self {
                         // Embed `spec` elements as `__anodized_fn_*` items.
                         let spec_requires_fn = TraitItemFn {
                             attrs: attrs.to_vec(),
@@ -89,7 +89,7 @@ impl Config {
                         new_trait_items.push(TraitItem::Fn(spec_ensures_fn));
                     }
 
-                    if !matches!(self, Self::Nothing) {
+                    if !matches!(self, Self::ChangeNothing) {
                         let spec_trait_qualifiers_const = Self::build_qualifier_const_item(
                             &attrs,
                             "__anodized_fn_qualifiers_trait",
@@ -111,7 +111,7 @@ impl Config {
                         self.instrument_loops_in_fn_body(default_body)?;
                     }
 
-                    if let Self::Dynamic(_) = self {
+                    if let Self::InjectChecks(_) = self {
                         let mangled_ident = mangle_ident(&func.sig.ident);
 
                         let mut mangled_fn = func.clone();
@@ -215,7 +215,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         parse_quote!(#[allow(warnings)]),
                     ];
 
-                    if let Self::Static = self {
+                    if let Self::EmbedSpecs = self {
                         // Embed `spec` elements as `__anodized_fn_*` items.
                         let spec_requires_fn = ImplItemFn {
                             attrs: attrs.to_vec(),
@@ -250,7 +250,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         new_items.push(ImplItem::Fn(spec_ensures_fn));
                     }
 
-                    if !matches!(self, Self::Nothing) {
+                    if !matches!(self, Self::ChangeNothing) {
                         let spec_qualifiers_const = Self::build_qualifier_const_item(
                             &attrs,
                             "__anodized_fn_qualifiers",
@@ -260,7 +260,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         new_items.push(ImplItem::Const(spec_qualifiers_const));
                     }
 
-                    if let Self::Dynamic(_) = self {
+                    if let Self::InjectChecks(_) = self {
                         self.instrument_fn(&fn_spec, &func.sig, &mut func.block)?;
 
                         // Add a compile-time check to the body.

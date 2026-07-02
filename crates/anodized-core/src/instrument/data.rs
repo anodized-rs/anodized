@@ -18,7 +18,7 @@ impl Config {
 
         item_struct.to_tokens(&mut tokens);
 
-        if !matches!(self, Self::Nothing) {
+        if !matches!(self, Self::ChangeNothing) {
             let ident = &item_struct.ident;
             let (impl_generics, ty_generics, where_clause) = item_struct.generics.split_for_impl();
             let statements = Self::build_precondition_fn_body(&[], &spec.maintains).stmts;
@@ -47,7 +47,7 @@ impl Config {
 
         item_enum.to_tokens(&mut tokens);
 
-        if let Self::Static = self {
+        if let Self::EmbedSpecs = self {
             let spec_impl: ItemImpl = parse_quote! {
                 #[doc(hidden)]
                 #[allow(warnings)]

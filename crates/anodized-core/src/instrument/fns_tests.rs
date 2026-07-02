@@ -73,7 +73,9 @@ fn embed_spec_item_fn() {
         }
     };
 
-    let observed = Config::Static.instrument_item_fn(fn_spec, item_fn).unwrap();
+    let observed = Config::EmbedSpecs
+        .instrument_item_fn(fn_spec, item_fn)
+        .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
@@ -168,7 +170,7 @@ fn simple_requires() {
         }
     };
 
-    let observed = RuntimeConfig::PRINT_AND_PANIC
+    let observed = CheckConfig::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -183,7 +185,7 @@ fn requires_disable_runtime_checks() {
     let ret_type = make_return_type();
     let is_async = false;
 
-    let observed = RuntimeConfig::DEFAULT
+    let observed = CheckConfig::DEFAULT
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     let expected: Block = parse_quote! {
@@ -236,7 +238,7 @@ fn requires_no_panic_runtime() {
         }
     };
 
-    let observed = RuntimeConfig::PRINT
+    let observed = CheckConfig::PRINT
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -274,7 +276,7 @@ fn simple_maintains() {
         }
     };
 
-    let observed = RuntimeConfig::PRINT_AND_PANIC
+    let observed = CheckConfig::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -311,7 +313,7 @@ fn simple_ensures() {
         }
     };
 
-    let observed = RuntimeConfig::PRINT_AND_PANIC
+    let observed = CheckConfig::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -352,7 +354,7 @@ fn simple_requires_and_maintains() {
         }
     };
 
-    let observed = RuntimeConfig::PRINT_AND_PANIC
+    let observed = CheckConfig::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -391,7 +393,7 @@ fn simple_requires_and_ensures() {
         }
     };
 
-    let observed = RuntimeConfig::PRINT_AND_PANIC
+    let observed = CheckConfig::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -432,7 +434,7 @@ fn simple_maintains_and_ensures() {
         }
     };
 
-    let observed = RuntimeConfig::PRINT_AND_PANIC
+    let observed = CheckConfig::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -476,7 +478,7 @@ fn simple_requires_maintains_and_ensures() {
         }
     };
 
-    let observed = RuntimeConfig::PRINT_AND_PANIC
+    let observed = CheckConfig::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -520,7 +522,7 @@ fn simple_async_requires_maintains_and_ensures() {
         }
     };
 
-    let observed = RuntimeConfig::PRINT_AND_PANIC
+    let observed = CheckConfig::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -572,7 +574,7 @@ fn multiple_conditions_in_clauses() {
         }
     };
 
-    let observed = RuntimeConfig::PRINT_AND_PANIC
+    let observed = CheckConfig::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -610,7 +612,7 @@ fn binds_parameter() {
         }
     };
 
-    let observed = RuntimeConfig::PRINT_AND_PANIC
+    let observed = CheckConfig::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -658,7 +660,7 @@ fn ensures_with_mixed_conditions() {
         }
     };
 
-    let observed = RuntimeConfig::PRINT_AND_PANIC
+    let observed = CheckConfig::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -706,7 +708,7 @@ fn cfg_attributes() {
         }
     };
 
-    let observed = RuntimeConfig::PRINT_AND_PANIC
+    let observed = CheckConfig::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -760,7 +762,7 @@ fn cfg_on_single_and_list_conditions() {
         }
     };
 
-    let observed = RuntimeConfig::PRINT_AND_PANIC
+    let observed = CheckConfig::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -828,7 +830,7 @@ fn complex_mixed_conditions() {
         }
     };
 
-    let observed = RuntimeConfig::PRINT_AND_PANIC
+    let observed = CheckConfig::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -876,7 +878,7 @@ fn captures() {
         }
     };
 
-    let observed = RuntimeConfig::PRINT_AND_PANIC
+    let observed = CheckConfig::PRINT_AND_PANIC
         .instrument_fn_body(&spec, &body, is_async, &ret_type)
         .unwrap();
     assert_tokens_eq(&observed, &expected);

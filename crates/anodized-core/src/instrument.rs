@@ -11,13 +11,16 @@ pub mod traits;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Config {
-    Nothing,
-    Dynamic(RuntimeConfig),
-    Static,
+    /// Make no changes to the code.
+    ChangeNothing,
+    /// Inject code to enable compile-time and/or runtime checks.
+    InjectChecks(CheckConfig),
+    /// Embed spec elements as new items without changing existing code.
+    EmbedSpecs,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct RuntimeConfig {
+pub struct CheckConfig {
     pub does_print: bool,
     pub does_panic: bool,
 }
@@ -26,7 +29,7 @@ impl Config {
     pub fn instrument_item_fn(&self, spec: Spec, mut item_fn: ItemFn) -> Result<TokenStream> {
         let mut tokens = TokenStream::new();
 
-        if let Self::Static = self {
+        if let Self::EmbedSpecs = self {
             // Embed `spec` elements as `__anodized_fn_*` items.
             let attrs: [Attribute; 2] = [
                 parse_quote!(#[doc(hidden)]),
@@ -93,11 +96,11 @@ impl Config {
 
 #[cfg(test)]
 impl Config {
-    pub(crate) const DEFAULT: Self = Self::Dynamic(RuntimeConfig::DEFAULT);
+    pub(crate) const DEFAULT: Self = Self::InjectChecks(CheckConfig::DEFAULT);
 }
 
 #[cfg(test)]
-impl RuntimeConfig {
+impl CheckConfig {
     pub(crate) const DEFAULT: Self = Self {
         does_print: false,
         does_panic: false,
