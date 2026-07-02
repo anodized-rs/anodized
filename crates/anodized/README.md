@@ -14,12 +14,13 @@
 
 Anodized aims to be for specifications what [Serde](https://serde.rs) is for serialization: a common layer for writing specs once and validating them with many tools.
 
-In the verification landscape, Anodized is in the spirit of
+Write preconditions, postconditions, loop invariants, and type refinements directly in standard Rust. Validate them with runtime checks, fuzzers, model checkers, or formal provers - without rewriting your specs when you switch or combine tools.
+
+In the verification landscape, Anodized is in the spirit of behavioral specification languages like
 [SPARK](<https://en.wikipedia.org/wiki/SPARK_(programming_language)>),
 [JML](https://en.wikipedia.org/wiki/Java_Modeling_Language), and
-[ACSL](https://en.wikipedia.org/wiki/ANSI/ISO_C_Specification_Language).
-
-Write preconditions, postconditions, loop invariants, and type refinements directly in standard Rust. Validate them with runtime checks, fuzzers, model checkers, or formal provers - without rewriting your specs when you switch or combine tools.
+[ACSL](https://en.wikipedia.org/wiki/ANSI/ISO_C_Specification_Language). Unlike JML and ACSL,
+Anodized specs are not comments but attributes, so they are checked by the Rust compiler for syntax, scoping, and types, and understood by tools like `rust-analyzer` out of the box.
 
 ## The `spec` Attribute
 
