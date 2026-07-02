@@ -119,6 +119,11 @@ impl CheckSettings {
         does_print: true,
         does_panic: true,
     };
+
+    pub(crate) const PRINT_AND_SPLIT_PANIC: Self = Self {
+        does_print: true,
+        does_panic: true,
+    };
 }
 
 /// Make an error message to say that some item is unsupported.

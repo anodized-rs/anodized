@@ -125,6 +125,70 @@ fn default_instrument_item_fn() {
     assert_tokens_eq(&observed, &expected);
 }
 
+#[test]
+fn split_instrument_item_fn() {
+    let fn_spec = make_complex_spec();
+    let item_fn: ItemFn = parse_quote! {
+        fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
+            BODY
+        }
+    };
+
+    let expected: TokenStream = parse_quote! {
+        fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
+            match Self::__anodized_split_FUNC(self, PARAM_1, PARAM_2) {
+                Ok(output) => output,
+                Err((false, errors)) => panic!("precondition failed:{errors}"),
+                Err((true, errors)) => panic!("postcondition failed:{errors}"),
+            }
+        }
+
+        #[doc(hidden)]
+        #[inline]
+        fn __anodized_split_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2)
+            -> Result<RET_TYPE, (bool, String)>
+        {
+            if true {
+                let mut __anodized_errors = String::new();
+                let __anodized_precond = (|| -> bool { COND_1 })()
+                    & (|| -> bool { COND_2 })()
+                    & (|| -> bool { COND_3 })()
+                    & (|| -> bool { COND_4 })()
+                    & (|| -> bool { COND_5 })()
+                    & (|| -> bool { COND_6 })();
+                if !__anodized_precond {
+                    return Err((false, __anodized_errors));
+                }
+            }
+            let (ALIAS_1, (ALIAS_2, ALIAS_3), __anodized_output): (_, _, RET_TYPE) = (
+                (|| EXPR_1)(),
+                (|| EXPR_2)(),
+                (|| {
+                    BODY
+                })(),
+            );
+            if true {
+                let mut __anodized_errors = String::new();
+                let __anodized_postcond = (|| -> bool { COND_4 })()
+                    & (|| -> bool { COND_5 })()
+                    & (|| -> bool { COND_6 })()
+                    & (|PAT_1: &RET_TYPE| -> bool { COND_7 })(&__anodized_output)
+                    & (|PAT_1: &RET_TYPE| -> bool { COND_8 })(&__anodized_output)
+                    & (|PAT_2: TYPE| -> bool { COND_9 })(&__anodized_output);
+                if !__anodized_postcond {
+                    return Err((true, __anodized_errors));
+                }
+            }
+            Ok(__anodized_output)
+        }
+    };
+
+    let observed = Mode::InjectChecks(CheckSettings::PRINT_AND_SPLIT_PANIC)
+        .instrument_item_fn(fn_spec, item_fn)
+        .unwrap();
+    assert_tokens_eq(&observed, &expected);
+}
+
 fn make_fn_body() -> Block {
     parse_quote! {
         {
