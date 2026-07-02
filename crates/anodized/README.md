@@ -22,13 +22,13 @@ In the verification landscape, Anodized is in the spirit of behavioral specifica
 [ACSL](https://en.wikipedia.org/wiki/ANSI/ISO_C_Specification_Language). Unlike JML and ACSL,
 Anodized specs are not comments but attributes, so they are checked by the Rust compiler for syntax, scoping, and types, and understood by tools like `rust-analyzer` out of the box.
 
+<img style="max-width:630px;" alt="editor integration demo" src="https://raw.githubusercontent.com/anodized-rs/anodized/main/assets/anodized-editor-integration.gif">
+
 ## The `spec` Attribute
 
 - **highly expressive**: Write specs in the Rust you already know - call functions, use macros, write `if` and `match` expressions.
 - **deeply integrated**: Syntax-checked, type-checked, and understood by `rust-analyzer` out of the box. No special toolchain components needed.
 - **widely compatible**: Validate the same specs with any combination of runtime checks, fuzzers, model checkers, or formal provers.
-
-<img style="max-width:630px;" alt="editor integration demo" src="https://raw.githubusercontent.com/anodized-rs/anodized/main/assets/anodized-editor-integration.gif">
 
 ## Quickstart
 
