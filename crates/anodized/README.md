@@ -8,8 +8,6 @@
 
 > Harden your Rust with **specifications**.
 
-**The detailed reference is here: [The Anodized Reference](https://github.com/anodized-rs/anodized/blob/main/crates/anodized/REFERENCE.md).**
-
 # Anodized
 
 Anodized aims to be for specifications what [Serde](https://serde.rs) is for serialization: a common layer for writing specs once and validating them with many tools.
@@ -36,7 +34,7 @@ Anodized specs are not comments but attributes, so they are checked by the Rust 
 
 ```toml
 [dependencies]
-anodized = { version = "0.5.1" }
+anodized = "0.5.1"
 ```
 
 **2. Extend your code with specs.**
