@@ -73,6 +73,9 @@ impl Mode {
             spec_ensures_fn.to_tokens(&mut tokens);
         }
 
+        // Instrument function body.
+        self.instrument_fn(&spec, &item_fn.sig, &mut item_fn.block)?;
+
         if let Self::InjectChecks(settings) = self
             && settings.split_func
         {
@@ -96,11 +99,13 @@ impl Mode {
 
             // Mangle the name and return type of the original function.
             item_fn.sig.ident = mangled_ident;
+            // Extract the return type from the function signature
+            item_fn.sig.output = match item_fn.sig.output {
+                syn::ReturnType::Default => parse_quote!(-> Result<(), (bool, String)>),
+                syn::ReturnType::Type(ra, ty) => parse_quote!(#ra Result<#ty, (bool, String)>),
+            };
             item_fn.attrs = vec![parse_quote!(#[doc(hidden)]), parse_quote!(#[inline])];
         }
-
-        // Instrument function body.
-        self.instrument_fn(&spec, &item_fn.sig, &mut item_fn.block)?;
 
         item_fn.to_tokens(&mut tokens);
         Ok(tokens)
