@@ -1,6 +1,9 @@
 use proc_macro2::TokenStream;
 use quote::ToTokens;
-use syn::{Attribute, ItemConst, ItemFn, ItemImpl, ItemTrait, Result, parse_quote};
+use syn::{
+    Attribute, FnArg, Ident, ItemConst, ItemFn, ItemImpl, ItemTrait, Result, ReturnType, Signature,
+    parse_quote,
+};
 
 use crate::{DataSpec, Spec};
 
@@ -80,15 +83,20 @@ impl Mode {
             && settings.split_func
         {
             // Split function into two entry points for e.g. fuzzing.
-            let mangled_ident = syn::Ident::new(
+            let mangled_ident = Ident::new(
                 &format!("__anodized_split_{}", item_fn.sig.ident),
                 item_fn.sig.ident.span(),
             );
 
             let mut wrapper_fn = item_fn.clone();
+            wrapper_fn.sig = Self::build_wrapper_fn_signature(wrapper_fn.sig);
+            let args = wrapper_fn.sig.inputs.iter().map(|arg| match arg {
+                FnArg::Receiver(receiver) => receiver.self_token.to_token_stream(),
+                FnArg::Typed(pat_type) => pat_type.pat.to_token_stream(),
+            });
             wrapper_fn.block = parse_quote! {
                 {
-                    match #mangled_ident() {
+                    match #mangled_ident(#(#args),*) {
                         Ok(output) => output,
                         Err((false, errors)) => panic!("precondition failed:{errors}"),
                         Err((true, errors)) => panic!("postcondition failed:{errors}"),
@@ -99,16 +107,29 @@ impl Mode {
 
             // Mangle the name and return type of the original function.
             item_fn.sig.ident = mangled_ident;
-            // Extract the return type from the function signature
             item_fn.sig.output = match item_fn.sig.output {
-                syn::ReturnType::Default => parse_quote!(-> Result<(), (bool, String)>),
-                syn::ReturnType::Type(ra, ty) => parse_quote!(#ra Result<#ty, (bool, String)>),
+                ReturnType::Default => parse_quote!(-> Result<(), (bool, String)>),
+                ReturnType::Type(ra, ty) => parse_quote!(#ra Result<#ty, (bool, String)>),
             };
             item_fn.attrs = vec![parse_quote!(#[doc(hidden)]), parse_quote!(#[inline])];
         }
 
         item_fn.to_tokens(&mut tokens);
         Ok(tokens)
+    }
+
+    fn build_wrapper_fn_signature(mut sig: Signature) -> Signature {
+        use syn::spanned::Spanned;
+        for (i, arg) in sig.inputs.iter_mut().enumerate() {
+            match arg {
+                FnArg::Receiver(_) => {}
+                FnArg::Typed(pat_type) => {
+                    let name = Ident::new(&format!("arg_{i}"), pat_type.span());
+                    pat_type.pat = parse_quote!(#name);
+                }
+            }
+        }
+        sig
     }
 
     pub fn instrument_item_trait(
