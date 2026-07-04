@@ -135,8 +135,8 @@ fn split_instrument_item_fn() {
     };
 
     let expected: TokenStream = parse_quote! {
-        fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
-            match Self::__anodized_split_FUNC(self, PARAM_1, PARAM_2) {
+        fn FUNC(&self, input_1: TYPE_1, input_2: TYPE_2) -> RET_TYPE {
+            match __anodized_split_FUNC(self, input_1, input_2) {
                 Ok(output) => output,
                 Err((false, errors)) => panic!("precondition failed:{errors}"),
                 Err((true, errors)) => panic!("postcondition failed:{errors}"),

@@ -1,8 +1,8 @@
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 use syn::{
-    Attribute, FnArg, Ident, ItemConst, ItemFn, ItemImpl, ItemTrait, Result, ReturnType, Signature,
-    parse_quote,
+    Attribute, Block, FnArg, Ident, ItemConst, ItemFn, ItemImpl, ItemTrait, Result, ReturnType,
+    Signature, parse_quote,
 };
 
 use crate::{DataSpec, Spec};
@@ -83,26 +83,9 @@ impl Mode {
             && settings.split_func
         {
             // Split function into two entry points for e.g. fuzzing.
-            let mangled_ident = Ident::new(
-                &format!("__anodized_split_{}", item_fn.sig.ident),
-                item_fn.sig.ident.span(),
-            );
-
             let mut wrapper_fn = item_fn.clone();
-            wrapper_fn.sig = Self::build_wrapper_fn_signature(wrapper_fn.sig);
-            let args = wrapper_fn.sig.inputs.iter().map(|arg| match arg {
-                FnArg::Receiver(receiver) => receiver.self_token.to_token_stream(),
-                FnArg::Typed(pat_type) => pat_type.pat.to_token_stream(),
-            });
-            wrapper_fn.block = parse_quote! {
-                {
-                    match #mangled_ident(#(#args),*) {
-                        Ok(output) => output,
-                        Err((false, errors)) => panic!("precondition failed:{errors}"),
-                        Err((true, errors)) => panic!("postcondition failed:{errors}"),
-                    }
-                }
-            };
+            let mangled_ident =
+                Self::build_split_fn(false, &mut wrapper_fn.sig, wrapper_fn.block.as_mut());
             wrapper_fn.to_tokens(&mut tokens);
 
             // Mangle the name and return type of the original function.
@@ -118,18 +101,47 @@ impl Mode {
         Ok(tokens)
     }
 
-    fn build_wrapper_fn_signature(mut sig: Signature) -> Signature {
+    fn build_split_fn(is_impl: bool, sig: &mut Signature, body: &mut Block) -> Ident {
+        let mangled_ident =
+            Ident::new(&format!("__anodized_split_{}", sig.ident), sig.ident.span());
+
+        Self::build_wrapper_fn_signature(sig);
+
+        let args = sig.inputs.iter().map(|arg| match arg {
+            FnArg::Receiver(receiver) => receiver.self_token.to_token_stream(),
+            FnArg::Typed(pat_type) => pat_type.pat.to_token_stream(),
+        });
+
+        let self_type = if is_impl {
+            quote::quote!(Self::)
+        } else {
+            quote::quote!()
+        };
+
+        *body = parse_quote! {
+            {
+                match #self_type #mangled_ident(#(#args),*) {
+                    Ok(output) => output,
+                    Err((false, errors)) => panic!("precondition failed:{errors}"),
+                    Err((true, errors)) => panic!("postcondition failed:{errors}"),
+                }
+            }
+        };
+
+        mangled_ident
+    }
+
+    fn build_wrapper_fn_signature(sig: &mut Signature) {
         use syn::spanned::Spanned;
         for (i, arg) in sig.inputs.iter_mut().enumerate() {
             match arg {
                 FnArg::Receiver(_) => {}
                 FnArg::Typed(pat_type) => {
-                    let name = Ident::new(&format!("arg_{i}"), pat_type.span());
+                    let name = Ident::new(&format!("input_{i}"), pat_type.span());
                     pat_type.pat = parse_quote!(#name);
                 }
             }
         }
-        sig
     }
 
     pub fn instrument_item_trait(
