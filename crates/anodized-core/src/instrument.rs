@@ -82,13 +82,14 @@ impl Mode {
         if let Self::InjectChecks(settings) = self
             && settings.split_func
         {
-            // Split function into two entry points for e.g. fuzzing.
+            // Build a wrapper that forwards to the "split" function.
             let mut wrapper_fn = item_fn.clone();
             let mangled_ident =
                 Self::build_split_fn(false, &mut wrapper_fn.sig, wrapper_fn.block.as_mut());
             wrapper_fn.to_tokens(&mut tokens);
 
-            // Mangle the name and return type of the original function.
+            // "Split" the original function by mangling its return type.
+            // The "split" entry point is used for e.g. fuzzing and PBT.
             item_fn.sig.ident = mangled_ident;
             item_fn.sig.output = match item_fn.sig.output {
                 ReturnType::Default => parse_quote!(-> Result<(), (bool, String)>),
