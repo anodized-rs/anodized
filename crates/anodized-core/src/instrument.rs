@@ -113,10 +113,9 @@ impl Mode {
             FnArg::Typed(pat_type) => pat_type.pat.to_token_stream(),
         });
 
-        let maybe_self = if is_impl {
-            quote::quote!(Self::)
-        } else {
-            quote::quote!()
+        let maybe_self = match is_impl {
+            true => quote::quote!(Self::),
+            false => quote::quote!(),
         };
 
         let maybe_await = match &sig.asyncness {
