@@ -9,6 +9,7 @@ use crate::{DataSpec, Spec};
 
 pub mod data;
 pub mod fns;
+pub mod impls;
 pub mod loops;
 pub mod traits;
 
@@ -57,6 +58,14 @@ impl Mode {
 
     pub fn instrument_item_fn(&self, spec: Spec, mut item_fn: ItemFn) -> Result<TokenStream> {
         let mut tokens = TokenStream::new();
+
+        if item_fn.sig.ident.to_string().starts_with("__anodized_") {
+            return Err(syn::Error::new_spanned(
+                item_fn.sig.ident,
+                r#"An item with the `__anodized_` prefix is internal. Do not implement it directly.
+Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or impl block."#,
+            ));
+        }
 
         if let Self::EmbedSpecs = self {
             // Embed `spec` elements as `__anodized_fn_*` items.
@@ -169,6 +178,11 @@ impl Mode {
                 }
             }
         }
+    }
+
+    pub fn instrument_item_impl(&self, spec: DataSpec, item_impl: ItemImpl) -> Result<TokenStream> {
+        let new_impl = self.instrument_impl(spec, item_impl)?;
+        Ok(new_impl.to_token_stream())
     }
 
     pub fn instrument_item_trait(

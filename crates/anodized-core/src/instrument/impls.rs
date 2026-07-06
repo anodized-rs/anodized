@@ -1,0 +1,156 @@
+#[cfg(test)]
+#[path = "impls_tests.rs"]
+mod impls_tests;
+
+use syn::{Attribute, ImplItem, ImplItemFn, ReturnType, Visibility, parse_quote};
+
+use crate::{
+    DataSpec, Spec,
+    instrument::{Mode, find_spec_attr, make_item_error},
+};
+
+impl Mode {
+    /// Expand impl items.
+    pub fn instrument_impl(
+        &self,
+        spec: DataSpec,
+        mut the_impl: syn::ItemImpl,
+    ) -> syn::Result<syn::ItemImpl> {
+        if the_impl.trait_.is_some() {
+            return Err(make_item_error(&the_impl, "trait impl"));
+        };
+
+        if !spec.is_empty() {
+            return Err(spec.spec_err("Unsupported spec element on inherent impl."));
+        }
+
+        let mut new_items = Vec::with_capacity(the_impl.items.len() * 4);
+
+        for item in the_impl.items.into_iter() {
+            match item {
+                ImplItem::Fn(mut item_fn) => {
+                    let (spec_attr, func_attrs) = find_spec_attr(item_fn.attrs)?;
+                    item_fn.attrs = func_attrs;
+
+                    if item_fn.sig.ident.to_string().starts_with("__anodized_") {
+                        return Err(syn::Error::new_spanned(
+                            item_fn.sig.ident,
+                            r#"An item with the `__anodized_` prefix is internal. Do not implement it directly.
+Instead, ensure that both the impl block and the fn have a `#[spec]` annotation."#,
+                        ));
+                    }
+
+                    let fn_spec: Spec = match spec_attr {
+                        Some(spec_attr) => spec_attr.parse_args()?,
+                        None => Spec::empty(),
+                    };
+
+                    if let Self::EmbedSpecs = self {
+                        // Embed `spec` elements as `__anodized_fn_*` items.
+                        let attrs: [Attribute; 2] = [
+                            parse_quote!(#[doc(hidden)]),
+                            parse_quote!(#[allow(warnings)]),
+                        ];
+
+                        let spec_qualifiers_const = Self::build_qualifier_const_item(
+                            &attrs,
+                            "__anodized_fn_qualifiers",
+                            fn_spec.qualifiers,
+                            &item_fn.sig.ident,
+                        );
+                        let spec_requires_fn = ImplItemFn {
+                            attrs: attrs.to_vec(),
+                            sig: Self::build_precondition_fn_sig(
+                                "__anodized_fn_requires",
+                                &item_fn.sig,
+                            ),
+                            block: Self::build_precondition_fn_body(
+                                &fn_spec.requires,
+                                &fn_spec.maintains,
+                            ),
+                            vis: Visibility::Inherited,
+                            defaultness: None,
+                        };
+                        let spec_ensures_fn = ImplItemFn {
+                            attrs: attrs.to_vec(),
+                            sig: Self::build_postcondition_fn_sig(
+                                "__anodized_fn_ensures",
+                                &item_fn.sig,
+                            ),
+                            block: Self::build_postcondition_fn_body(
+                                &fn_spec.maintains,
+                                &fn_spec.captures,
+                                &fn_spec.ensures,
+                                &item_fn.sig.output,
+                            )?,
+                            vis: Visibility::Inherited,
+                            defaultness: None,
+                        };
+
+                        new_items.push(ImplItem::Const(spec_qualifiers_const));
+                        new_items.push(ImplItem::Fn(spec_requires_fn));
+                        new_items.push(ImplItem::Fn(spec_ensures_fn));
+                    }
+
+                    // Instrument function body.
+                    self.instrument_fn(&fn_spec, &item_fn.sig, &mut item_fn.block)?;
+
+                    if let Self::InjectChecks(check_settings) = self
+                        && let Some(ref panic_settings) = check_settings.does_panic
+                        && panic_settings.split_func
+                    {
+                        // Build a wrapper that forwards to the "split" function.
+                        let mut wrapper_fn = item_fn.clone();
+                        let mangled_ident =
+                            Self::build_split_fn(false, &mut wrapper_fn.sig, &mut wrapper_fn.block);
+                        new_items.push(ImplItem::Fn(wrapper_fn));
+
+                        // "Split" the original function by mangling its return type.
+                        // The "split" entry point is used for e.g. fuzzing and PBT.
+                        item_fn.sig.ident = mangled_ident;
+                        item_fn.sig.output = match item_fn.sig.output {
+                            ReturnType::Default => parse_quote!(-> Result<(), (bool, String)>),
+                            ReturnType::Type(ra, ty) => {
+                                parse_quote!(#ra Result<#ty, (bool, String)>)
+                            }
+                        };
+                        item_fn.attrs = vec![parse_quote!(#[doc(hidden)]), parse_quote!(#[inline])];
+                    }
+
+                    new_items.push(ImplItem::Fn(item_fn));
+                }
+                ImplItem::Const(mut const_item) => {
+                    let (spec, attrs) = find_spec_attr(const_item.attrs)?;
+                    if let Some(ref spec_attr) = spec {
+                        return Err(make_item_error(&spec_attr, "trait impl const"));
+                    }
+                    const_item.attrs = attrs;
+                    new_items.push(ImplItem::Const(const_item));
+                }
+                ImplItem::Type(mut type_item) => {
+                    let (spec, attrs) = find_spec_attr(type_item.attrs)?;
+                    if let Some(ref spec_attr) = spec {
+                        return Err(make_item_error(&spec_attr, "trait impl type"));
+                    }
+                    type_item.attrs = attrs;
+                    new_items.push(ImplItem::Type(type_item));
+                }
+                ImplItem::Macro(mut macro_item) => {
+                    let (spec, attrs) = find_spec_attr(macro_item.attrs)?;
+                    if let Some(ref spec_attr) = spec {
+                        return Err(make_item_error(&spec_attr, "trait impl macro"));
+                    }
+                    macro_item.attrs = attrs;
+                    new_items.push(ImplItem::Macro(macro_item));
+                }
+                ImplItem::Verbatim(token_stream) => {
+                    new_items.push(ImplItem::Verbatim(token_stream))
+                }
+                _ => unimplemented!(),
+            };
+        }
+
+        the_impl.items = new_items;
+        Ok(the_impl)
+    }
+}
