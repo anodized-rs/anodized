@@ -5,7 +5,7 @@ use syn::{Item, TraitItemFn, parse_macro_input};
 
 use anodized_core::{
     DataSpec, Spec,
-    instrument::{CheckSettings, Mode, make_item_error},
+    instrument::{CheckSettings, Mode, PanicSettings, make_item_error},
 };
 
 const CONFIG: Mode = if cfg!(anodized_discard_specs) {
@@ -13,7 +13,13 @@ const CONFIG: Mode = if cfg!(anodized_discard_specs) {
 } else {
     Mode::InjectChecks(CheckSettings {
         does_print: cfg!(anodized_print),
-        does_panic: cfg!(anodized_panic),
+        does_panic: if cfg!(anodized_panic) {
+            Some(PanicSettings {
+                split_func: cfg!(anodized_split_func),
+            })
+        } else {
+            None
+        },
     })
 };
 
@@ -40,8 +46,9 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
             let spec = parse_macro_input!(args as DataSpec);
             CONFIG.instrument_item_trait_impl(spec, the_impl)
         }
-        Item::Impl(ref the_impl) if the_impl.trait_.is_none() => {
-            Err(make_item_error(&item, "inherent impl"))
+        Item::Impl(the_impl) if the_impl.trait_.is_none() => {
+            let spec = parse_macro_input!(args as DataSpec);
+            CONFIG.instrument_item_impl(spec, the_impl)
         }
         Item::Const(_) => Err(make_item_error(&item, "const")),
         Item::Enum(the_enum) => {

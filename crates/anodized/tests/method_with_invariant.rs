@@ -6,6 +6,7 @@ struct Counter {
     capacity: u32,
 }
 
+#[spec]
 impl Counter {
     #[spec(
         maintains: self.count <= self.capacity,

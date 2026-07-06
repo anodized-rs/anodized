@@ -310,14 +310,29 @@ impl CheckSettings {
             postcondition_clauses.push(parse_quote!(true));
         }
 
-        let do_run_checks = self.does_print || self.does_panic;
-        let precond_fail_action = self.build_fail_action("precondition failed");
-        let postcond_fail_action = self.build_fail_action("postcondition failed");
+        let do_run_checks = self.does_print || self.does_panic.is_some();
+
+        let (output_expr, precond_fail_action, postcond_fail_action) =
+            if let Some(ref panic_settings) = self.does_panic
+                && panic_settings.split_func
+            {
+                (
+                    quote! { Ok(#output_ident) },
+                    Some(parse_quote! { return Err((false, __anodized_errors)); }),
+                    Some(parse_quote! { return Err((true, __anodized_errors)); }),
+                )
+            } else {
+                (
+                    quote! { #output_ident },
+                    self.build_fail_action("precondition failed"),
+                    self.build_fail_action("postcondition failed"),
+                )
+            };
 
         Ok(parse_quote! {
             {
                 if #do_run_checks {
-                    let mut __anodized_errors = String::new();
+                    let mut __anodized_errors = ::std::string::String::new();
                     let __anodized_precond = #(#precondition_clauses)&*;
                     if !__anodized_precond {
                         #precond_fail_action
@@ -325,13 +340,13 @@ impl CheckSettings {
                 }
                 #body_and_captures
                 if #do_run_checks {
-                    let mut __anodized_errors = String::new();
+                    let mut __anodized_errors = ::std::string::String::new();
                     let __anodized_postcond = #(#postcondition_clauses)&*;
                     if !__anodized_postcond {
                         #postcond_fail_action
                     }
                 }
-                #output_ident
+                #output_expr
             }
         })
     }
@@ -351,7 +366,7 @@ impl CheckSettings {
 
     fn build_fail_action(&self, message: &str) -> Option<Stmt> {
         let message_and_errors = format!("{message}:{{__anodized_errors}}");
-        match (self.does_print, self.does_panic) {
+        match (self.does_print, self.does_panic.is_some()) {
             (true, true) => Some(parse_quote! { panic!(#message_and_errors); }),
             (true, false) => Some(parse_quote! { eprintln!(#message_and_errors); }),
             (false, true) => Some(parse_quote! { panic!(#message); }),

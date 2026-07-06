@@ -1,15 +1,19 @@
 use proc_macro2::TokenStream;
-use quote::ToTokens;
-use syn::{Attribute, ItemConst, ItemFn, ItemImpl, ItemTrait, Result, parse_quote};
+use quote::{ToTokens, quote};
+use syn::{
+    Attribute, Block, FnArg, Ident, ItemConst, ItemFn, ItemImpl, ItemTrait, Result, ReturnType,
+    Signature, parse_quote,
+};
 
 use crate::{DataSpec, Spec};
 
 pub mod data;
 pub mod fns;
+pub mod impls;
 pub mod loops;
 pub mod traits;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub enum Mode {
     /// Make no changes to the code.
     ChangeNothing,
@@ -19,10 +23,18 @@ pub enum Mode {
     EmbedSpecs,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct CheckSettings {
+    /// Print errors about violated clauses.
     pub does_print: bool,
-    pub does_panic: bool,
+    /// Panic on a violated pre/postcondition or invariant.
+    pub does_panic: Option<PanicSettings>,
+}
+
+#[derive(Debug, Clone)]
+pub struct PanicSettings {
+    /// Generate an entry point that defers the panic. Used for fuzzing, PBT, etc.
+    pub split_func: bool,
 }
 
 impl Mode {
@@ -30,8 +42,30 @@ impl Mode {
         !matches!(self, Mode::ChangeNothing)
     }
 
+    pub fn with_split_func(&self, value: bool) -> Self {
+        match self {
+            Mode::ChangeNothing => Mode::ChangeNothing,
+            Mode::InjectChecks(check_settings) => {
+                let mut check_settings = check_settings.clone();
+                if let Some(panic_settings) = &mut check_settings.does_panic {
+                    panic_settings.split_func = value;
+                };
+                Mode::InjectChecks(check_settings)
+            }
+            Mode::EmbedSpecs => Mode::EmbedSpecs,
+        }
+    }
+
     pub fn instrument_item_fn(&self, spec: Spec, mut item_fn: ItemFn) -> Result<TokenStream> {
         let mut tokens = TokenStream::new();
+
+        if item_fn.sig.ident.to_string().starts_with("__anodized_") {
+            return Err(syn::Error::new_spanned(
+                item_fn.sig.ident,
+                r#"An item with the `__anodized_` prefix is internal. Do not implement it directly.
+Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or impl block."#,
+            ));
+        }
 
         if let Self::EmbedSpecs = self {
             // Embed `spec` elements as `__anodized_fn_*` items.
@@ -75,8 +109,84 @@ impl Mode {
         // Instrument function body.
         self.instrument_fn(&spec, &item_fn.sig, &mut item_fn.block)?;
 
+        if let Self::InjectChecks(check_settings) = self
+            && let Some(ref panic_settings) = check_settings.does_panic
+            && panic_settings.split_func
+        {
+            // Build a wrapper that forwards to the "split" function.
+            let mut wrapper_fn = item_fn.clone();
+            let mangled_ident =
+                Self::build_split_fn(false, &mut wrapper_fn.sig, wrapper_fn.block.as_mut());
+            wrapper_fn.to_tokens(&mut tokens);
+
+            // "Split" the original function by mangling its return type.
+            // The "split" entry point is used for e.g. fuzzing and PBT.
+            item_fn.sig.ident = mangled_ident;
+            item_fn.sig.output = match item_fn.sig.output {
+                ReturnType::Default => parse_quote!(-> Result<(), (bool, ::std::string::String)>),
+                ReturnType::Type(ra, ty) => {
+                    parse_quote!(#ra ::core::result::Result<#ty, (bool, ::std::string::String)>)
+                }
+            };
+            item_fn.attrs = vec![parse_quote!(#[doc(hidden)]), parse_quote!(#[inline])];
+        }
+
         item_fn.to_tokens(&mut tokens);
         Ok(tokens)
+    }
+
+    fn build_split_fn(is_impl: bool, sig: &mut Signature, body: &mut Block) -> Ident {
+        let mangled_ident = Ident::new(
+            &format!("__anodized_fn_split_{}", sig.ident),
+            sig.ident.span(),
+        );
+
+        Self::build_wrapper_fn_signature(sig);
+
+        let args = sig.inputs.iter().map(|arg| match arg {
+            FnArg::Receiver(receiver) => receiver.self_token.to_token_stream(),
+            FnArg::Typed(pat_type) => pat_type.pat.to_token_stream(),
+        });
+
+        let maybe_self = match is_impl {
+            true => quote!(Self::),
+            false => quote!(),
+        };
+
+        let maybe_await = match &sig.asyncness {
+            Some(_) => quote!(.await),
+            None => quote!(),
+        };
+
+        *body = parse_quote! {
+            {
+                match #maybe_self #mangled_ident(#(#args),*) #maybe_await {
+                    Ok(output) => output,
+                    Err((false, errors)) => panic!("precondition failed:{errors}"),
+                    Err((true, errors)) => panic!("postcondition failed:{errors}"),
+                }
+            }
+        };
+
+        mangled_ident
+    }
+
+    fn build_wrapper_fn_signature(sig: &mut Signature) {
+        use syn::spanned::Spanned;
+        for (i, arg) in sig.inputs.iter_mut().enumerate() {
+            match arg {
+                FnArg::Receiver(_) => {}
+                FnArg::Typed(pat_type) => {
+                    let name = Ident::new(&format!("input_{i}"), pat_type.span());
+                    pat_type.pat = parse_quote!(#name);
+                }
+            }
+        }
+    }
+
+    pub fn instrument_item_impl(&self, spec: DataSpec, item_impl: ItemImpl) -> Result<TokenStream> {
+        let new_impl = self.instrument_impl(spec, item_impl)?;
+        Ok(new_impl.to_token_stream())
     }
 
     pub fn instrument_item_trait(
@@ -107,17 +217,22 @@ impl Mode {
 impl CheckSettings {
     pub(crate) const DEFAULT: Self = Self {
         does_print: false,
-        does_panic: false,
+        does_panic: None,
     };
 
     pub(crate) const PRINT: Self = Self {
         does_print: true,
-        does_panic: false,
+        does_panic: None,
     };
 
     pub(crate) const PRINT_AND_PANIC: Self = Self {
         does_print: true,
-        does_panic: true,
+        does_panic: Some(PanicSettings { split_func: false }),
+    };
+
+    pub(crate) const PRINT_AND_SPLIT_PANIC: Self = Self {
+        does_print: true,
+        does_panic: Some(PanicSettings { split_func: true }),
     };
 }
 

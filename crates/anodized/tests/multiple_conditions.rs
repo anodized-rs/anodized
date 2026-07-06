@@ -7,6 +7,7 @@ struct SafeBuffer<T> {
     locked: bool,
 }
 
+#[spec]
 impl<T> SafeBuffer<T> {
     #[spec(
         requires: [

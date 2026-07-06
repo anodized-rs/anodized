@@ -4,8 +4,8 @@ mod traits_tests;
 
 use quote::quote;
 use syn::{
-    Attribute, Block, FnArg, ImplItem, ImplItemFn, Pat, TraitItem, TraitItemFn, Visibility,
-    parse_quote,
+    Attribute, Block, FnArg, ImplItem, ImplItemFn, Pat, ReturnType, TraitItem, TraitItemFn,
+    Visibility, parse_quote,
 };
 
 use crate::{
@@ -129,6 +129,32 @@ impl Mode {
 
                         func.default = Some(forwarding_body);
                         func.semi_token = None;
+                    }
+
+                    if let Self::InjectChecks(check_settings) = self
+                        && let Some(ref panic_settings) = check_settings.does_panic
+                        && panic_settings.split_func
+                    {
+                        // Build a wrapper that forwards to the "split" function.
+                        let mut wrapper_func = func.clone();
+                        let mut wrapper_body: Block = parse_quote!({});
+                        let mangled_ident =
+                            Self::build_split_fn(true, &mut wrapper_func.sig, &mut wrapper_body);
+                        wrapper_func.default = Some(wrapper_body);
+                        new_trait_items.push(TraitItem::Fn(wrapper_func));
+
+                        // "Split" the original function by mangling its return type.
+                        // The "split" entry point is used for e.g. fuzzing and PBT.
+                        func.sig.ident = mangled_ident;
+                        func.sig.output = match func.sig.output {
+                            ReturnType::Default => {
+                                parse_quote!(-> Result<(), (bool, ::std::string::String)>)
+                            }
+                            ReturnType::Type(ra, ty) => {
+                                parse_quote!(#ra ::core::result::Result<#ty, (bool, ::std::string::String)>)
+                            }
+                        };
+                        func.attrs = vec![parse_quote!(#[doc(hidden)]), parse_quote!(#[inline])];
                     }
 
                     new_trait_items.push(TraitItem::Fn(func));
@@ -261,7 +287,11 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                     }
 
                     if let Mode::InjectChecks(_) = self {
-                        self.instrument_fn(&fn_spec, &func.sig, &mut func.block)?;
+                        self.with_split_func(false).instrument_fn(
+                            &fn_spec,
+                            &func.sig,
+                            &mut func.block,
+                        )?;
 
                         // Add a compile-time check to the body.
                         func.block.stmts.insert(
