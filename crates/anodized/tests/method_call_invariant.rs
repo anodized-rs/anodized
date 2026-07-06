@@ -6,6 +6,7 @@ struct Validator {
     valid: bool,
 }
 
+#[spec]
 impl Validator {
     fn is_valid(&self) -> bool {
         self.valid

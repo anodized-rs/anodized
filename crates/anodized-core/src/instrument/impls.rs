@@ -2,7 +2,9 @@
 #[path = "impls_tests.rs"]
 mod impls_tests;
 
-use syn::{Attribute, ImplItem, ImplItemFn, ReturnType, Visibility, parse_quote};
+use syn::{
+    Attribute, Error, ImplItem, ImplItemFn, ItemImpl, Result, ReturnType, Visibility, parse_quote,
+};
 
 use crate::{
     DataSpec, Spec,
@@ -11,11 +13,7 @@ use crate::{
 
 impl Mode {
     /// Expand impl items.
-    pub fn instrument_impl(
-        &self,
-        spec: DataSpec,
-        mut the_impl: syn::ItemImpl,
-    ) -> syn::Result<syn::ItemImpl> {
+    pub fn instrument_impl(&self, spec: DataSpec, mut the_impl: ItemImpl) -> Result<ItemImpl> {
         if the_impl.trait_.is_some() {
             return Err(make_item_error(&the_impl, "trait impl"));
         };
@@ -33,7 +31,7 @@ impl Mode {
                     item_fn.attrs = func_attrs;
 
                     if item_fn.sig.ident.to_string().starts_with("__anodized_") {
-                        return Err(syn::Error::new_spanned(
+                        return Err(Error::new_spanned(
                             item_fn.sig.ident,
                             r#"An item with the `__anodized_` prefix is internal. Do not implement it directly.
 Instead, ensure that both the impl block and the fn have a `#[spec]` annotation."#,
@@ -102,7 +100,7 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                         // Build a wrapper that forwards to the "split" function.
                         let mut wrapper_fn = item_fn.clone();
                         let mangled_ident =
-                            Self::build_split_fn(false, &mut wrapper_fn.sig, &mut wrapper_fn.block);
+                            Self::build_split_fn(true, &mut wrapper_fn.sig, &mut wrapper_fn.block);
                         new_items.push(ImplItem::Fn(wrapper_fn));
 
                         // "Split" the original function by mangling its return type.
@@ -122,7 +120,7 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                 ImplItem::Const(mut const_item) => {
                     let (spec, attrs) = find_spec_attr(const_item.attrs)?;
                     if let Some(ref spec_attr) = spec {
-                        return Err(make_item_error(&spec_attr, "trait impl const"));
+                        return Err(make_item_error(&spec_attr, "impl const"));
                     }
                     const_item.attrs = attrs;
                     new_items.push(ImplItem::Const(const_item));
@@ -130,7 +128,7 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                 ImplItem::Type(mut type_item) => {
                     let (spec, attrs) = find_spec_attr(type_item.attrs)?;
                     if let Some(ref spec_attr) = spec {
-                        return Err(make_item_error(&spec_attr, "trait impl type"));
+                        return Err(make_item_error(&spec_attr, "impl type"));
                     }
                     type_item.attrs = attrs;
                     new_items.push(ImplItem::Type(type_item));
@@ -138,7 +136,7 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                 ImplItem::Macro(mut macro_item) => {
                     let (spec, attrs) = find_spec_attr(macro_item.attrs)?;
                     if let Some(ref spec_attr) = spec {
-                        return Err(make_item_error(&spec_attr, "trait impl macro"));
+                        return Err(make_item_error(&spec_attr, "impl macro"));
                     }
                     macro_item.attrs = attrs;
                     new_items.push(ImplItem::Macro(macro_item));

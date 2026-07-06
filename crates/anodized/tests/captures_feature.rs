@@ -143,6 +143,7 @@ fn precondition_runs_before_captures() {
         counter: u32,
     }
 
+    #[spec]
     impl TestStruct {
         #[spec(
             requires: self.counter < 100,
