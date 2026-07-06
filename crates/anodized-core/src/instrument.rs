@@ -123,8 +123,10 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
             // The "split" entry point is used for e.g. fuzzing and PBT.
             item_fn.sig.ident = mangled_ident;
             item_fn.sig.output = match item_fn.sig.output {
-                ReturnType::Default => parse_quote!(-> Result<(), (bool, String)>),
-                ReturnType::Type(ra, ty) => parse_quote!(#ra Result<#ty, (bool, String)>),
+                ReturnType::Default => parse_quote!(-> Result<(), (bool, ::std::string::String)>),
+                ReturnType::Type(ra, ty) => {
+                    parse_quote!(#ra ::core::result::Result<#ty, (bool, ::std::string::String)>)
+                }
             };
             item_fn.attrs = vec![parse_quote!(#[doc(hidden)]), parse_quote!(#[inline])];
         }

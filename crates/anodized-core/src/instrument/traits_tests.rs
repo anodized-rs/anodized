@@ -96,7 +96,7 @@ fn default_instrument_item_trait() {
 
             fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
                 if false {
-                    let mut __anodized_errors = String::new();
+                    let mut __anodized_errors = ::std::string::String::new();
                     let __anodized_precond = (|| -> bool { COND_1 })()
                         & (|| -> bool { COND_2 })();
                     if !__anodized_precond {}
@@ -105,7 +105,7 @@ fn default_instrument_item_trait() {
                     Self::__anodized_FUNC(self, PARAM_1, PARAM_2)
                 })());
                 if false {
-                    let mut __anodized_errors = String::new();
+                    let mut __anodized_errors = ::std::string::String::new();
                     let __anodized_postcond = (|| -> bool { COND_2 })()
                         & (|PAT_1: &RET_TYPE| -> bool { COND_3 })(&__anodized_output);
                     if !__anodized_postcond {}
@@ -165,10 +165,10 @@ fn split_panic_instrument_item_trait() {
             #[doc(hidden)]
             #[inline]
             fn __anodized_fn_split_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2)
-                -> Result<RET_TYPE, (bool, String)>
+                -> ::core::result::Result<RET_TYPE, (bool, ::std::string::String)>
             {
                 if true {
-                    let mut __anodized_errors = String::new();
+                    let mut __anodized_errors = ::std::string::String::new();
                     let __anodized_precond = ((|| -> bool { COND_1 })()
                             || __anodized_errors.push_str("\n    COND_1") != ())
                         & ((|| -> bool { COND_2 })()
@@ -181,7 +181,7 @@ fn split_panic_instrument_item_trait() {
                     Self::__anodized_FUNC(self, PARAM_1, PARAM_2)
                 })());
                 if true {
-                    let mut __anodized_errors = String::new();
+                    let mut __anodized_errors = ::std::string::String::new();
                     let __anodized_postcond = ((|| -> bool { COND_2 })()
                             || __anodized_errors.push_str("\n    COND_2") != ())
                         & ((|PAT_1: &RET_TYPE| -> bool { COND_3 })(&__anodized_output)
@@ -289,7 +289,7 @@ fn default_instrument_item_impl_trait() {
                     );
                 };
                 if false {
-                    let mut __anodized_errors = String::new();
+                    let mut __anodized_errors = ::std::string::String::new();
                     let __anodized_precond = (|| -> bool { COND_1 })()
                         & (|| -> bool { COND_2 })();
                     if !__anodized_precond {}
@@ -298,7 +298,7 @@ fn default_instrument_item_impl_trait() {
                     BODY
                 })());
                 if false {
-                    let mut __anodized_errors = String::new();
+                    let mut __anodized_errors = ::std::string::String::new();
                     let __anodized_postcond = (|| -> bool { COND_2 })()
                         & (|PAT_1: &RET_TYPE| -> bool { COND_3 })(&__anodized_output);
                     if !__anodized_postcond {}
@@ -349,7 +349,7 @@ fn split_panic_instrument_item_impl_trait() {
                     );
                 };
                 if true {
-                    let mut __anodized_errors = String::new();
+                    let mut __anodized_errors = ::std::string::String::new();
                     let __anodized_precond = ((|| -> bool { COND_1 })()
                             || __anodized_errors.push_str("\n    COND_1") != ())
                         & ((|| -> bool { COND_2 })()
@@ -362,7 +362,7 @@ fn split_panic_instrument_item_impl_trait() {
                     BODY
                 })());
                 if true {
-                    let mut __anodized_errors = String::new();
+                    let mut __anodized_errors = ::std::string::String::new();
                     let __anodized_postcond = ((|| -> bool { COND_2 })()
                             || __anodized_errors.push_str("\n    COND_2") != ())
                         & ((|PAT_1: &RET_TYPE| -> bool { COND_3 })(&__anodized_output)

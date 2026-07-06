@@ -332,7 +332,7 @@ impl CheckSettings {
         Ok(parse_quote! {
             {
                 if #do_run_checks {
-                    let mut __anodized_errors = String::new();
+                    let mut __anodized_errors = ::std::string::String::new();
                     let __anodized_precond = #(#precondition_clauses)&*;
                     if !__anodized_precond {
                         #precond_fail_action
@@ -340,7 +340,7 @@ impl CheckSettings {
                 }
                 #body_and_captures
                 if #do_run_checks {
-                    let mut __anodized_errors = String::new();
+                    let mut __anodized_errors = ::std::string::String::new();
                     let __anodized_postcond = #(#postcondition_clauses)&*;
                     if !__anodized_postcond {
                         #postcond_fail_action

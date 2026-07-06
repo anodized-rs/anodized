@@ -147,9 +147,11 @@ impl Mode {
                         // The "split" entry point is used for e.g. fuzzing and PBT.
                         func.sig.ident = mangled_ident;
                         func.sig.output = match func.sig.output {
-                            ReturnType::Default => parse_quote!(-> Result<(), (bool, String)>),
+                            ReturnType::Default => {
+                                parse_quote!(-> Result<(), (bool, ::std::string::String)>)
+                            }
                             ReturnType::Type(ra, ty) => {
-                                parse_quote!(#ra Result<#ty, (bool, String)>)
+                                parse_quote!(#ra ::core::result::Result<#ty, (bool, ::std::string::String)>)
                             }
                         };
                         func.attrs = vec![parse_quote!(#[doc(hidden)]), parse_quote!(#[inline])];
