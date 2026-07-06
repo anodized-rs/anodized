@@ -136,7 +136,7 @@ fn split_panic_instrument_item_fn() {
 
     let expected: TokenStream = parse_quote! {
         fn FUNC(&self, input_1: TYPE_1, input_2: TYPE_2) -> RET_TYPE {
-            match __anodized_split_FUNC(self, input_1, input_2) {
+            match __anodized_fn_split_FUNC(self, input_1, input_2) {
                 Ok(output) => output,
                 Err((false, errors)) => panic!("precondition failed:{errors}"),
                 Err((true, errors)) => panic!("postcondition failed:{errors}"),
@@ -145,7 +145,7 @@ fn split_panic_instrument_item_fn() {
 
         #[doc(hidden)]
         #[inline]
-        fn __anodized_split_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2)
+        fn __anodized_fn_split_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2)
             -> Result<RET_TYPE, (bool, String)>
         {
             if true {

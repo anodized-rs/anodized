@@ -15,7 +15,7 @@ impl Mode {
     /// Expand items inside an inherent impl.
     ///
     /// Reasons why impl functions must be treated differently from free-standing functions:
-    /// - The `__anodized_split_*` function must be qualified as `Self::` inside an impl.
+    /// - The `__anodized_fn_split_*` function must be qualified as `Self::` inside an impl.
     pub fn instrument_impl(&self, spec: DataSpec, mut the_impl: ItemImpl) -> Result<ItemImpl> {
         if the_impl.trait_.is_some() {
             return Err(make_item_error(&the_impl, "trait impl"));
