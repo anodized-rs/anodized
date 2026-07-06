@@ -12,6 +12,7 @@ struct Job {
     state: State,
 }
 
+#[spec]
 impl Job {
     #[spec(
         requires: matches!(self.state, State::Idle),

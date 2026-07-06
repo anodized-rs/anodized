@@ -46,8 +46,9 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
             let spec = parse_macro_input!(args as DataSpec);
             CONFIG.instrument_item_trait_impl(spec, the_impl)
         }
-        Item::Impl(ref the_impl) if the_impl.trait_.is_none() => {
-            Err(make_item_error(&item, "inherent impl"))
+        Item::Impl(the_impl) if the_impl.trait_.is_none() => {
+            let spec = parse_macro_input!(args as DataSpec);
+            CONFIG.instrument_item_impl(spec, the_impl)
         }
         Item::Const(_) => Err(make_item_error(&item, "const")),
         Item::Enum(the_enum) => {

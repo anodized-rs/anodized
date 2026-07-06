@@ -18,6 +18,7 @@ struct Container {
     capacity: usize,
 }
 
+#[spec]
 impl Container {
     fn new() -> Self {
         Container {
