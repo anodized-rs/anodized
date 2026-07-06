@@ -132,7 +132,7 @@ impl Mode {
                     }
 
                     if let Self::InjectChecks(check_settings) = self
-                        && let Some(panic_settings) = check_settings.does_panic
+                        && let Some(ref panic_settings) = check_settings.does_panic
                         && panic_settings.split_func
                     {
                         // Build a wrapper that forwards to the "split" function.
@@ -285,7 +285,11 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                     }
 
                     if let Mode::InjectChecks(_) = self {
-                        self.instrument_fn(&fn_spec, &func.sig, &mut func.block)?;
+                        self.with_split_func(false).instrument_fn(
+                            &fn_spec,
+                            &func.sig,
+                            &mut func.block,
+                        )?;
 
                         // Add a compile-time check to the body.
                         func.block.stmts.insert(

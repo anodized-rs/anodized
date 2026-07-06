@@ -12,7 +12,7 @@ pub mod fns;
 pub mod loops;
 pub mod traits;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub enum Mode {
     /// Make no changes to the code.
     ChangeNothing,
@@ -22,7 +22,7 @@ pub enum Mode {
     EmbedSpecs,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct CheckSettings {
     /// Print errors about violated clauses.
     pub does_print: bool,
@@ -30,7 +30,7 @@ pub struct CheckSettings {
     pub does_panic: Option<PanicSettings>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct PanicSettings {
     /// Generate an entry point that defers the panic. Used for fuzzing, PBT, etc.
     pub split_func: bool,
@@ -39,6 +39,20 @@ pub struct PanicSettings {
 impl Mode {
     pub fn changes_anything(&self) -> bool {
         !matches!(self, Mode::ChangeNothing)
+    }
+
+    pub fn with_split_func(&self, value: bool) -> Self {
+        match self {
+            Mode::ChangeNothing => Mode::ChangeNothing,
+            Mode::InjectChecks(check_settings) => {
+                let mut check_settings = check_settings.clone();
+                if let Some(panic_settings) = &mut check_settings.does_panic {
+                    panic_settings.split_func = value;
+                };
+                Mode::InjectChecks(check_settings)
+            }
+            Mode::EmbedSpecs => Mode::EmbedSpecs,
+        }
     }
 
     pub fn instrument_item_fn(&self, spec: Spec, mut item_fn: ItemFn) -> Result<TokenStream> {
@@ -87,7 +101,7 @@ impl Mode {
         self.instrument_fn(&spec, &item_fn.sig, &mut item_fn.block)?;
 
         if let Self::InjectChecks(check_settings) = self
-            && let Some(panic_settings) = check_settings.does_panic
+            && let Some(ref panic_settings) = check_settings.does_panic
             && panic_settings.split_func
         {
             // Build a wrapper that forwards to the "split" function.

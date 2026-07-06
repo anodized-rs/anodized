@@ -312,22 +312,22 @@ impl CheckSettings {
 
         let do_run_checks = self.does_print || self.does_panic.is_some();
 
-        let (output_expr, precond_fail_action, postcond_fail_action) = if let Some(panic_settings) =
-            self.does_panic
-            && panic_settings.split_func
-        {
-            (
-                quote! { Ok(#output_ident) },
-                Some(parse_quote! { return Err((false, __anodized_errors)); }),
-                Some(parse_quote! { return Err((true, __anodized_errors)); }),
-            )
-        } else {
-            (
-                quote! { #output_ident },
-                self.build_fail_action("precondition failed"),
-                self.build_fail_action("postcondition failed"),
-            )
-        };
+        let (output_expr, precond_fail_action, postcond_fail_action) =
+            if let Some(ref panic_settings) = self.does_panic
+                && panic_settings.split_func
+            {
+                (
+                    quote! { Ok(#output_ident) },
+                    Some(parse_quote! { return Err((false, __anodized_errors)); }),
+                    Some(parse_quote! { return Err((true, __anodized_errors)); }),
+                )
+            } else {
+                (
+                    quote! { #output_ident },
+                    self.build_fail_action("precondition failed"),
+                    self.build_fail_action("postcondition failed"),
+                )
+            };
 
         Ok(parse_quote! {
             {
