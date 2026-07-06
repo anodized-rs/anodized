@@ -113,15 +113,20 @@ impl Mode {
             FnArg::Typed(pat_type) => pat_type.pat.to_token_stream(),
         });
 
-        let self_type = if is_impl {
+        let maybe_self = if is_impl {
             quote::quote!(Self::)
         } else {
             quote::quote!()
         };
 
+        let maybe_await = match &sig.asyncness {
+            Some(_) => quote::quote!(.await),
+            None => quote::quote!(),
+        };
+
         *body = parse_quote! {
             {
-                match #self_type #mangled_ident(#(#args),*) {
+                match #maybe_self #mangled_ident(#(#args),*) #maybe_await {
                     Ok(output) => output,
                     Err((false, errors)) => panic!("precondition failed:{errors}"),
                     Err((true, errors)) => panic!("postcondition failed:{errors}"),
