@@ -114,7 +114,8 @@ fn split_panic_instrument_item_impl() {
                 binds: PAT_1,
                 ensures: COND_3,
             )]
-            fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
+            // An associated `fn` (no receiver) is syntactically identical to a free-standing `fn`.
+            fn FUNC(PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
                 BODY
             }
         }
@@ -122,8 +123,8 @@ fn split_panic_instrument_item_impl() {
 
     let expected: TokenStream = parse_quote! {
         impl IMPL_TYPE {
-            fn FUNC(&self, input_1: TYPE_1, input_2: TYPE_2) -> RET_TYPE {
-                match Self::__anodized_split_FUNC(self, input_1, input_2) {
+            fn FUNC(input_0: TYPE_1, input_1: TYPE_2) -> RET_TYPE {
+                match Self::__anodized_split_FUNC(input_0, input_1) {
                     Ok(output) => output,
                     Err((false, errors)) => panic!("precondition failed:{errors}"),
                     Err((true, errors)) => panic!("postcondition failed:{errors}"),
@@ -132,7 +133,7 @@ fn split_panic_instrument_item_impl() {
 
             #[doc(hidden)]
             #[inline]
-            fn __anodized_split_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2)
+            fn __anodized_split_FUNC(PARAM_1: TYPE_1, PARAM_2: TYPE_2)
                 -> Result<RET_TYPE, (bool, String)>
             {
                 if true {
