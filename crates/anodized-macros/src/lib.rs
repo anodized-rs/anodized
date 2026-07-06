@@ -5,7 +5,7 @@ use syn::{Item, TraitItemFn, parse_macro_input};
 
 use anodized_core::{
     DataSpec, Spec,
-    instrument::{CheckSettings, Mode, make_item_error},
+    instrument::{CheckSettings, Mode, PanicSettings, make_item_error},
 };
 
 const CONFIG: Mode = if cfg!(anodized_discard_specs) {
@@ -13,8 +13,13 @@ const CONFIG: Mode = if cfg!(anodized_discard_specs) {
 } else {
     Mode::InjectChecks(CheckSettings {
         does_print: cfg!(anodized_print),
-        does_panic: cfg!(anodized_panic),
-        split_func: cfg!(anodized_split_func),
+        does_panic: if cfg!(anodized_panic) {
+            Some(PanicSettings {
+                split_func: cfg!(anodized_split_func),
+            })
+        } else {
+            None
+        },
     })
 };
 

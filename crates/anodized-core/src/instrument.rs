@@ -1,5 +1,5 @@
 use proc_macro2::TokenStream;
-use quote::ToTokens;
+use quote::{ToTokens, quote};
 use syn::{
     Attribute, Block, FnArg, Ident, ItemConst, ItemFn, ItemImpl, ItemTrait, Result, ReturnType,
     Signature, parse_quote,
@@ -24,8 +24,15 @@ pub enum Mode {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CheckSettings {
+    /// Print errors about violated clauses.
     pub does_print: bool,
-    pub does_panic: bool,
+    /// Panic on a violated pre/postcondition or invariant.
+    pub does_panic: Option<PanicSettings>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PanicSettings {
+    /// Generate an entry point that defers the panic. Used for fuzzing, PBT, etc.
     pub split_func: bool,
 }
 
@@ -79,8 +86,9 @@ impl Mode {
         // Instrument function body.
         self.instrument_fn(&spec, &item_fn.sig, &mut item_fn.block)?;
 
-        if let Self::InjectChecks(settings) = self
-            && settings.split_func
+        if let Self::InjectChecks(check_settings) = self
+            && let Some(panic_settings) = check_settings.does_panic
+            && panic_settings.split_func
         {
             // Build a wrapper that forwards to the "split" function.
             let mut wrapper_fn = item_fn.clone();
@@ -114,13 +122,13 @@ impl Mode {
         });
 
         let maybe_self = match is_impl {
-            true => quote::quote!(Self::),
-            false => quote::quote!(),
+            true => quote!(Self::),
+            false => quote!(),
         };
 
         let maybe_await = match &sig.asyncness {
-            Some(_) => quote::quote!(.await),
-            None => quote::quote!(),
+            Some(_) => quote!(.await),
+            None => quote!(),
         };
 
         *body = parse_quote! {
@@ -177,26 +185,22 @@ impl Mode {
 impl CheckSettings {
     pub(crate) const DEFAULT: Self = Self {
         does_print: false,
-        does_panic: false,
-        split_func: false,
+        does_panic: None,
     };
 
     pub(crate) const PRINT: Self = Self {
         does_print: true,
-        does_panic: false,
-        split_func: false,
+        does_panic: None,
     };
 
     pub(crate) const PRINT_AND_PANIC: Self = Self {
         does_print: true,
-        does_panic: true,
-        split_func: false,
+        does_panic: Some(PanicSettings { split_func: false }),
     };
 
     pub(crate) const PRINT_AND_SPLIT_PANIC: Self = Self {
         does_print: true,
-        does_panic: true,
-        split_func: true,
+        does_panic: Some(PanicSettings { split_func: true }),
     };
 }
 

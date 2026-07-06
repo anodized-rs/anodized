@@ -310,9 +310,12 @@ impl CheckSettings {
             postcondition_clauses.push(parse_quote!(true));
         }
 
-        let do_run_checks = self.does_print || self.does_panic;
+        let do_run_checks = self.does_print || self.does_panic.is_some();
 
-        let (output_expr, precond_fail_action, postcond_fail_action) = if self.split_func {
+        let (output_expr, precond_fail_action, postcond_fail_action) = if let Some(panic_settings) =
+            self.does_panic
+            && panic_settings.split_func
+        {
             (
                 quote! { Ok(#output_ident) },
                 Some(parse_quote! { return Err((false, __anodized_errors)); }),
@@ -363,7 +366,7 @@ impl CheckSettings {
 
     fn build_fail_action(&self, message: &str) -> Option<Stmt> {
         let message_and_errors = format!("{message}:{{__anodized_errors}}");
-        match (self.does_print, self.does_panic) {
+        match (self.does_print, self.does_panic.is_some()) {
             (true, true) => Some(parse_quote! { panic!(#message_and_errors); }),
             (true, false) => Some(parse_quote! { eprintln!(#message_and_errors); }),
             (false, true) => Some(parse_quote! { panic!(#message); }),
