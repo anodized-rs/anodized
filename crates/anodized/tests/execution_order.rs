@@ -1,6 +1,24 @@
 #![allow(clippy::unit_cmp, clippy::needless_return)]
 
 use anodized::spec;
+use std::cell::RefCell;
+
+struct ExecLog(RefCell<Vec<&'static str>>);
+
+#[allow(unused)]
+impl ExecLog {
+    fn new() -> Self {
+        Self(RefCell::new(Vec::new()))
+    }
+
+    fn push(&self, entry: &'static str) {
+        self.0.borrow_mut().push(entry);
+    }
+
+    fn into_vec(self) -> Vec<&'static str> {
+        self.0.into_inner()
+    }
+}
 
 #[spec(
     requires: [
@@ -21,7 +39,7 @@ use anodized::spec;
     ],
 )]
 #[allow(unused)]
-fn func(log: &mut Vec<&'static str>) {
+fn func(log: &ExecLog) {
     log.push("body");
     return;
 }
@@ -29,12 +47,12 @@ fn func(log: &mut Vec<&'static str>) {
 #[cfg(any(anodized_panic, anodized_print))]
 #[test]
 fn execution_order() {
-    let mut log = Vec::new();
-    func(&mut log);
+    let log = ExecLog::new();
+    func(&log);
 
     // Verify the exact execution order
     assert_eq!(
-        log,
+        log.into_vec(),
         [
             "requires1",
             "requires2",
@@ -70,7 +88,7 @@ fn execution_order() {
     ],
 )]
 #[allow(unused)]
-fn func_all_conditions_fail(log: &mut Vec<&'static str>) {
+fn func_all_conditions_fail(log: &ExecLog) {
     log.push("body");
     return;
 }
@@ -78,12 +96,12 @@ fn func_all_conditions_fail(log: &mut Vec<&'static str>) {
 #[cfg(all(anodized_print, not(anodized_panic)))]
 #[test]
 fn execution_order_print_only() {
-    let mut log = Vec::new();
-    func_all_conditions_fail(&mut log);
+    let log = ExecLog::new();
+    func_all_conditions_fail(&log);
 
     // Verify the exact execution order
     assert_eq!(
-        log,
+        log.into_vec(),
         [
             "requires1",
             "requires2",
@@ -119,7 +137,7 @@ fn execution_order_print_only() {
     ],
 )]
 #[allow(unused)]
-async fn async_func(log: &mut Vec<&'static str>) {
+async fn async_func(log: &ExecLog) {
     log.push("body");
     return;
 }
@@ -127,11 +145,11 @@ async fn async_func(log: &mut Vec<&'static str>) {
 #[cfg(any(anodized_panic, anodized_print))]
 #[test]
 fn async_execution_order() {
-    let mut log = Vec::new();
-    pollster::block_on(async_func(&mut log));
+    let log = ExecLog::new();
+    pollster::block_on(async_func(&log));
 
     assert_eq!(
-        log,
+        log.into_vec(),
         [
             "requires1",
             "requires2",
