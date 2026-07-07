@@ -5,8 +5,7 @@ mod fns_tests;
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Block, Expr, ExprClosure, Ident, Meta, Pat, PatIdent, Path, ReturnType, Signature,
-    Stmt, Type,
+    Attribute, Block, Expr, Ident, Meta, Pat, PatIdent, Path, ReturnType, Signature, Stmt, Type,
     parse::{Parse, Result},
     parse_quote,
 };
