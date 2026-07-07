@@ -1000,7 +1000,8 @@ fn captures() {
                 let mut __anodized_errors = ::std::string::String::new();
                 let __anodized_postcond = (__anodized_eval_post(&|output: &#ret_type| -> bool { CONDITION_2 }, &__anodized_output)
                     || __anodized_errors.push_str("\n    | output | CONDITION_2") != ())
-                    & (__anodized_eval_post(&|output: &#ret_type| -> bool { CONDITION_3 }, &__anodized_output)
+                    & (__anodized_eval_post(
+                        &|output: &#ret_type| -> bool { CONDITION_3 }, &__anodized_output)
                         || __anodized_errors.push_str("\n    | output | CONDITION_3") != ());
                 if !__anodized_postcond {
                     panic!("postcondition failed:{__anodized_errors}");

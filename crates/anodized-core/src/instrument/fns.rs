@@ -5,7 +5,8 @@ mod fns_tests;
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Block, Expr, Ident, Meta, Pat, PatIdent, Path, ReturnType, Signature, Stmt, Type,
+    Attribute, Block, Expr, ExprClosure, Ident, Meta, Pat, PatIdent, Path, ReturnType, Signature,
+    Stmt, Type,
     parse::{Parse, Result},
     parse_quote,
 };
@@ -233,7 +234,7 @@ impl CheckSettings {
         let mut precondition_clauses: Vec<Expr> = vec![];
         for condition in spec.requires.iter().chain(&spec.maintains) {
             let closure = &condition.closure;
-            let expr = parse_quote! { __anodized_eval_pre(&#closure) };
+            let expr = parse_quote! { __anodized_eval_pre(#closure) };
             let repr = condition.closure.body.to_token_stream().to_string();
             let clause = self.build_clause_eval(condition.cfg.as_ref(), &expr, &repr);
             precondition_clauses.push(clause);
@@ -284,7 +285,7 @@ impl CheckSettings {
         let mut postcondition_clauses: Vec<Expr> = vec![];
         for condition in &spec.maintains {
             let closure = condition.closure.to_token_stream();
-            let expr = parse_quote! { __anodized_eval_inv(&#closure) };
+            let expr = parse_quote! { __anodized_eval_inv(#closure) };
             let repr = condition.closure.body.to_token_stream().to_string();
             let clause = self.build_clause_eval(condition.cfg.as_ref(), &expr, &repr);
             postcondition_clauses.push(clause);
@@ -294,13 +295,14 @@ impl CheckSettings {
             let input = &closure.inputs.first().unwrap();
             let output = &closure.output;
             let body = &closure.body;
-            let expr = match input {
-                Pat::Type(_) => parse_quote! { __anodized_eval_post(&#closure, &#output_ident) },
+            let closure_expr = match input {
+                Pat::Type(_) => closure.clone(),
                 _ => parse_quote! {
                     // If the closure's input doesn't have a type ascription, add one.
-                    __anodized_eval_post(&|#input: &#return_type| #output { #body }, &#output_ident)
+                    |#input: &#return_type| #output { #body }
                 },
             };
+            let expr = parse_quote! { __anodized_eval_post(#closure_expr, &#output_ident) };
             // Omit the closure's return type for brevity.
             let repr = quote! { |#input| #body }.to_string();
             let clause = self.build_clause_eval(postcondition.cfg.as_ref(), &expr, &repr);
@@ -332,7 +334,7 @@ impl CheckSettings {
         Ok(parse_quote! {
             {
                 if #do_run_checks {
-                    fn __anodized_eval_pre(c: &impl Fn() -> bool) -> bool { c() }
+                    fn __anodized_eval_pre(c: impl Fn() -> bool) -> bool { c() }
                     let mut __anodized_errors = ::std::string::String::new();
                     let __anodized_precond = #(#precondition_clauses)&*;
                     if !__anodized_precond {
@@ -341,8 +343,8 @@ impl CheckSettings {
                 }
                 #body_and_captures
                 if #do_run_checks {
-                    fn __anodized_eval_inv(c: &impl Fn() -> bool) -> bool { c() }
-                    fn __anodized_eval_post<R>(c: &impl Fn(&R) -> bool, r: &R) -> bool { c(r) }
+                    fn __anodized_eval_inv(c: impl Fn() -> bool) -> bool { c() }
+                    fn __anodized_eval_post<R>(c: impl Fn(&R) -> bool, r: &R) -> bool { c(r) }
                     let mut __anodized_errors = ::std::string::String::new();
                     let __anodized_postcond = #(#postcondition_clauses)&*;
                     if !__anodized_postcond {
