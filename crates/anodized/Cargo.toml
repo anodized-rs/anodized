@@ -27,3 +27,5 @@ anodized-macros.workspace = true
 [dev-dependencies]
 pollster = "0.4"
 trybuild = "1.0"
+arbitrary = "1.4.2"
+libfuzzer-sys = "0.4.13"
