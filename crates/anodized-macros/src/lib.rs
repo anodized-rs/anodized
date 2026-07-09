@@ -16,6 +16,7 @@ const CONFIG: Mode = if cfg!(anodized_discard_specs) {
         does_panic: if cfg!(anodized_panic) {
             Some(PanicSettings {
                 split_func: cfg!(anodized_split_func),
+                fuzz_func: cfg!(anodized_fuzz),
             })
         } else {
             None
