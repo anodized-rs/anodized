@@ -22,23 +22,25 @@ pub fn find_insert_index<T: Ord>(seq: &[T], value: &T) -> usize {
 
 fn __anodized_fn_fuzz_find_insert_index<'__anodized_lifetime, T: Ord>(
     data: &'__anodized_lifetime [u8],
-) -> Corpus
+) -> Result<usize, (bool, String)>
 where
     Box<[T]>: Arbitrary<'__anodized_lifetime>,
     T: Arbitrary<'__anodized_lifetime>,
 {
     let mut unst = Unstructured::new(data);
     let Ok(input_0) = <Box<[T]> as Arbitrary>::arbitrary(&mut unst) else {
-        return Corpus::Reject;
+        return Err((false, "could not generated input_0".into()));
     };
     let Ok(input_1) = <T as Arbitrary>::arbitrary(&mut unst) else {
-        return Corpus::Reject;
+        return Err((false, "could not generated input_1".into()));
     };
-    match __anodized_fn_split_find_insert_index(&input_0, &input_1) {
+    __anodized_fn_split_find_insert_index(&input_0, &input_1)
+}
+
+fuzz_target!(|data: &[u8]| -> Corpus {
+    match __anodized_fn_fuzz_find_insert_index::<i32>(data) {
         Ok(_) => Corpus::Keep,
         Err((false, _)) => Corpus::Reject,
         Err((true, errors)) => panic!("postcondition failed:{errors}"),
     }
-}
-
-fuzz_target!(|data: &[u8]| -> Corpus { __anodized_fn_fuzz_find_insert_index::<i32>(data) });
+});

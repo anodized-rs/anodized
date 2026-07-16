@@ -129,17 +129,17 @@ fn default_instrument_item_fn() {
 }
 
 #[test]
-fn split_panic_instrument_item_fn() {
+fn fuzz_item_fn() {
     let fn_spec = make_complex_spec();
     let item_fn: ItemFn = parse_quote! {
-        fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
+        fn FUNC(PARAM_0: TYPE_0, PARAM_1: &TYPE_1, PARAM_2: &[TYPE_2]) -> RET_TYPE {
             BODY
         }
     };
 
     let expected: TokenStream = parse_quote! {
-        fn FUNC(&self, input_1: TYPE_1, input_2: TYPE_2) -> RET_TYPE {
-            match __anodized_fn_split_FUNC(self, input_1, input_2) {
+        fn FUNC(input_0: TYPE_0, input_1: &TYPE_1, input_2: &[TYPE_2]) -> RET_TYPE {
+            match __anodized_fn_split_FUNC(input_0, input_1, input_2) {
                 Ok(output) => output,
                 Err((false, errors)) => panic!("precondition failed:{errors}"),
                 Err((true, errors)) => panic!("postcondition failed:{errors}"),
@@ -148,7 +148,31 @@ fn split_panic_instrument_item_fn() {
 
         #[doc(hidden)]
         #[inline]
-        fn __anodized_fn_split_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2)
+        fn __anodized_fn_fuzz_FUNC<'__anodized_lifetime>(
+            data: &'__anodized_lifetime [u8],
+        ) -> ::core::result::Result<RET_TYPE, (bool, ::std::string::String)>
+        where
+            TYPE_0: ::arbitrary::Arbitrary<'__anodized_lifetime>,
+            TYPE_1: ::arbitrary::Arbitrary<'__anodized_lifetime>,
+            ::alloc::boxed::Box<[TYPE_2]>: ::arbitrary::Arbitrary<'__anodized_lifetime>,
+        {
+            use ::core::result::Result::*;
+            let mut unst = ::arbitrary::Unstructured::new(data);
+            let Ok(input_0) = <TYPE_0 as ::arbitrary::Arbitrary>::arbitrary(&mut unst) else {
+                return Err((false, "could not generate input_0".into()));
+            };
+            let Ok(input_1) = <TYPE_1 as ::arbitrary::Arbitrary>::arbitrary(&mut unst) else {
+                return Err((false, "could not generate input_1".into()));
+            };
+            let Ok(input_2) = <::alloc::boxed::Box<[TYPE_2]> as ::arbitrary::Arbitrary>::arbitrary(&mut unst) else {
+                return Err((false, "could not generate input_2".into()));
+            };
+            __anodized_fn_split_FUNC(input_0, &input_1, &input_2)
+        }
+
+        #[doc(hidden)]
+        #[inline]
+        fn __anodized_fn_split_FUNC(PARAM_0: TYPE_0, PARAM_1: &TYPE_1, PARAM_2: &[TYPE_2])
             -> ::core::result::Result<RET_TYPE, (bool, ::std::string::String)>
         {
             if true {
