@@ -20,15 +20,18 @@ pub fn find_insert_index<T: Ord>(seq: &[T], value: &T) -> usize {
     index
 }
 
-fn __anodized_fn_fuzz_find_insert_index<'__a, T: Ord>(data: &'__a [u8]) -> Corpus
+fn __anodized_fn_fuzz_find_insert_index<'__anodized_lifetime, T: Ord>(
+    data: &'__anodized_lifetime [u8],
+) -> Corpus
 where
-    T: Arbitrary<'__a>,
+    Box<[T]>: Arbitrary<'__anodized_lifetime>,
+    T: Arbitrary<'__anodized_lifetime>,
 {
     let mut unst = Unstructured::new(data);
     let Ok(input_0) = <Box<[T]> as Arbitrary>::arbitrary(&mut unst) else {
         return Corpus::Reject;
     };
-    let Ok(input_1) = <Box<T> as Arbitrary>::arbitrary(&mut unst) else {
+    let Ok(input_1) = <T as Arbitrary>::arbitrary(&mut unst) else {
         return Corpus::Reject;
     };
     match __anodized_fn_split_find_insert_index(&input_0, &input_1) {
