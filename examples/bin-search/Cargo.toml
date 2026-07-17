@@ -1,0 +1,17 @@
+[package]
+publish = false
+name = "example-bin-search"
+description = "Anodized example: binary search"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+categories.workspace = true
+keywords.workspace = true
+
+[dependencies]
+anodized = { workspace = true }
+
+[dev-dependencies]
+arbitrary = "1.4.2"
+libfuzzer-sys = "0.4.13"

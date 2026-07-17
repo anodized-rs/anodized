@@ -6,6 +6,7 @@ members = [
     "crates/anodized-logic",
     "crates/anodized-macros",
     "crates/test-util",
+    "examples/bin-search",
     "fuzz",
 ]
 resolver = "2"
@@ -29,8 +30,10 @@ keywords = [
 ]
 
 [workspace.dependencies]
+anodized = { version = "0.5.1", path = "crates/anodized" }
 anodized-core = { version = "0.5.1", path = "crates/anodized-core" }
 anodized-fmt = { version = "0.5.1", path = "crates/anodized-fmt" }
+anodized-fuzz = { version = "0.5.1", path = "crates/anodized-fuzz" }
 anodized-logic = { version = "0.5.1", path = "crates/anodized-logic" }
 anodized-macros = { version = "0.5.1", path = "crates/anodized-macros" }
 test-util = { path = "crates/test-util" }
