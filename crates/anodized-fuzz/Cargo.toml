@@ -1,0 +1,17 @@
+[package]
+name = "anodized-fuzz"
+description = "Tools for fuzzing code with Anodized specifications"
+
+version.workspace = true
+edition.workspace = true
+readme = "README.md"
+repository.workspace = true
+categories.workspace = true
+keywords.workspace = true
+license.workspace = true
+
+[features]
+cargo-fuzz = ["dep:cargo-fuzz"]
+
+[dependencies]
+cargo-fuzz = { optional = true, version = "*" }
