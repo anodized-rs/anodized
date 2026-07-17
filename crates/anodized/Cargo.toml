@@ -14,22 +14,15 @@ license.workspace = true
 level = "warn"
 check-cfg = [
     "cfg(anodized_discard_specs)",
-    "cfg(anodized_fuzz)",
     "cfg(anodized_panic)",
     "cfg(anodized_print)",
     "cfg(anodized_split_func)",
 ]
 
-[features]
-arbitrary = ["dep:arbitrary"]
-
 [dependencies]
 anodized-logic.workspace = true
 anodized-macros.workspace = true
-arbitrary = { optional = true, version = "1" }
 
 [dev-dependencies]
 pollster = "0.4"
 trybuild = "1.0"
-arbitrary = "1.4.2"
-libfuzzer-sys = "0.4.13"
