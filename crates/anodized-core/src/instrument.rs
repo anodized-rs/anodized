@@ -35,8 +35,6 @@ pub struct CheckSettings {
 pub struct PanicSettings {
     /// Generate an entry point that defers the panic. Used for fuzzing, PBT, etc.
     pub split_func: bool,
-    /// Generate an entry point for fuzzing. Assumes `split_func`.
-    pub fuzz_func: bool,
 }
 
 impl Mode {
@@ -229,26 +227,12 @@ impl CheckSettings {
 
     pub(crate) const PRINT_AND_PANIC: Self = Self {
         does_print: true,
-        does_panic: Some(PanicSettings {
-            split_func: false,
-            fuzz_func: false,
-        }),
+        does_panic: Some(PanicSettings { split_func: false }),
     };
 
     pub(crate) const PRINT_AND_SPLIT_PANIC: Self = Self {
         does_print: true,
-        does_panic: Some(PanicSettings {
-            split_func: true,
-            fuzz_func: false,
-        }),
-    };
-
-    pub(crate) const FUZZ: Self = Self {
-        does_print: true,
-        does_panic: Some(PanicSettings {
-            split_func: true,
-            fuzz_func: true,
-        }),
+        does_panic: Some(PanicSettings { split_func: true }),
     };
 }
 
