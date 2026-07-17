@@ -3,6 +3,3 @@
 pub use anodized_logic as logic;
 pub use anodized_logic::arithmetic;
 pub use anodized_macros::spec;
-
-#[cfg(feature = "arbitrary")]
-pub use arbitrary;

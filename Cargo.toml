@@ -6,8 +6,10 @@ members = [
     "crates/anodized-logic",
     "crates/anodized-macros",
     "crates/test-util",
-    "examples/bin-search",
     "fuzz",
+]
+exclude = [
+    "examples/bin-search",
 ]
 resolver = "2"
 

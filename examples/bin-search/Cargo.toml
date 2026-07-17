@@ -2,15 +2,11 @@
 publish = false
 name = "example-bin-search"
 description = "Anodized example: binary search"
-version.workspace = true
-edition.workspace = true
-license.workspace = true
-repository.workspace = true
-categories.workspace = true
-keywords.workspace = true
+version = "0.0.0"
+edition = "2024"
 
 [dependencies]
-anodized = { workspace = true }
+anodized = { path = "../../crates/anodized" }
 
 [dev-dependencies]
 arbitrary = "1.4.2"
