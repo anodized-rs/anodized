@@ -20,9 +20,13 @@ check-cfg = [
     "cfg(anodized_split_func)",
 ]
 
+[features]
+arbitrary = ["dep:arbitrary"]
+
 [dependencies]
 anodized-logic.workspace = true
 anodized-macros.workspace = true
+arbitrary = { optional = true, version = "1" }
 
 [dev-dependencies]
 pollster = "0.4"

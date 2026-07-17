@@ -1,7 +1,6 @@
 #![no_main]
 
 use anodized::spec;
-use arbitrary::{Arbitrary, Unstructured};
 use libfuzzer_sys::{Corpus, fuzz_target};
 
 #[spec(
@@ -20,25 +19,28 @@ pub fn find_insert_index<T: Ord>(seq: &[T], value: &T) -> usize {
     index
 }
 
-pub fn __anodized_fn_fuzz_find_insert_index<'__anodized_lifetime, T: Ord>(
-    data: &'__anodized_lifetime [u8],
+#[cfg(feature = "arbitrary")]
+pub fn __anodized_fn_arbitrary_find_insert_index<'__anodized_arbitrary, T: Ord, Input0, Input1>(
+    data: &'__anodized_arbitrary [u8],
 ) -> Result<usize, (bool, String)>
 where
-    Box<[T]>: Arbitrary<'__anodized_lifetime>,
-    T: Arbitrary<'__anodized_lifetime>,
+    Input0: ::std::borrow::Borrow<[T]>,
+    Input0: ::anodized::arbitrary::Arbitrary<'__anodized_arbitrary>,
+    Input1: ::std::borrow::Borrow<T>,
+    Input1: ::anodized::arbitrary::Arbitrary<'__anodized_arbitrary>,
 {
-    let mut unst = Unstructured::new(data);
-    let Ok(input_0) = <Box<[T]> as Arbitrary>::arbitrary(&mut unst) else {
+    let mut unst = ::anodized::arbitrary::Unstructured::new(data);
+    let Ok(input_0) = <Input0 as ::anodized::arbitrary::Arbitrary>::arbitrary(&mut unst) else {
         return Err((false, "could not generate input_0".into()));
     };
-    let Ok(input_1) = <T as Arbitrary>::arbitrary(&mut unst) else {
+    let Ok(input_1) = <Input1 as ::anodized::arbitrary::Arbitrary>::arbitrary(&mut unst) else {
         return Err((false, "could not generate input_1".into()));
     };
-    __anodized_fn_split_find_insert_index(&input_0, &input_1)
+    __anodized_fn_split_find_insert_index(input_0.borrow(), input_1.borrow())
 }
 
 fuzz_target!(|data: &[u8]| -> Corpus {
-    match __anodized_fn_fuzz_find_insert_index::<i32>(data) {
+    match __anodized_fn_arbitrary_find_insert_index::<i32, Box<[i32]>, i32>(data) {
         Ok(_) => Corpus::Keep,
         Err((false, _)) => Corpus::Reject,
         Err((true, errors)) => panic!("postcondition failed:{errors}"),
