@@ -20,7 +20,7 @@ pub fn find_insert_index<T: Ord>(seq: &[T], value: &T) -> usize {
     index
 }
 
-fn __anodized_fn_fuzz_find_insert_index<'__anodized_lifetime, T: Ord>(
+pub fn __anodized_fn_fuzz_find_insert_index<'__anodized_lifetime, T: Ord>(
     data: &'__anodized_lifetime [u8],
 ) -> Result<usize, (bool, String)>
 where
@@ -29,10 +29,10 @@ where
 {
     let mut unst = Unstructured::new(data);
     let Ok(input_0) = <Box<[T]> as Arbitrary>::arbitrary(&mut unst) else {
-        return Err((false, "could not generated input_0".into()));
+        return Err((false, "could not generate input_0".into()));
     };
     let Ok(input_1) = <T as Arbitrary>::arbitrary(&mut unst) else {
-        return Err((false, "could not generated input_1".into()));
+        return Err((false, "could not generate input_1".into()));
     };
     __anodized_fn_split_find_insert_index(&input_0, &input_1)
 }
