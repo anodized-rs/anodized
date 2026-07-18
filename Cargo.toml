@@ -3,6 +3,7 @@ members = [
     "crates/anodized",
     "crates/anodized-core",
     "crates/anodized-fmt",
+    "crates/anodized-fuzz",
     "crates/anodized-logic",
     "crates/anodized-macros",
     "crates/test-util",
