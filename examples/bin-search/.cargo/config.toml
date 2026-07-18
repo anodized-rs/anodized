@@ -1,0 +1,15 @@
+target-applies-to-host = false
+
+[host]
+rustflags = [
+    "--cfg", "anodized_print",
+    "--cfg", "anodized_panic",
+    "--cfg", "anodized_split_func",
+]
+
+[target.aarch64-apple-darwin]
+rustflags = [
+    "--cfg", "anodized_print",
+    "--cfg", "anodized_panic",
+    "--cfg", "anodized_split_func",
+]
