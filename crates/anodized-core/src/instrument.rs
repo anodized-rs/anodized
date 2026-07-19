@@ -42,6 +42,16 @@ impl Mode {
         !matches!(self, Mode::ChangeNothing)
     }
 
+    pub fn does_split_func(&self) -> bool {
+        if let Self::InjectChecks(check_settings) = self
+            && let Some(panic_settings) = &check_settings.does_panic
+        {
+            panic_settings.split_func
+        } else {
+            false
+        }
+    }
+
     pub fn with_split_func(&self, value: bool) -> Self {
         match self {
             Mode::ChangeNothing => Mode::ChangeNothing,

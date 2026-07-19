@@ -1,6 +1,7 @@
 #![doc = include_str!("../README.md")]
 
 use proc_macro::TokenStream;
+use proc_macro2::Span;
 use quote::ToTokens;
 use syn::{Expr, Item, TraitItemFn, parse_macro_input};
 
@@ -107,6 +108,15 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
 ///     - `<Type as Trait>::trait_fn(...)`
 #[proc_macro]
 pub fn try_call(args: TokenStream) -> TokenStream {
+    if !CONFIG.does_split_func() {
+        return syn::Error::new(
+            Span::call_site(),
+            "`try_call` needs the `anodized_split_func` build `cfg` to be enabled",
+        )
+        .to_compile_error()
+        .into();
+    }
+
     let expr = parse_macro_input!(args as Expr);
 
     match make_try_call(expr) {
