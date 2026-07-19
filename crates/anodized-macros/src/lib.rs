@@ -6,7 +6,7 @@ use syn::{Expr, Item, TraitItemFn, parse_macro_input};
 
 use anodized_core::{
     DataSpec, Spec,
-    instrument::{CheckSettings, Mode, PanicSettings, fns::make_call_fuzzed, make_item_error},
+    instrument::{CheckSettings, Mode, PanicSettings, fns::split_call, make_item_error},
 };
 
 const CONFIG: Mode = if cfg!(anodized_discard_specs) {
@@ -108,9 +108,9 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
 ///     - `Err((true, errors))` if postconditions failed.
 #[proc_macro]
 pub fn fuzz_fn_call(args: TokenStream) -> TokenStream {
-    let call = parse_macro_input!(args as Expr);
+    let expr = parse_macro_input!(args as Expr);
 
-    match make_call_fuzzed(call) {
+    match split_call(expr) {
         Ok(call) => call.into_token_stream().into(),
         Err(error) => error.to_compile_error().into(),
     }
@@ -146,10 +146,7 @@ mod tests {
 
         for (input, expected) in calls {
             assert_eq!(
-                make_call_fuzzed(input)
-                    .unwrap()
-                    .into_token_stream()
-                    .to_string(),
+                split_call(input).unwrap().into_token_stream().to_string(),
                 expected.to_string()
             );
         }
@@ -157,7 +154,7 @@ mod tests {
 
     #[test]
     fn rejects_unsupported_expressions() {
-        let error = make_call_fuzzed(parse_quote!(free_fn(value))).unwrap_err();
+        let error = split_call(parse_quote!(free_fn(value))).unwrap_err();
         assert_eq!(
             error.to_string(),
             "fuzz_fn! expects a qualified function call or method call"

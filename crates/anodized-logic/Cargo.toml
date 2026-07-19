@@ -4,6 +4,7 @@ description = "Helps Anodized embed non-trivial elements of logic into Rust code
 
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 readme = "README.md"
 repository.workspace = true
 categories.workspace = true

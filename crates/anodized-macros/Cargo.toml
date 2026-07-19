@@ -4,6 +4,7 @@ description = "Proc macros used by the Anodized specification system"
 
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 readme = "README.md"
 repository.workspace = true
 categories.workspace = true

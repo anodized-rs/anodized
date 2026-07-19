@@ -383,28 +383,26 @@ pub fn make_split_fn_ident(ident: &Ident) -> Ident {
     Ident::new(&format!("__anodized_fn_split_{ident}"), ident.span())
 }
 
-pub fn make_call_fuzzed(mut call: Expr) -> Result<Expr> {
-    match &mut call {
-        Expr::Call(call) => match call.func.as_mut() {
-            Expr::Path(path) if path.qself.is_some() || path.path.segments.len() > 1 => {
-                let segment = path.path.segments.last_mut().expect("qualified path");
-                segment.ident = make_split_fn_ident(&segment.ident);
+pub fn split_call(mut expr: Expr) -> Result<Expr> {
+    match &mut expr {
+        Expr::Call(fn_call) => {
+            if let Expr::Path(path) = fn_call.func.as_mut()
+                && (path.qself.is_some() || path.path.segments.len() > 1)
+            {
+                let last_segment = path.path.segments.last_mut().expect("last segment");
+                last_segment.ident = make_split_fn_ident(&last_segment.ident);
+                return Ok(expr);
             }
-            _ => {
-                return Err(syn::Error::new_spanned(
-                    call,
-                    "fuzz_fn! expects a qualified function call or method call",
-                ));
-            }
-        },
-        Expr::MethodCall(method) => method.method = make_split_fn_ident(&method.method),
-        _ => {
-            return Err(syn::Error::new_spanned(
-                call,
-                "fuzz_fn! expects a qualified function call or method call",
-            ));
         }
+        Expr::MethodCall(method_call) => {
+            method_call.method = make_split_fn_ident(&method_call.method);
+            return Ok(expr);
+        }
+        _ => {}
     }
 
-    Ok(call)
+    return Err(syn::Error::new_spanned(
+        expr,
+        "must be a method call or a qualified function call",
+    ));
 }
