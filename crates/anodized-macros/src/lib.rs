@@ -87,3 +87,25 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
         Err(e) => e.to_compile_error().into(),
     }
 }
+
+/// Call a function with fuzzing instrumentation.
+///
+/// The macro must wrap a call expression, targeting one of the following cases:
+/// - a free function with a qualified name:
+///     - `qualified::free_fn(...)`
+/// - a method:
+///     - `receiver.method(...)`
+/// - a function qualified by a type or trait:
+///     - `Type::associated_fn(...)`
+///     - `<Type>::associated_fn(...)`
+///     - `<Type as Trait>::trait_fn(...)`
+///
+/// Let `T` be the original function's return type. The fuzzed call returns:
+///     - `Result<T, (bool, String)>`
+///     - `Ok(output)` if pre- and postconditions passed.
+///     - `Err((false, errors))` if preconditions failed.
+///     - `Err((true, errors))` if postconditions failed.
+#[proc_macro]
+pub fn fuzz_fn(args: TokenStream) -> TokenStream {
+    todo!()
+}

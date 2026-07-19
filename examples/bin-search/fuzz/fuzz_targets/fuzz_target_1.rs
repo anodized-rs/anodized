@@ -1,5 +1,6 @@
 #![no_main]
 
+use anodized_fuzz::fuzz_fn;
 use libfuzzer_sys::arbitrary::{Arbitrary, Error, Unstructured};
 use libfuzzer_sys::{fuzz_target, Corpus};
 
@@ -8,7 +9,7 @@ fuzz_target!(|data: &[u8]| -> Corpus {
     let Ok((seq, value)) = <(AscendingVec<i32>, i32) as Arbitrary>::arbitrary(&mut unst) else {
         return Corpus::Reject;
     };
-    match ::bin_search::__anodized_fn_split_bin_search(&seq, &value) {
+    match fuzz_fn!(bin_search::bin_search(&seq, &value)) {
         Ok(_) => Corpus::Keep,
         Err((false, _)) => Corpus::Reject,
         Err((true, errors)) => {
