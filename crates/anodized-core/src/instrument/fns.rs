@@ -320,10 +320,10 @@ impl CheckSettings {
                 (
                     quote! { Ok(#output_ident) },
                     Some(parse_quote! {
-                        return ::anodized::result::err_pre(__anodized_errors);
+                        return ::anodized::result::pre_err(__anodized_errors);
                     }),
                     Some(parse_quote! {
-                        return ::anodized::result::err_post(#output_ident, __anodized_errors);
+                        return ::anodized::result::post_err(#output_ident, __anodized_errors);
                     }),
                 )
             } else {
