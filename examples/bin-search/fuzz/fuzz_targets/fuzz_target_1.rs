@@ -1,6 +1,6 @@
 #![no_main]
 
-use anodized_fuzz::fuzz_fn;
+use anodized_fuzz::fuzz_fn_call;
 use libfuzzer_sys::arbitrary::{Arbitrary, Error, Unstructured};
 use libfuzzer_sys::{fuzz_target, Corpus};
 
@@ -9,7 +9,8 @@ fuzz_target!(|data: &[u8]| -> Corpus {
     let Ok((seq, value)) = <(AscendingVec<i32>, i32) as Arbitrary>::arbitrary(&mut unst) else {
         return Corpus::Reject;
     };
-    match fuzz_fn!(bin_search::bin_search(&seq, &value)) {
+    let result = fuzz_fn_call! { bin_search::bin_search(&seq, &value) };
+    match result {
         Ok(_) => Corpus::Keep,
         Err((false, _)) => Corpus::Reject,
         Err((true, errors)) => {

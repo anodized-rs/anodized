@@ -378,3 +378,33 @@ impl CheckSettings {
         }
     }
 }
+
+pub fn make_split_fn_ident(ident: &Ident) -> Ident {
+    Ident::new(&format!("__anodized_fn_split_{ident}"), ident.span())
+}
+
+pub fn make_call_fuzzed(mut call: Expr) -> Result<Expr> {
+    match &mut call {
+        Expr::Call(call) => match call.func.as_mut() {
+            Expr::Path(path) if path.qself.is_some() || path.path.segments.len() > 1 => {
+                let segment = path.path.segments.last_mut().expect("qualified path");
+                segment.ident = make_split_fn_ident(&segment.ident);
+            }
+            _ => {
+                return Err(syn::Error::new_spanned(
+                    call,
+                    "fuzz_fn! expects a qualified function call or method call",
+                ));
+            }
+        },
+        Expr::MethodCall(method) => method.method = make_split_fn_ident(&method.method),
+        _ => {
+            return Err(syn::Error::new_spanned(
+                call,
+                "fuzz_fn! expects a qualified function call or method call",
+            ));
+        }
+    }
+
+    Ok(call)
+}

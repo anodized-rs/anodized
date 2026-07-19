@@ -6,7 +6,7 @@ use syn::{Expr, Item, TraitItemFn, parse_macro_input};
 
 use anodized_core::{
     DataSpec, Spec,
-    instrument::{CheckSettings, Mode, PanicSettings, make_item_error},
+    instrument::{CheckSettings, Mode, PanicSettings, fns::make_call_fuzzed, make_item_error},
 };
 
 const CONFIG: Mode = if cfg!(anodized_discard_specs) {
@@ -89,7 +89,7 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
     }
 }
 
-/// Call a function with fuzzing instrumentation.
+/// Transform a function call for fuzzing.
 ///
 /// The macro must wrap a call expression, targeting one of the following cases:
 /// - a free function with a qualified name:
@@ -107,43 +107,13 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
 ///     - `Err((false, errors))` if preconditions failed.
 ///     - `Err((true, errors))` if postconditions failed.
 #[proc_macro]
-pub fn fuzz_fn(args: TokenStream) -> TokenStream {
+pub fn fuzz_fn_call(args: TokenStream) -> TokenStream {
     let call = parse_macro_input!(args as Expr);
 
-    match fuzzed_call(call) {
+    match make_call_fuzzed(call) {
         Ok(call) => call.into_token_stream().into(),
         Err(error) => error.to_compile_error().into(),
     }
-}
-
-fn fuzzed_call(mut call: Expr) -> syn::Result<Expr> {
-    match &mut call {
-        Expr::Call(call) => match call.func.as_mut() {
-            Expr::Path(path) if path.qself.is_some() || path.path.segments.len() > 1 => {
-                let segment = path.path.segments.last_mut().expect("qualified path");
-                segment.ident = split_fn_ident(&segment.ident);
-            }
-            _ => {
-                return Err(syn::Error::new_spanned(
-                    call,
-                    "fuzz_fn! expects a qualified function call or method call",
-                ));
-            }
-        },
-        Expr::MethodCall(method) => method.method = split_fn_ident(&method.method),
-        _ => {
-            return Err(syn::Error::new_spanned(
-                call,
-                "fuzz_fn! expects a qualified function call or method call",
-            ));
-        }
-    }
-
-    Ok(call)
-}
-
-fn split_fn_ident(ident: &syn::Ident) -> syn::Ident {
-    syn::Ident::new(&format!("__anodized_fn_split_{ident}"), ident.span())
 }
 
 #[cfg(test)]
@@ -176,7 +146,10 @@ mod tests {
 
         for (input, expected) in calls {
             assert_eq!(
-                fuzzed_call(input).unwrap().into_token_stream().to_string(),
+                make_call_fuzzed(input)
+                    .unwrap()
+                    .into_token_stream()
+                    .to_string(),
                 expected.to_string()
             );
         }
@@ -184,7 +157,7 @@ mod tests {
 
     #[test]
     fn rejects_unsupported_expressions() {
-        let error = fuzzed_call(parse_quote!(free_fn(value))).unwrap_err();
+        let error = make_call_fuzzed(parse_quote!(free_fn(value))).unwrap_err();
         assert_eq!(
             error.to_string(),
             "fuzz_fn! expects a qualified function call or method call"
