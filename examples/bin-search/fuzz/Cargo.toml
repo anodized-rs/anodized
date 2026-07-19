@@ -8,8 +8,8 @@ edition = "2024"
 cargo-fuzz = true
 
 [dependencies]
-anodized-fuzz = { path = "../../../crates/anodized-fuzz" }
-libfuzzer-sys = "0.4"
+anodized = { path = "../../../crates/anodized" }
+libfuzzer-sys = { version = "0.4", features = ["arbitrary-derive"] }
 bin-search = { package = "example-bin-search", path = ".." }
 
 [[bin]]

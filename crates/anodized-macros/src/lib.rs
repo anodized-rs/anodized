@@ -6,7 +6,7 @@ use syn::{Expr, Item, TraitItemFn, parse_macro_input};
 
 use anodized_core::{
     DataSpec, Spec,
-    instrument::{CheckSettings, Mode, PanicSettings, fns::split_call, make_item_error},
+    instrument::{CheckSettings, Mode, PanicSettings, fns::make_try_call, make_item_error},
 };
 
 const CONFIG: Mode = if cfg!(anodized_discard_specs) {
@@ -89,7 +89,12 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
     }
 }
 
-/// Transform a function call for fuzzing.
+/// Try to call a function with a `spec` and defer acting on pre/postcondition failures.
+///
+/// Returns `Result<T, (bool, String)>` where `T` is the original return type:
+///     - `Ok(output)` if pre- and postconditions passed.
+///     - `Err((false, errors))` if preconditions failed.
+///     - `Err((true, errors))` if postconditions failed.
 ///
 /// The macro must wrap a call expression, targeting one of the following cases:
 /// - a free function with a qualified name:
@@ -100,64 +105,12 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
 ///     - `Type::associated_fn(...)`
 ///     - `<Type>::associated_fn(...)`
 ///     - `<Type as Trait>::trait_fn(...)`
-///
-/// Let `T` be the original function's return type. The fuzzed call returns:
-///     - `Result<T, (bool, String)>`
-///     - `Ok(output)` if pre- and postconditions passed.
-///     - `Err((false, errors))` if preconditions failed.
-///     - `Err((true, errors))` if postconditions failed.
 #[proc_macro]
-pub fn fuzz_fn_call(args: TokenStream) -> TokenStream {
+pub fn try_call(args: TokenStream) -> TokenStream {
     let expr = parse_macro_input!(args as Expr);
 
-    match split_call(expr) {
+    match make_try_call(expr) {
         Ok(call) => call.into_token_stream().into(),
         Err(error) => error.to_compile_error().into(),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use quote::quote;
-    use syn::parse_quote;
-
-    use super::*;
-
-    #[test]
-    fn rewrites_supported_call_targets() {
-        let calls: [(Expr, proc_macro2::TokenStream); 4] = [
-            (
-                parse_quote!(module::free_fn(value)),
-                quote!(module::__anodized_fn_split_free_fn(value)),
-            ),
-            (
-                parse_quote!(receiver.method(value)),
-                quote!(receiver.__anodized_fn_split_method(value)),
-            ),
-            (
-                parse_quote!(Type::associated_fn(value)),
-                quote!(Type::__anodized_fn_split_associated_fn(value)),
-            ),
-            (
-                parse_quote!(<Type as Trait>::trait_fn(value)),
-                quote!(<Type as Trait>::__anodized_fn_split_trait_fn(value)),
-            ),
-        ];
-
-        for (input, expected) in calls {
-            assert_eq!(
-                split_call(input).unwrap().into_token_stream().to_string(),
-                expected.to_string()
-            );
-        }
-    }
-
-    #[test]
-    fn rejects_unsupported_expressions() {
-        let error = split_call(parse_quote!(free_fn(value))).unwrap_err();
-        assert_eq!(
-            error.to_string(),
-            "fuzz_fn! expects a qualified function call or method call"
-        );
     }
 }

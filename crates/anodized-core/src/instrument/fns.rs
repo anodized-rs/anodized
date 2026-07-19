@@ -383,7 +383,7 @@ pub fn make_split_fn_ident(ident: &Ident) -> Ident {
     Ident::new(&format!("__anodized_fn_split_{ident}"), ident.span())
 }
 
-pub fn split_call(mut expr: Expr) -> Result<Expr> {
+pub fn make_try_call(mut expr: Expr) -> Result<Expr> {
     match &mut expr {
         Expr::Call(fn_call) => {
             if let Expr::Path(path) = fn_call.func.as_mut()
