@@ -177,7 +177,7 @@ jobs:
         run: cargo build
 
       - name: Lint fuzz targets
-        run: cargo clippy -p fuzz --all-targets -- -D warnings
+        run: cargo clippy --manifest-path ./fuzz/Cargo.toml --all-targets -- -D warnings
 
       - name: Install cargo-fuzz
         run: cargo install cargo-fuzz
