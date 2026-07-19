@@ -126,9 +126,13 @@ fn emit_try_fn_instrument_item_impl() {
         impl IMPL_TYPE {
             fn FUNC(input_0: TYPE_1, input_1: TYPE_2) -> RET_TYPE {
                 match Self::__anodized_fn_try_FUNC(input_0, input_1) {
-                    Ok(output) => output,
-                    Err((false, errors)) => panic!("precondition failed:{errors}"),
-                    Err((true, errors)) => panic!("postcondition failed:{errors}"),
+                    ::anodized::result::Result::Ok(output) => output,
+                    ::anodized::result::Result::Err(
+                        ::anodized::result::Error::Pre(errors)
+                    ) => panic!("precondition failed:{errors}"),
+                    ::anodized::result::Result::Err(
+                        ::anodized::result::Error::Post(_, errors)
+                    ) => panic!("postcondition failed:{errors}"),
                 }
             }
 
@@ -145,7 +149,7 @@ fn emit_try_fn_instrument_item_impl() {
                         & (__anodized_eval_pre(|| -> bool { COND_2 })
                             || __anodized_errors.push_str("\n    COND_2") != ());
                     if !__anodized_precond {
-                        return Err((false, __anodized_errors));
+                        return ::anodized::result::pre_err(__anodized_errors);
                     }
                 }
                 let (__anodized_output): (RET_TYPE) = ((|| { BODY })());
@@ -158,7 +162,7 @@ fn emit_try_fn_instrument_item_impl() {
                         & (__anodized_eval_post(|PAT_1: &RET_TYPE| -> bool { COND_3 }, &__anodized_output)
                             || __anodized_errors.push_str("\n    | PAT_1 | COND_3") != ());
                     if !__anodized_postcond {
-                        return Err((true, __anodized_errors));
+                        return ::anodized::result::post_err(__anodized_output, __anodized_errors);
                     }
                 }
                 Ok(__anodized_output)

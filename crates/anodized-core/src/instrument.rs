@@ -172,7 +172,7 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
                         ::anodized::result::Error::Pre(errors)
                     ) => panic!("precondition failed:{errors}"),
                     ::anodized::result::Result::Err(
-                        ::anodized::result::Error::Post(output, errors)
+                        ::anodized::result::Error::Post(_, errors)
                     ) => panic!("postcondition failed:{errors}"),
                 }
             }
