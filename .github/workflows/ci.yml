@@ -165,7 +165,7 @@ jobs:
       - name: Install Rust nightly toolchain
         uses: dtolnay/rust-toolchain@nightly
         with:
-          components: clippy
+          components: clippy rustfmt
 
       - name: Check formatting
         run: cargo fmt --all -- --check
