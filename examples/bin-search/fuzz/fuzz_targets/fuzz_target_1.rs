@@ -1,3 +1,4 @@
+//! In the future, an `anodized-fuzz` tool should generate this harness.
 #![no_main]
 
 use anodized::runtime::try_call;
@@ -20,7 +21,7 @@ fuzz_target!(|data: &[u8]| -> Corpus {
         Ok(_) => Corpus::Keep,
         // When preconditions are violated, reject the input.
         Err((false, _)) => Corpus::Reject,
-        // When postcondition are violated, panic to signal a counter-example.
+        // When postconditions are violated, panic to signal a counter-example.
         Err((true, errors)) => {
             eprintln!("inputs:");
             dbg!(inputs.seq);
@@ -30,7 +31,6 @@ fuzz_target!(|data: &[u8]| -> Corpus {
     }
 });
 
-/// In the future, the `anodized-fuzz` tool will generate this boilerplate.
 #[derive(Debug, Arbitrary)]
 struct Inputs<T: Ord> {
     seq: AscendingVec<T>,
