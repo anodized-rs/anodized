@@ -158,7 +158,7 @@ fn split_panic_instrument_item_trait() {
             }
 
             fn FUNC(&self, input_1: TYPE_1, input_2: TYPE_2) -> RET_TYPE {
-                match Self::__anodized_fn_split_FUNC(self, input_1, input_2) {
+                match Self::__anodized_fn_try_FUNC(self, input_1, input_2) {
                     Ok(output) => output,
                     Err((false, errors)) => panic!("precondition failed:{errors}"),
                     Err((true, errors)) => panic!("postcondition failed:{errors}"),
@@ -167,7 +167,7 @@ fn split_panic_instrument_item_trait() {
 
             #[doc(hidden)]
             #[inline]
-            fn __anodized_fn_split_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2)
+            fn __anodized_fn_try_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2)
                 -> ::core::result::Result<RET_TYPE, (bool, ::std::string::String)>
             {
                 if true {

@@ -380,7 +380,7 @@ impl CheckSettings {
 }
 
 pub(crate) fn make_split_fn_ident(ident: &Ident) -> Ident {
-    Ident::new(&format!("__anodized_fn_split_{ident}"), ident.span())
+    Ident::new(&format!("__anodized_fn_try_{ident}"), ident.span())
 }
 
 pub fn make_try_call(mut expr: Expr) -> Result<Expr> {

@@ -139,7 +139,7 @@ fn split_panic_instrument_item_fn() {
 
     let expected: TokenStream = parse_quote! {
         fn FUNC(&self, input_1: TYPE_1, input_2: TYPE_2) -> RET_TYPE {
-            match __anodized_fn_split_FUNC(self, input_1, input_2) {
+            match __anodized_fn_try_FUNC(self, input_1, input_2) {
                 Ok(output) => output,
                 Err((false, errors)) => panic!("precondition failed:{errors}"),
                 Err((true, errors)) => panic!("postcondition failed:{errors}"),
@@ -148,7 +148,7 @@ fn split_panic_instrument_item_fn() {
 
         #[doc(hidden)]
         #[inline]
-        fn __anodized_fn_split_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2)
+        fn __anodized_fn_try_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2)
             -> ::core::result::Result<RET_TYPE, (bool, ::std::string::String)>
         {
             if true {
@@ -1023,7 +1023,7 @@ fn try_call_free_fn() {
     };
 
     let expected: Expr = parse_quote! {
-        module::__anodized_fn_split_FUNC(arg_1, arg_2)
+        module::__anodized_fn_try_FUNC(arg_1, arg_2)
     };
 
     let observed = make_try_call(input).expect("tryify");
@@ -1037,7 +1037,7 @@ fn try_call_method() {
     };
 
     let expected: Expr = parse_quote! {
-        receiver.__anodized_fn_split_METHOD(arg_1, arg_2)
+        receiver.__anodized_fn_try_METHOD(arg_1, arg_2)
     };
 
     let observed = make_try_call(input).expect("tryify");
@@ -1051,7 +1051,7 @@ fn try_call_associated_fn() {
     };
 
     let expected: Expr = parse_quote! {
-        Type::__anodized_fn_split_FUNC(arg_1, arg_2)
+        Type::__anodized_fn_try_FUNC(arg_1, arg_2)
     };
 
     let observed = make_try_call(input).expect("tryify");
@@ -1065,7 +1065,7 @@ fn try_call_turbofish_associated_fn() {
     };
 
     let expected: Expr = parse_quote! {
-        <Type>::__anodized_fn_split_FUNC(arg_1, arg_2)
+        <Type>::__anodized_fn_try_FUNC(arg_1, arg_2)
     };
 
     let observed = make_try_call(input).expect("tryify");
@@ -1079,7 +1079,7 @@ fn try_call_trait_fn() {
     };
 
     let expected: Expr = parse_quote! {
-        <Type as Trait>::__anodized_fn_split_FUNC(arg_1, arg_2)
+        <Type as Trait>::__anodized_fn_try_FUNC(arg_1, arg_2)
     };
 
     let observed = make_try_call(input).expect("tryify");
