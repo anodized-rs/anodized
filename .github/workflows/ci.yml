@@ -186,4 +186,4 @@ jobs:
         run: cargo clippy -p fuzz --all-targets -- -D warnings
 
       - name: Build fuzz targets
-        run: cargo +nightly fuzz build
+        run: cargo +nightly fuzz build -Ztarget-applies-to-host -Zhost-config
