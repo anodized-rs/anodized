@@ -379,7 +379,7 @@ impl CheckSettings {
     }
 }
 
-pub fn make_split_fn_ident(ident: &Ident) -> Ident {
+pub(crate) fn make_split_fn_ident(ident: &Ident) -> Ident {
     Ident::new(&format!("__anodized_fn_split_{ident}"), ident.span())
 }
 

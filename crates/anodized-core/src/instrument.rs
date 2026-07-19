@@ -146,10 +146,7 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
     }
 
     fn build_split_fn(is_impl: bool, sig: &mut Signature, body: &mut Block) -> Ident {
-        let mangled_ident = Ident::new(
-            &format!("__anodized_fn_split_{}", sig.ident),
-            sig.ident.span(),
-        );
+        let mangled_ident = fns::make_split_fn_ident(&sig.ident);
 
         Self::build_wrapper_fn_signature(sig);
 
