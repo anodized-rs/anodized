@@ -129,7 +129,7 @@ fn default_instrument_item_fn() {
 }
 
 #[test]
-fn emit_try_fn_item_fn() {
+fn emit_try_fn_instrument_item_fn() {
     let fn_spec = make_complex_spec();
     let item_fn: ItemFn = parse_quote! {
         fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
