@@ -34,7 +34,7 @@ pub struct CheckSettings {
 #[derive(Debug, Clone)]
 pub struct PanicSettings {
     /// Generate an entry point that defers the panic. Used for fuzzing, PBT, etc.
-    pub split_func: bool,
+    pub has_try_fn: bool,
 }
 
 impl Mode {
@@ -42,23 +42,23 @@ impl Mode {
         !matches!(self, Mode::ChangeNothing)
     }
 
-    pub fn does_split_func(&self) -> bool {
+    pub fn emits_try_fn(&self) -> bool {
         if let Self::InjectChecks(check_settings) = self
             && let Some(panic_settings) = &check_settings.does_panic
         {
-            panic_settings.split_func
+            panic_settings.has_try_fn
         } else {
             false
         }
     }
 
-    pub fn with_split_func(&self, value: bool) -> Self {
+    pub fn with_try_fn(&self, value: bool) -> Self {
         match self {
             Mode::ChangeNothing => Mode::ChangeNothing,
             Mode::InjectChecks(check_settings) => {
                 let mut check_settings = check_settings.clone();
                 if let Some(panic_settings) = &mut check_settings.does_panic {
-                    panic_settings.split_func = value;
+                    panic_settings.has_try_fn = value;
                 };
                 Mode::InjectChecks(check_settings)
             }
@@ -121,16 +121,15 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
 
         if let Self::InjectChecks(check_settings) = self
             && let Some(ref panic_settings) = check_settings.does_panic
-            && panic_settings.split_func
+            && panic_settings.has_try_fn
         {
-            // Build a wrapper that forwards to the "split" function.
+            // Build a wrapper that forwards to the "try_fn" entry point.
             let mut wrapper_fn = item_fn.clone();
             let mangled_ident =
-                Self::build_split_fn(false, &mut wrapper_fn.sig, wrapper_fn.block.as_mut());
+                Self::build_try_fn(false, &mut wrapper_fn.sig, wrapper_fn.block.as_mut());
             wrapper_fn.to_tokens(&mut tokens);
 
-            // "Split" the original function by mangling its return type.
-            // The "split" entry point is used for e.g. fuzzing and PBT.
+            // Create the "try_fn" entry point for e.g. fuzzing and PBT.
             item_fn.sig.ident = mangled_ident;
             item_fn.sig.output = match item_fn.sig.output {
                 ReturnType::Default => parse_quote!(-> Result<(), (bool, ::std::string::String)>),
@@ -145,8 +144,8 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
         Ok(tokens)
     }
 
-    fn build_split_fn(is_impl: bool, sig: &mut Signature, body: &mut Block) -> Ident {
-        let mangled_ident = fns::make_split_fn_ident(&sig.ident);
+    fn build_try_fn(is_impl: bool, sig: &mut Signature, body: &mut Block) -> Ident {
+        let mangled_ident = fns::make_try_fn_ident(&sig.ident);
 
         Self::build_wrapper_fn_signature(sig);
 
@@ -234,12 +233,12 @@ impl CheckSettings {
 
     pub(crate) const PRINT_AND_PANIC: Self = Self {
         does_print: true,
-        does_panic: Some(PanicSettings { split_func: false }),
+        does_panic: Some(PanicSettings { has_try_fn: false }),
     };
 
-    pub(crate) const PRINT_AND_SPLIT_PANIC: Self = Self {
+    pub(crate) const PRINT_AND_TRY: Self = Self {
         does_print: true,
-        does_panic: Some(PanicSettings { split_func: true }),
+        does_panic: Some(PanicSettings { has_try_fn: true }),
     };
 }
 

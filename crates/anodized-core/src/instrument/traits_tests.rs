@@ -125,7 +125,7 @@ fn default_instrument_item_trait() {
 }
 
 #[test]
-fn split_panic_instrument_item_trait() {
+fn emit_try_fn_instrument_item_trait() {
     let trait_spec = DataSpec::empty();
     let item_trait: ItemTrait = parse_quote! {
         trait TRAIT {
@@ -158,7 +158,7 @@ fn split_panic_instrument_item_trait() {
             }
 
             fn FUNC(&self, input_1: TYPE_1, input_2: TYPE_2) -> RET_TYPE {
-                match Self::__anodized_fn_split_FUNC(self, input_1, input_2) {
+                match Self::__anodized_fn_try_FUNC(self, input_1, input_2) {
                     Ok(output) => output,
                     Err((false, errors)) => panic!("precondition failed:{errors}"),
                     Err((true, errors)) => panic!("postcondition failed:{errors}"),
@@ -167,7 +167,7 @@ fn split_panic_instrument_item_trait() {
 
             #[doc(hidden)]
             #[inline]
-            fn __anodized_fn_split_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2)
+            fn __anodized_fn_try_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2)
                 -> ::core::result::Result<RET_TYPE, (bool, ::std::string::String)>
             {
                 if true {
@@ -201,7 +201,7 @@ fn split_panic_instrument_item_trait() {
         }
     };
 
-    let observed = Mode::InjectChecks(CheckSettings::PRINT_AND_SPLIT_PANIC)
+    let observed = Mode::InjectChecks(CheckSettings::PRINT_AND_TRY)
         .instrument_item_trait(trait_spec, item_trait)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -324,7 +324,7 @@ fn default_instrument_item_impl_trait() {
 }
 
 #[test]
-fn split_panic_instrument_item_impl_trait() {
+fn emit_try_fn_instrument_item_impl_trait() {
     let trait_spec = DataSpec::empty();
     let item_impl: ItemImpl = parse_quote! {
         impl TRAIT for IMPL_TYPE {
@@ -388,7 +388,7 @@ fn split_panic_instrument_item_impl_trait() {
         }
     };
 
-    let observed = Mode::InjectChecks(CheckSettings::PRINT_AND_SPLIT_PANIC)
+    let observed = Mode::InjectChecks(CheckSettings::PRINT_AND_TRY)
         .instrument_item_trait_impl(trait_spec, item_impl)
         .unwrap();
     assert_tokens_eq(&observed, &expected);

@@ -56,7 +56,7 @@ jobs:
           - cfg: '--config ''build.rustflags=["--cfg","anodized_print"]'''
           - cfg: '--config ''build.rustflags=["--cfg","anodized_panic"]'''
           - cfg: '--config ''build.rustflags=["--cfg","anodized_print","--cfg","anodized_panic"]'''
-          - cfg: '--config ''build.rustflags=["--cfg","anodized_print","--cfg","anodized_panic","--cfg","anodized_split_func"]'''
+          - cfg: '--config ''build.rustflags=["--cfg","anodized_print","--cfg","anodized_panic","--cfg","anodized_try"]'''
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -177,7 +177,7 @@ jobs:
         run: cargo build
 
       - name: Lint fuzz targets
-        run: cargo clippy --manifest-path ./fuzz/Cargo.toml --all-targets --config 'build.rustflags=["--cfg","anodized_print", "--cfg","anodized_panic", "--cfg","anodized_split_func"]' -- -D warnings
+        run: cargo clippy --manifest-path ./fuzz/Cargo.toml --all-targets --config 'build.rustflags=["--cfg","anodized_print", "--cfg","anodized_panic", "--cfg","anodized_try"]' -- -D warnings
 
       - name: Install cargo-fuzz
         run: cargo install cargo-fuzz

@@ -17,7 +17,7 @@ const CONFIG: Mode = if cfg!(anodized_discard_specs) {
         does_print: cfg!(anodized_print),
         does_panic: if cfg!(anodized_panic) {
             Some(PanicSettings {
-                split_func: cfg!(anodized_split_func),
+                has_try_fn: cfg!(anodized_try),
             })
         } else {
             None
@@ -108,10 +108,10 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
 ///     - `<Type as Trait>::trait_fn(...)`
 #[proc_macro]
 pub fn try_call(args: TokenStream) -> TokenStream {
-    if !CONFIG.does_split_func() {
+    if !CONFIG.emits_try_fn() {
         return syn::Error::new(
             Span::call_site(),
-            "`try_call` needs the `anodized_split_func` build `cfg` to be enabled",
+            "`try_call` needs the `anodized_try` build `cfg` to be enabled",
         )
         .to_compile_error()
         .into();

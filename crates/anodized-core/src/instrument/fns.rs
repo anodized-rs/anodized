@@ -315,7 +315,7 @@ impl CheckSettings {
 
         let (output_expr, precond_fail_action, postcond_fail_action) =
             if let Some(ref panic_settings) = self.does_panic
-                && panic_settings.split_func
+                && panic_settings.has_try_fn
             {
                 (
                     quote! { Ok(#output_ident) },
@@ -379,8 +379,8 @@ impl CheckSettings {
     }
 }
 
-pub(crate) fn make_split_fn_ident(ident: &Ident) -> Ident {
-    Ident::new(&format!("__anodized_fn_split_{ident}"), ident.span())
+pub(crate) fn make_try_fn_ident(ident: &Ident) -> Ident {
+    Ident::new(&format!("__anodized_fn_try_{ident}"), ident.span())
 }
 
 pub fn make_try_call(mut expr: Expr) -> Result<Expr> {
@@ -390,12 +390,12 @@ pub fn make_try_call(mut expr: Expr) -> Result<Expr> {
                 && (path.qself.is_some() || path.path.segments.len() > 1)
             {
                 let last_segment = path.path.segments.last_mut().expect("last segment");
-                last_segment.ident = make_split_fn_ident(&last_segment.ident);
+                last_segment.ident = make_try_fn_ident(&last_segment.ident);
                 return Ok(expr);
             }
         }
         Expr::MethodCall(method_call) => {
-            method_call.method = make_split_fn_ident(&method_call.method);
+            method_call.method = make_try_fn_ident(&method_call.method);
             return Ok(expr);
         }
         _ => {}
