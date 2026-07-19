@@ -1,4 +1,4 @@
-/// Try to call a function with a [crate::spec] and return a [Result].
+/// Try to call a function with a [`spec`](crate::spec) and return a [`Result`].
 ///
 /// The macro must wrap a call expression of the following supported cases:
 /// ```ignore
@@ -19,7 +19,7 @@
 /// ```
 pub use anodized_macros::try_call;
 
-/// Return type of a call wrapped by [try_call].
+/// Return type of a call wrapped by [`try_call!`].
 pub type Result<T> = std::result::Result<T, Error<T>>;
 
 /// Construct a precondition failure.
