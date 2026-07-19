@@ -17,7 +17,7 @@ check-cfg = [
     "cfg(anodized_discard_specs)",
     "cfg(anodized_panic)",
     "cfg(anodized_print)",
-    "cfg(anodized_split_func)",
+    "cfg(anodized_try)",
 ]
 
 [dependencies]
