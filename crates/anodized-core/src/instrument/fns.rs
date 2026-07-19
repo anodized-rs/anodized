@@ -319,8 +319,16 @@ impl CheckSettings {
             {
                 (
                     quote! { Ok(#output_ident) },
-                    Some(parse_quote! { return Err((false, __anodized_errors)); }),
-                    Some(parse_quote! { return Err((true, __anodized_errors)); }),
+                    Some(parse_quote! {
+                        return ::anodized::runtime::Result::Err(
+                            ::anodized::runtime::Error::Pre(__anodized_errors)
+                        );
+                    }),
+                    Some(parse_quote! {
+                        return ::anodized::runtime::Result::Err(
+                            ::anodized::runtime::Error::Post(#output_ident, __anodized_errors)
+                        );
+                    }),
                 )
             } else {
                 (

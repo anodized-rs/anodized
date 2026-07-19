@@ -102,18 +102,21 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                     {
                         // Build a wrapper that forwards to the "try_fn" entry point.
                         let mut wrapper_fn = item_fn.clone();
-                        let mangled_ident =
-                            Self::build_try_fn(true, &mut wrapper_fn.sig, &mut wrapper_fn.block);
+                        let mangled_ident = Self::build_try_fn_wrapper(
+                            true,
+                            &mut wrapper_fn.sig,
+                            &mut wrapper_fn.block,
+                        );
                         new_items.push(ImplItem::Fn(wrapper_fn));
 
                         // Create the "try_fn" entry point for e.g. fuzzing and PBT.
                         item_fn.sig.ident = mangled_ident;
                         item_fn.sig.output = match item_fn.sig.output {
                             ReturnType::Default => {
-                                parse_quote!(-> Result<(), (bool, ::std::string::String)>)
+                                parse_quote!(-> ::anodized::runtime::Result<()>)
                             }
                             ReturnType::Type(ra, ty) => {
-                                parse_quote!(#ra ::core::result::Result<#ty, (bool, ::std::string::String)>)
+                                parse_quote!(#ra ::anodized::runtime::Result<#ty>)
                             }
                         };
                         item_fn.attrs = vec![parse_quote!(#[doc(hidden)]), parse_quote!(#[inline])];

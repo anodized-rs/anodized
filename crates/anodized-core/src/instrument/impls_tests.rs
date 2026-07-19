@@ -135,7 +135,7 @@ fn emit_try_fn_instrument_item_impl() {
             #[doc(hidden)]
             #[inline]
             fn __anodized_fn_try_FUNC(PARAM_1: TYPE_1, PARAM_2: TYPE_2)
-                -> ::core::result::Result<RET_TYPE, (bool, ::std::string::String)>
+                -> ::anodized::runtime::Result<RET_TYPE>
             {
                 if true {
                     fn __anodized_eval_pre(c: impl Fn() -> bool) -> bool { c() }
