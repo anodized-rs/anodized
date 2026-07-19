@@ -1,7 +1,8 @@
 #![doc = include_str!("../README.md")]
 
 use proc_macro::TokenStream;
-use syn::{Item, TraitItemFn, parse_macro_input};
+use quote::ToTokens;
+use syn::{Expr, Item, TraitItemFn, parse_macro_input};
 
 use anodized_core::{
     DataSpec, Spec,
@@ -107,5 +108,86 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
 ///     - `Err((true, errors))` if postconditions failed.
 #[proc_macro]
 pub fn fuzz_fn(args: TokenStream) -> TokenStream {
-    todo!()
+    let call = parse_macro_input!(args as Expr);
+
+    match fuzzed_call(call) {
+        Ok(call) => call.into_token_stream().into(),
+        Err(error) => error.to_compile_error().into(),
+    }
+}
+
+fn fuzzed_call(mut call: Expr) -> syn::Result<Expr> {
+    match &mut call {
+        Expr::Call(call) => match call.func.as_mut() {
+            Expr::Path(path) if path.qself.is_some() || path.path.segments.len() > 1 => {
+                let segment = path.path.segments.last_mut().expect("qualified path");
+                segment.ident = split_fn_ident(&segment.ident);
+            }
+            _ => {
+                return Err(syn::Error::new_spanned(
+                    call,
+                    "fuzz_fn! expects a qualified function call or method call",
+                ));
+            }
+        },
+        Expr::MethodCall(method) => method.method = split_fn_ident(&method.method),
+        _ => {
+            return Err(syn::Error::new_spanned(
+                call,
+                "fuzz_fn! expects a qualified function call or method call",
+            ));
+        }
+    }
+
+    Ok(call)
+}
+
+fn split_fn_ident(ident: &syn::Ident) -> syn::Ident {
+    syn::Ident::new(&format!("__anodized_fn_split_{ident}"), ident.span())
+}
+
+#[cfg(test)]
+mod tests {
+    use quote::quote;
+    use syn::parse_quote;
+
+    use super::*;
+
+    #[test]
+    fn rewrites_supported_call_targets() {
+        let calls: [(Expr, proc_macro2::TokenStream); 4] = [
+            (
+                parse_quote!(module::free_fn(value)),
+                quote!(module::__anodized_fn_split_free_fn(value)),
+            ),
+            (
+                parse_quote!(receiver.method(value)),
+                quote!(receiver.__anodized_fn_split_method(value)),
+            ),
+            (
+                parse_quote!(Type::associated_fn(value)),
+                quote!(Type::__anodized_fn_split_associated_fn(value)),
+            ),
+            (
+                parse_quote!(<Type as Trait>::trait_fn(value)),
+                quote!(<Type as Trait>::__anodized_fn_split_trait_fn(value)),
+            ),
+        ];
+
+        for (input, expected) in calls {
+            assert_eq!(
+                fuzzed_call(input).unwrap().into_token_stream().to_string(),
+                expected.to_string()
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_unsupported_expressions() {
+        let error = fuzzed_call(parse_quote!(free_fn(value))).unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "fuzz_fn! expects a qualified function call or method call"
+        );
+    }
 }
