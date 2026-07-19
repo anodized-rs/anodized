@@ -1,7 +1,7 @@
 //! In the future, an `anodized-fuzz` tool should generate this harness.
 #![no_main]
 
-use anodized::runtime::{try_call, Error as FnSpecError};
+use anodized::result::{try_call, Error as FnSpecError};
 use libfuzzer_sys::arbitrary::{self, Arbitrary, Error, Unstructured};
 use libfuzzer_sys::{fuzz_target, Corpus};
 

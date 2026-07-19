@@ -113,10 +113,10 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                         item_fn.sig.ident = mangled_ident;
                         item_fn.sig.output = match item_fn.sig.output {
                             ReturnType::Default => {
-                                parse_quote!(-> ::anodized::runtime::Result<()>)
+                                parse_quote!(-> ::anodized::result::Result<()>)
                             }
                             ReturnType::Type(ra, ty) => {
-                                parse_quote!(#ra ::anodized::runtime::Result<#ty>)
+                                parse_quote!(#ra ::anodized::result::Result<#ty>)
                             }
                         };
                         item_fn.attrs = vec![parse_quote!(#[doc(hidden)]), parse_quote!(#[inline])];

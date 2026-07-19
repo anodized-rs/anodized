@@ -150,10 +150,10 @@ impl Mode {
                         func.sig.ident = mangled_ident;
                         func.sig.output = match func.sig.output {
                             ReturnType::Default => {
-                                parse_quote!(-> ::anodized::runtime::Result<()>)
+                                parse_quote!(-> ::anodized::result::Result<()>)
                             }
                             ReturnType::Type(ra, ty) => {
-                                parse_quote!(#ra ::anodized::runtime::Result<#ty>)
+                                parse_quote!(#ra ::anodized::result::Result<#ty>)
                             }
                         };
                         func.attrs = vec![parse_quote!(#[doc(hidden)]), parse_quote!(#[inline])];

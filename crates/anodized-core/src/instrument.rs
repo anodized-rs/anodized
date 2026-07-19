@@ -132,9 +132,9 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
             // Create the "try_fn" entry point for e.g. fuzzing and PBT.
             item_fn.sig.ident = mangled_ident;
             item_fn.sig.output = match item_fn.sig.output {
-                ReturnType::Default => parse_quote!(-> ::anodized::runtime::Result<()>),
+                ReturnType::Default => parse_quote!(-> ::anodized::result::Result<()>),
                 ReturnType::Type(ra, ty) => {
-                    parse_quote!(#ra ::anodized::runtime::Result<#ty>)
+                    parse_quote!(#ra ::anodized::result::Result<#ty>)
                 }
             };
             item_fn.attrs = vec![parse_quote!(#[doc(hidden)]), parse_quote!(#[inline])];
@@ -167,12 +167,12 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
         *body = parse_quote! {
             {
                 match #maybe_self #mangled_ident(#(#args),*) #maybe_await {
-                    ::anodized::runtime::Result::Ok(output) => output,
-                    ::anodized::runtime::Result::Err(
-                        ::anodized::runtime::Error::Pre(errors)
+                    ::anodized::result::Result::Ok(output) => output,
+                    ::anodized::result::Result::Err(
+                        ::anodized::result::Error::Pre(errors)
                     ) => panic!("precondition failed:{errors}"),
-                    ::anodized::runtime::Result::Err(
-                        ::anodized::runtime::Error::Post(output, errors)
+                    ::anodized::result::Result::Err(
+                        ::anodized::result::Error::Post(output, errors)
                     ) => panic!("postcondition failed:{errors}"),
                 }
             }
