@@ -42,6 +42,16 @@ impl Mode {
         !matches!(self, Mode::ChangeNothing)
     }
 
+    pub fn does_split_func(&self) -> bool {
+        if let Self::InjectChecks(check_settings) = self
+            && let Some(panic_settings) = &check_settings.does_panic
+        {
+            panic_settings.split_func
+        } else {
+            false
+        }
+    }
+
     pub fn with_split_func(&self, value: bool) -> Self {
         match self {
             Mode::ChangeNothing => Mode::ChangeNothing,
@@ -136,10 +146,7 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
     }
 
     fn build_split_fn(is_impl: bool, sig: &mut Signature, body: &mut Block) -> Ident {
-        let mangled_ident = Ident::new(
-            &format!("__anodized_fn_split_{}", sig.ident),
-            sig.ident.span(),
-        );
+        let mangled_ident = fns::make_split_fn_ident(&sig.ident);
 
         Self::build_wrapper_fn_signature(sig);
 

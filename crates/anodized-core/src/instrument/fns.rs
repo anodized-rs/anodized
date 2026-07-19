@@ -378,3 +378,31 @@ impl CheckSettings {
         }
     }
 }
+
+pub(crate) fn make_split_fn_ident(ident: &Ident) -> Ident {
+    Ident::new(&format!("__anodized_fn_split_{ident}"), ident.span())
+}
+
+pub fn make_try_call(mut expr: Expr) -> Result<Expr> {
+    match &mut expr {
+        Expr::Call(fn_call) => {
+            if let Expr::Path(path) = fn_call.func.as_mut()
+                && (path.qself.is_some() || path.path.segments.len() > 1)
+            {
+                let last_segment = path.path.segments.last_mut().expect("last segment");
+                last_segment.ident = make_split_fn_ident(&last_segment.ident);
+                return Ok(expr);
+            }
+        }
+        Expr::MethodCall(method_call) => {
+            method_call.method = make_split_fn_ident(&method_call.method);
+            return Ok(expr);
+        }
+        _ => {}
+    }
+
+    Err(syn::Error::new_spanned(
+        expr,
+        "must be a method call or a qualified function call",
+    ))
+}

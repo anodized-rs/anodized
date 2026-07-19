@@ -1015,3 +1015,85 @@ fn captures() {
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
+
+#[test]
+fn try_call_free_fn() {
+    let input: Expr = parse_quote! {
+        module::FUNC(arg_1, arg_2)
+    };
+
+    let expected: Expr = parse_quote! {
+        module::__anodized_fn_split_FUNC(arg_1, arg_2)
+    };
+
+    let observed = make_try_call(input).expect("tryify");
+    assert_eq!(expected, observed);
+}
+
+#[test]
+fn try_call_method() {
+    let input: Expr = parse_quote! {
+        receiver.METHOD(arg_1, arg_2)
+    };
+
+    let expected: Expr = parse_quote! {
+        receiver.__anodized_fn_split_METHOD(arg_1, arg_2)
+    };
+
+    let observed = make_try_call(input).expect("tryify");
+    assert_eq!(expected, observed);
+}
+
+#[test]
+fn try_call_associated_fn() {
+    let input: Expr = parse_quote! {
+        Type::FUNC(arg_1, arg_2)
+    };
+
+    let expected: Expr = parse_quote! {
+        Type::__anodized_fn_split_FUNC(arg_1, arg_2)
+    };
+
+    let observed = make_try_call(input).expect("tryify");
+    assert_eq!(expected, observed);
+}
+
+#[test]
+fn try_call_turbofish_associated_fn() {
+    let input: Expr = parse_quote! {
+        <Type>::FUNC(arg_1, arg_2)
+    };
+
+    let expected: Expr = parse_quote! {
+        <Type>::__anodized_fn_split_FUNC(arg_1, arg_2)
+    };
+
+    let observed = make_try_call(input).expect("tryify");
+    assert_eq!(expected, observed);
+}
+
+#[test]
+fn try_call_trait_fn() {
+    let input: Expr = parse_quote! {
+        <Type as Trait>::FUNC(arg_1, arg_2)
+    };
+
+    let expected: Expr = parse_quote! {
+        <Type as Trait>::__anodized_fn_split_FUNC(arg_1, arg_2)
+    };
+
+    let observed = make_try_call(input).expect("tryify");
+    assert_eq!(expected, observed);
+}
+
+#[test]
+fn try_call_invalid() {
+    let input = parse_quote! {
+        free_fn(value)
+    };
+    let error = make_try_call(input).expect_err("invalid input");
+    assert_eq!(
+        error.to_string(),
+        "must be a method call or a qualified function call",
+    );
+}

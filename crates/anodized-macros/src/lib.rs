@@ -1,11 +1,13 @@
 #![doc = include_str!("../README.md")]
 
 use proc_macro::TokenStream;
-use syn::{Item, TraitItemFn, parse_macro_input};
+use proc_macro2::Span;
+use quote::ToTokens;
+use syn::{Expr, Item, TraitItemFn, parse_macro_input};
 
 use anodized_core::{
     DataSpec, Spec,
-    instrument::{CheckSettings, Mode, PanicSettings, make_item_error},
+    instrument::{CheckSettings, Mode, PanicSettings, fns::make_try_call, make_item_error},
 };
 
 const CONFIG: Mode = if cfg!(anodized_discard_specs) {
@@ -85,5 +87,40 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
     match result {
         Ok(item) => item.into(),
         Err(e) => e.to_compile_error().into(),
+    }
+}
+
+/// Try to call a function with a `spec` and defer acting on pre/postcondition failures.
+///
+/// Returns `Result<T, (bool, String)>` where `T` is the original return type:
+///     - `Ok(output)` if pre- and postconditions passed.
+///     - `Err((false, errors))` if preconditions failed.
+///     - `Err((true, errors))` if postconditions failed.
+///
+/// The macro must wrap a call expression, targeting one of the following cases:
+/// - a free function with a qualified name:
+///     - `qualified::free_fn(...)`
+/// - a method:
+///     - `receiver.method(...)`
+/// - a function qualified by a type or trait:
+///     - `Type::associated_fn(...)`
+///     - `<Type>::associated_fn(...)`
+///     - `<Type as Trait>::trait_fn(...)`
+#[proc_macro]
+pub fn try_call(args: TokenStream) -> TokenStream {
+    if !CONFIG.does_split_func() {
+        return syn::Error::new(
+            Span::call_site(),
+            "`try_call` needs the `anodized_split_func` build `cfg` to be enabled",
+        )
+        .to_compile_error()
+        .into();
+    }
+
+    let expr = parse_macro_input!(args as Expr);
+
+    match make_try_call(expr) {
+        Ok(call) => call.into_token_stream().into(),
+        Err(error) => error.to_compile_error().into(),
     }
 }

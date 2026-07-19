@@ -8,11 +8,15 @@ members = [
     "crates/test-util",
     "fuzz",
 ]
+exclude = [
+    "examples/bin-search",
+]
 resolver = "2"
 
 [workspace.package]
 version = "0.5.1"
 edition = "2024"
+rust-version = "1.95"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/anodized-rs/anodized"
 description = "A common specification layer for Rust"
