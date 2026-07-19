@@ -129,7 +129,7 @@ fn default_instrument_item_fn() {
 }
 
 #[test]
-fn split_panic_instrument_item_fn() {
+fn emit_try_fn_item_fn() {
     let fn_spec = make_complex_spec();
     let item_fn: ItemFn = parse_quote! {
         fn FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> RET_TYPE {
@@ -202,7 +202,7 @@ fn split_panic_instrument_item_fn() {
         }
     };
 
-    let observed = Mode::InjectChecks(CheckSettings::PRINT_AND_SPLIT_PANIC)
+    let observed = Mode::InjectChecks(CheckSettings::PRINT_AND_TRY)
         .instrument_item_fn(fn_spec, item_fn)
         .unwrap();
     assert_tokens_eq(&observed, &expected);

@@ -105,7 +105,7 @@ fn default_instrument_item_impl() {
 }
 
 #[test]
-fn split_panic_instrument_item_impl() {
+fn emit_try_fn_instrument_item_impl() {
     let impl_spec = DataSpec::empty();
     let item_impl: ItemImpl = parse_quote! {
         impl IMPL_TYPE {
@@ -166,7 +166,7 @@ fn split_panic_instrument_item_impl() {
         }
     };
 
-    let observed = Mode::InjectChecks(CheckSettings::PRINT_AND_SPLIT_PANIC)
+    let observed = Mode::InjectChecks(CheckSettings::PRINT_AND_TRY)
         .instrument_item_impl(impl_spec, item_impl)
         .unwrap();
     assert_tokens_eq(&observed, &expected);

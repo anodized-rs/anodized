@@ -315,7 +315,7 @@ impl CheckSettings {
 
         let (output_expr, precond_fail_action, postcond_fail_action) =
             if let Some(ref panic_settings) = self.does_panic
-                && panic_settings.split_func
+                && panic_settings.has_try_fn
             {
                 (
                     quote! { Ok(#output_ident) },

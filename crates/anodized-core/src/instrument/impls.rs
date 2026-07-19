@@ -98,16 +98,15 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
 
                     if let Self::InjectChecks(check_settings) = self
                         && let Some(ref panic_settings) = check_settings.does_panic
-                        && panic_settings.split_func
+                        && panic_settings.has_try_fn
                     {
-                        // Build a wrapper that forwards to the "split" function.
+                        // Build a wrapper that forwards to the "try_fn" entry point.
                         let mut wrapper_fn = item_fn.clone();
                         let mangled_ident =
-                            Self::build_split_fn(true, &mut wrapper_fn.sig, &mut wrapper_fn.block);
+                            Self::build_try_fn(true, &mut wrapper_fn.sig, &mut wrapper_fn.block);
                         new_items.push(ImplItem::Fn(wrapper_fn));
 
-                        // "Split" the original function by mangling its return type.
-                        // The "split" entry point is used for e.g. fuzzing and PBT.
+                        // Create the "try_fn" entry point for e.g. fuzzing and PBT.
                         item_fn.sig.ident = mangled_ident;
                         item_fn.sig.output = match item_fn.sig.output {
                             ReturnType::Default => {

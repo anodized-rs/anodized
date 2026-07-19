@@ -125,7 +125,7 @@ fn default_instrument_item_trait() {
 }
 
 #[test]
-fn split_panic_instrument_item_trait() {
+fn emit_try_fn_instrument_item_trait() {
     let trait_spec = DataSpec::empty();
     let item_trait: ItemTrait = parse_quote! {
         trait TRAIT {
@@ -201,7 +201,7 @@ fn split_panic_instrument_item_trait() {
         }
     };
 
-    let observed = Mode::InjectChecks(CheckSettings::PRINT_AND_SPLIT_PANIC)
+    let observed = Mode::InjectChecks(CheckSettings::PRINT_AND_TRY)
         .instrument_item_trait(trait_spec, item_trait)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -324,7 +324,7 @@ fn default_instrument_item_impl_trait() {
 }
 
 #[test]
-fn split_panic_instrument_item_impl_trait() {
+fn emit_try_fn_instrument_item_impl_trait() {
     let trait_spec = DataSpec::empty();
     let item_impl: ItemImpl = parse_quote! {
         impl TRAIT for IMPL_TYPE {
@@ -388,7 +388,7 @@ fn split_panic_instrument_item_impl_trait() {
         }
     };
 
-    let observed = Mode::InjectChecks(CheckSettings::PRINT_AND_SPLIT_PANIC)
+    let observed = Mode::InjectChecks(CheckSettings::PRINT_AND_TRY)
         .instrument_item_trait_impl(trait_spec, item_impl)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
