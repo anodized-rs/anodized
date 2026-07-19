@@ -1,13 +1,9 @@
 [package]
 publish = false
-name = "example-bin-search"
+name = "bin-search"
 description = "Anodized example: binary search"
 version = "0.0.0"
 edition = "2024"
 
 [dependencies]
 anodized = { path = "../../crates/anodized" }
-
-[dev-dependencies]
-arbitrary = "1.4.2"
-libfuzzer-sys = "0.4.13"

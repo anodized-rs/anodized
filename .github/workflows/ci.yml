@@ -177,13 +177,10 @@ jobs:
         run: cargo build
 
       - name: Lint fuzz targets
-        run: cargo clippy --manifest-path ./fuzz/Cargo.toml --all-targets -- -D warnings
+        run: cargo clippy --manifest-path ./fuzz/Cargo.toml --all-targets --config 'build.rustflags=["--cfg","anodized_print", "--cfg","anodized_panic", "--cfg","anodized_split_func"]' -- -D warnings
 
       - name: Install cargo-fuzz
         run: cargo install cargo-fuzz
-
-      - name: Lint fuzz targets
-        run: cargo clippy -p fuzz --all-targets -- -D warnings
 
       - name: Build fuzz targets
         run: cargo +nightly fuzz build -Ztarget-applies-to-host -Zhost-config
