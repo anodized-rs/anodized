@@ -401,8 +401,8 @@ pub fn make_try_call(mut expr: Expr) -> Result<Expr> {
         _ => {}
     }
 
-    return Err(syn::Error::new_spanned(
+    Err(syn::Error::new_spanned(
         expr,
         "must be a method call or a qualified function call",
-    ));
+    ))
 }
