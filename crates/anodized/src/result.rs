@@ -32,6 +32,9 @@ pub fn post_err<T>(output: T, messages: Messages) -> Result<T> {
     Result::Err(Error::Post(output, messages))
 }
 
+pub use Error::Post as PostError;
+pub use Error::Pre as PreError;
+
 /// Error that represents a pre/postcondition failure.
 pub enum Error<T> {
     /// Preconditions failed.

@@ -1,7 +1,7 @@
 //! In the future, an `anodized-fuzz` tool should generate this harness.
 #![no_main]
 
-use anodized::result::{try_call, Error as FnSpecError};
+use anodized::result::{try_call, PostError, PreError};
 use libfuzzer_sys::arbitrary::{self, Arbitrary, Error, Unstructured};
 use libfuzzer_sys::{fuzz_target, Corpus};
 
@@ -20,9 +20,9 @@ fuzz_target!(|data: &[u8]| -> Corpus {
         // Successful call.
         Ok(_) => Corpus::Keep,
         // When preconditions are violated, reject the input.
-        Err(FnSpecError::Pre(_)) => Corpus::Reject,
+        Err(PreError(_)) => Corpus::Reject,
         // When postconditions are violated, panic to signal a counter-example.
-        Err(FnSpecError::Post(output, errors)) => {
+        Err(PostError(output, errors)) => {
             eprintln!("inputs:");
             dbg!(inputs.seq);
             dbg!(inputs.value);
