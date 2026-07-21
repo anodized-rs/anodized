@@ -508,7 +508,10 @@ fn sanitize_pat_for_expr(pat: &Pat) -> syn::Result<Pat> {
             &pat_wild,
             "not allowed here due to `#[spec]`",
         )),
-        _ => todo!(),
+        _ => Err(syn::Error::new_spanned(
+            &pat,
+            "not allowed here due to `#[spec]`",
+        )),
     }
 }
 
