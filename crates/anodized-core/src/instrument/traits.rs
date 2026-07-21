@@ -407,7 +407,7 @@ fn sanitize_pat_as_expr(pat: &Pat) -> syn::Result<Pat> {
         Pat::Ident(pat_ident) if pat_ident.by_ref.is_none() => {
             let None = pat_ident.by_ref else {
                 return Err(syn::Error::new_spanned(
-                    &pat_ident.by_ref,
+                    pat_ident.by_ref,
                     "not allowed here due to `#[spec]`",
                 ));
             };
@@ -470,7 +470,7 @@ fn sanitize_pat_as_expr(pat: &Pat) -> syn::Result<Pat> {
         Pat::Tuple(pat_tuple) => {
             let mut elems = syn::punctuated::Punctuated::<syn::Pat, syn::token::Comma>::new();
             for elem_pat in &pat_tuple.elems {
-                let elem_value = sanitize_pat_as_expr(&elem_pat)?;
+                let elem_value = sanitize_pat_as_expr(elem_pat)?;
                 elems.push(elem_value);
             }
             Ok(Pat::Tuple(PatTuple {
@@ -482,7 +482,7 @@ fn sanitize_pat_as_expr(pat: &Pat) -> syn::Result<Pat> {
         Pat::TupleStruct(pat_tuple_struct) => {
             let mut elems = syn::punctuated::Punctuated::<syn::Pat, syn::token::Comma>::new();
             for elem_pat in &pat_tuple_struct.elems {
-                let elem_value = sanitize_pat_as_expr(&elem_pat)?;
+                let elem_value = sanitize_pat_as_expr(elem_pat)?;
                 elems.push(elem_value);
             }
             Ok(Pat::TupleStruct(PatTupleStruct {
@@ -496,7 +496,7 @@ fn sanitize_pat_as_expr(pat: &Pat) -> syn::Result<Pat> {
         Pat::Slice(pat_slice) => {
             let mut elems = syn::punctuated::Punctuated::<syn::Pat, syn::token::Comma>::new();
             for elem_pat in &pat_slice.elems {
-                let elem_value = sanitize_pat_as_expr(&elem_pat)?;
+                let elem_value = sanitize_pat_as_expr(elem_pat)?;
                 elems.push(elem_value);
             }
             Ok(Pat::Slice(PatSlice {
@@ -507,23 +507,23 @@ fn sanitize_pat_as_expr(pat: &Pat) -> syn::Result<Pat> {
         }
         Pat::Verbatim(token_stream) => Ok(Pat::Verbatim(token_stream.clone())),
         Pat::Macro(pat_macro) => Err(syn::Error::new_spanned(
-            &pat_macro,
+            pat_macro,
             "not allowed here due to `#[spec]`",
         )),
         Pat::Or(pat_or) => Err(syn::Error::new_spanned(
-            &pat_or,
+            pat_or,
             "or-pattern not allowed here due to `#[spec]`",
         )),
         Pat::Rest(pat_rest) => Err(syn::Error::new_spanned(
-            &pat_rest,
+            pat_rest,
             "not allowed here due to `#[spec]`",
         )),
         Pat::Wild(pat_wild) => Err(syn::Error::new_spanned(
-            &pat_wild,
+            pat_wild,
             "not allowed here due to `#[spec]`",
         )),
         _ => Err(syn::Error::new_spanned(
-            &pat,
+            pat,
             "not allowed here due to `#[spec]`",
         )),
     }
