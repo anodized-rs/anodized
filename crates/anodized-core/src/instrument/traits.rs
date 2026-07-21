@@ -2,11 +2,11 @@
 #[path = "traits_tests.rs"]
 mod traits_tests;
 
-use quote::{ToTokens, quote};
+use quote::ToTokens;
 use syn::{
-    Attribute, Block, Expr, ExprCall, ExprStruct, ExprTuple, FnArg, ImplItem, ImplItemFn, Pat,
-    PatConst, PatIdent, PatLit, PatMacro, PatParen, PatPath, PatRange, PatStruct, PatTuple,
-    PatTupleStruct, ReturnType, TraitItem, TraitItemFn, Visibility, parse_quote,
+    Attribute, Block, FnArg, ImplItem, ImplItemFn, Pat, PatConst, PatIdent, PatLit, PatParen,
+    PatPath, PatRange, PatSlice, PatStruct, PatTuple, PatTupleStruct, ReturnType, TraitItem,
+    TraitItemFn, Visibility, parse_quote,
 };
 
 use crate::{
@@ -381,7 +381,7 @@ fn build_call_args(
     Ok(args)
 }
 
-/// Sanitize the pattern so that it may be used as an expression to reconstruct what it matched.
+/// Sanitize a pattern to be valid as an expression that reconstructs the matched value.
 fn sanitize_pat_for_expr(pat: &Pat) -> syn::Result<Pat> {
     match pat {
         Pat::Const(pat_const) => Ok(Pat::Const(PatConst {
@@ -478,15 +478,35 @@ fn sanitize_pat_for_expr(pat: &Pat) -> syn::Result<Pat> {
                 elems,
             }))
         }
+        Pat::Slice(pat_slice) => {
+            let mut elems = syn::punctuated::Punctuated::<syn::Pat, syn::token::Comma>::new();
+            for elem_pat in &pat_slice.elems {
+                let elem_value = sanitize_pat_for_expr(&elem_pat)?;
+                elems.push(elem_value);
+            }
+            Ok(Pat::Slice(PatSlice {
+                attrs: vec![],
+                bracket_token: pat_slice.bracket_token,
+                elems,
+            }))
+        }
+        Pat::Verbatim(token_stream) => Ok(Pat::Verbatim(token_stream.clone())),
         Pat::Macro(pat_macro) => Err(syn::Error::new_spanned(
             &pat_macro,
             "not allowed here due to `#[spec]`",
         )),
-        Pat::Or(pat_or) => todo!(),
-        Pat::Rest(pat_rest) => todo!(),
-        Pat::Slice(pat_slice) => todo!(),
-        Pat::Verbatim(token_stream) => todo!(),
-        Pat::Wild(pat_wild) => todo!(),
+        Pat::Or(pat_or) => Err(syn::Error::new_spanned(
+            &pat_or,
+            "or-pattern not allowed here due to `#[spec]`",
+        )),
+        Pat::Rest(pat_rest) => Err(syn::Error::new_spanned(
+            &pat_rest,
+            "not allowed here due to `#[spec]`",
+        )),
+        Pat::Wild(pat_wild) => Err(syn::Error::new_spanned(
+            &pat_wild,
+            "not allowed here due to `#[spec]`",
+        )),
         _ => todo!(),
     }
 }

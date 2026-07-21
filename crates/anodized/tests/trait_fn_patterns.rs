@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use anodized::spec;
 
 #[spec]
@@ -8,7 +10,7 @@ trait TraitA {
     }
 }
 
-struct Bounds {
+pub struct Bounds {
     lower: i32,
     upper: i32,
 }
