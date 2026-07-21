@@ -373,7 +373,7 @@ fn build_call_args(
         let expr = match input {
             FnArg::Receiver(_) => parse_quote!(self),
             FnArg::Typed(pat_type) => {
-                let pat = sanitize_pat_for_expr(&pat_type.pat)?;
+                let pat = sanitize_pat_as_expr(&pat_type.pat)?;
                 parse_quote!(#pat)
             }
         };
@@ -397,7 +397,7 @@ fn has_inline_attr(attrs: &[syn::Attribute]) -> bool {
 }
 
 /// Sanitize a pattern to be valid as an expression that reconstructs the matched value.
-fn sanitize_pat_for_expr(pat: &Pat) -> syn::Result<Pat> {
+fn sanitize_pat_as_expr(pat: &Pat) -> syn::Result<Pat> {
     match pat {
         Pat::Const(pat_const) => Ok(Pat::Const(PatConst {
             attrs: vec![],
@@ -437,10 +437,10 @@ fn sanitize_pat_for_expr(pat: &Pat) -> syn::Result<Pat> {
         Pat::Paren(pat_paren) => Ok(Pat::Paren(PatParen {
             attrs: vec![],
             paren_token: pat_paren.paren_token,
-            pat: sanitize_pat_for_expr(&pat_paren.pat)?.into(),
+            pat: sanitize_pat_as_expr(&pat_paren.pat)?.into(),
         })),
-        Pat::Reference(pat_reference) => sanitize_pat_for_expr(&pat_reference.pat),
-        Pat::Type(pat_type) => sanitize_pat_for_expr(&pat_type.pat),
+        Pat::Reference(pat_reference) => sanitize_pat_as_expr(&pat_reference.pat),
+        Pat::Type(pat_type) => sanitize_pat_as_expr(&pat_type.pat),
         Pat::Struct(pat_struct) => {
             let None = pat_struct.rest else {
                 return Err(syn::Error::new_spanned(
@@ -454,7 +454,7 @@ fn sanitize_pat_for_expr(pat: &Pat) -> syn::Result<Pat> {
                     attrs: vec![],
                     member: field_pat.member.clone(),
                     colon_token: field_pat.colon_token,
-                    pat: sanitize_pat_for_expr(&field_pat.pat)?.into(),
+                    pat: sanitize_pat_as_expr(&field_pat.pat)?.into(),
                 };
                 fields.push(field_value);
             }
@@ -470,7 +470,7 @@ fn sanitize_pat_for_expr(pat: &Pat) -> syn::Result<Pat> {
         Pat::Tuple(pat_tuple) => {
             let mut elems = syn::punctuated::Punctuated::<syn::Pat, syn::token::Comma>::new();
             for elem_pat in &pat_tuple.elems {
-                let elem_value = sanitize_pat_for_expr(&elem_pat)?;
+                let elem_value = sanitize_pat_as_expr(&elem_pat)?;
                 elems.push(elem_value);
             }
             Ok(Pat::Tuple(PatTuple {
@@ -482,7 +482,7 @@ fn sanitize_pat_for_expr(pat: &Pat) -> syn::Result<Pat> {
         Pat::TupleStruct(pat_tuple_struct) => {
             let mut elems = syn::punctuated::Punctuated::<syn::Pat, syn::token::Comma>::new();
             for elem_pat in &pat_tuple_struct.elems {
-                let elem_value = sanitize_pat_for_expr(&elem_pat)?;
+                let elem_value = sanitize_pat_as_expr(&elem_pat)?;
                 elems.push(elem_value);
             }
             Ok(Pat::TupleStruct(PatTupleStruct {
@@ -496,7 +496,7 @@ fn sanitize_pat_for_expr(pat: &Pat) -> syn::Result<Pat> {
         Pat::Slice(pat_slice) => {
             let mut elems = syn::punctuated::Punctuated::<syn::Pat, syn::token::Comma>::new();
             for elem_pat in &pat_slice.elems {
-                let elem_value = sanitize_pat_for_expr(&elem_pat)?;
+                let elem_value = sanitize_pat_as_expr(&elem_pat)?;
                 elems.push(elem_value);
             }
             Ok(Pat::Slice(PatSlice {
