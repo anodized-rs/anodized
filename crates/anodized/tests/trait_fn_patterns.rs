@@ -15,13 +15,13 @@ trait Trait {
     }
 
     #[spec(
-        requires: [
-            lower < upper,
-            i >= lower,
-            i < upper,
+        requires: lower < upper,
+        ensures: [
+            *output >= lower,
+            *output < upper,
         ],
     )]
-    fn func_3((i, Bounds { lower, upper }): (i32, Bounds)) {
+    fn func_3((i, Bounds { lower, upper }): (i32, Bounds)) -> i32 {
         unimplemented!()
     }
 }
@@ -37,7 +37,9 @@ struct Type;
 impl Trait for Type {
     fn func_1(_: (i32, i32)) {}
     fn func_2(_: Bounds) {}
-    fn func_3(_: (i32, Bounds)) {}
+    fn func_3((i, _): (i32, Bounds)) -> i32 {
+        i
+    }
 }
 
 #[cfg(all(anodized_print, anodized_panic))]
@@ -61,8 +63,8 @@ fn test_2() {
 
 #[cfg(all(anodized_print, anodized_panic))]
 #[test]
-#[should_panic(expected = r#"precondition failed:
-    i < upper"#)]
+#[should_panic(expected = r#"postcondition failed:
+    | output | * output < upper"#)]
 fn test_3() {
     let _ = Type::func_3((42, Bounds { lower: 1, upper: 5 }));
 }
