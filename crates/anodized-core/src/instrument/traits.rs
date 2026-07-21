@@ -2,7 +2,6 @@
 #[path = "traits_tests.rs"]
 mod traits_tests;
 
-use quote::ToTokens;
 use syn::{
     Attribute, Block, FnArg, ImplItem, ImplItemFn, Pat, PatConst, PatIdent, PatLit, PatParen,
     PatPath, PatRange, PatSlice, PatStruct, PatTuple, PatTupleStruct, ReturnType, TraitItem,
@@ -353,7 +352,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
 /// Build argument tokens for calling the mangled trait method from the wrapper.
 ///
 /// Purpose: the wrapper method needs to forward its arguments to the mangled
-/// implementation, so this extracts a usable token for each input.
+/// implementation, so this constructs a usable expression for each input.
 ///
 /// Examples (inputs -> output tokens):
 /// - `fn f(&self, x: i32)` -> `self, x`
@@ -366,17 +365,17 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
 /// part of the public API.
 fn build_call_args(
     inputs: &syn::punctuated::Punctuated<FnArg, syn::Token![,]>,
-) -> syn::Result<Vec<proc_macro2::TokenStream>> {
+) -> syn::Result<Vec<syn::Expr>> {
     let mut args = vec![];
     for input in inputs {
-        let tokens = match input {
-            FnArg::Receiver(receiver) => receiver.self_token.to_token_stream(),
+        let expr = match input {
+            FnArg::Receiver(_) => parse_quote!(self),
             FnArg::Typed(pat_type) => {
-                let expr = sanitize_pat_for_expr(&pat_type.pat)?;
-                expr.to_token_stream()
+                let pat = sanitize_pat_for_expr(&pat_type.pat)?;
+                parse_quote!(#pat)
             }
         };
-        args.push(tokens);
+        args.push(expr);
     }
     Ok(args)
 }
