@@ -1,9 +1,9 @@
 use anodized::spec;
 
 #[spec]
-trait PatternArguments {
+trait TraitA {
     #[spec(requires: left <= right)]
-    fn func((left, right): (i32, i32)) {
+    fn func(input @ (left, right): (i32, i32)) {
         let _ = (left, right);
     }
 }
@@ -14,7 +14,7 @@ struct Bounds {
 }
 
 #[spec]
-trait PatternArguments {
+trait TraitB {
     #[spec(requires: lower <= upper)]
     fn func(Bounds { lower, upper }: Bounds) {
         let _ = (lower, upper);

@@ -2,10 +2,11 @@
 #[path = "traits_tests.rs"]
 mod traits_tests;
 
-use quote::quote;
+use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Block, FnArg, ImplItem, ImplItemFn, Pat, ReturnType, TraitItem, TraitItemFn,
-    Visibility, parse_quote,
+    Attribute, Block, Expr, ExprCall, ExprStruct, ExprTuple, FnArg, ImplItem, ImplItemFn, Pat,
+    PatConst, PatIdent, PatLit, PatMacro, PatParen, PatPath, PatRange, PatStruct, PatTuple,
+    PatTupleStruct, ReturnType, TraitItem, TraitItemFn, Visibility, parse_quote,
 };
 
 use crate::{
@@ -366,27 +367,128 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
 fn build_call_args(
     inputs: &syn::punctuated::Punctuated<FnArg, syn::Token![,]>,
 ) -> syn::Result<Vec<proc_macro2::TokenStream>> {
-    let mut args = Vec::new();
-    for input in inputs.iter() {
-        match input {
-            FnArg::Receiver(_) => {
-                args.push(quote! { self });
+    let mut args = vec![];
+    for input in inputs {
+        let tokens = match input {
+            FnArg::Receiver(receiver) => receiver.self_token.to_token_stream(),
+            FnArg::Typed(pat_type) => {
+                let expr = sanitize_pat_for_expr(&pat_type.pat)?;
+                expr.to_token_stream()
             }
-            FnArg::Typed(pat) => match pat.pat.as_ref() {
-                Pat::Ident(pat_ident) => {
-                    let ident = &pat_ident.ident;
-                    args.push(quote! { #ident });
-                }
-                _ => {
-                    return Err(syn::Error::new_spanned(
-                        &pat.pat,
-                        "unsupported pattern in trait method arguments",
-                    ));
-                }
-            },
-        }
+        };
+        args.push(tokens);
     }
     Ok(args)
+}
+
+/// Sanitize the pattern so that it may be used as an expression to reconstruct what it matched.
+fn sanitize_pat_for_expr(pat: &Pat) -> syn::Result<Pat> {
+    match pat {
+        Pat::Const(pat_const) => Ok(Pat::Const(PatConst {
+            attrs: vec![],
+            const_token: pat_const.const_token,
+            block: pat_const.block.clone(),
+        })),
+        Pat::Ident(pat_ident) if pat_ident.by_ref.is_none() => {
+            let None = pat_ident.by_ref else {
+                return Err(syn::Error::new_spanned(
+                    &pat_ident.by_ref,
+                    "not allowed here due to `#[spec]`",
+                ));
+            };
+            Ok(Pat::Ident(PatIdent {
+                attrs: vec![],
+                by_ref: None,
+                mutability: None,
+                ident: pat_ident.ident.clone(),
+                subpat: None,
+            }))
+        }
+        Pat::Lit(pat_lit) => Ok(Pat::Lit(PatLit {
+            attrs: vec![],
+            lit: pat_lit.lit.clone(),
+        })),
+        Pat::Path(pat_path) => Ok(Pat::Path(PatPath {
+            attrs: vec![],
+            qself: pat_path.qself.clone(),
+            path: pat_path.path.clone(),
+        })),
+        Pat::Range(pat_range) => Ok(Pat::Range(PatRange {
+            attrs: vec![],
+            start: pat_range.start.clone(),
+            limits: pat_range.limits,
+            end: pat_range.end.clone(),
+        })),
+        Pat::Paren(pat_paren) => Ok(Pat::Paren(PatParen {
+            attrs: vec![],
+            paren_token: pat_paren.paren_token,
+            pat: sanitize_pat_for_expr(&pat_paren.pat)?.into(),
+        })),
+        Pat::Reference(pat_reference) => sanitize_pat_for_expr(&pat_reference.pat),
+        Pat::Type(pat_type) => sanitize_pat_for_expr(&pat_type.pat),
+        Pat::Struct(pat_struct) => {
+            let None = pat_struct.rest else {
+                return Err(syn::Error::new_spanned(
+                    &pat_struct.rest,
+                    "not allowed here due to `#[spec]`",
+                ));
+            };
+            let mut fields = syn::punctuated::Punctuated::<syn::FieldPat, syn::token::Comma>::new();
+            for field_pat in &pat_struct.fields {
+                let field_value = syn::FieldPat {
+                    attrs: vec![],
+                    member: field_pat.member.clone(),
+                    colon_token: field_pat.colon_token,
+                    pat: sanitize_pat_for_expr(&field_pat.pat)?.into(),
+                };
+                fields.push(field_value);
+            }
+            Ok(Pat::Struct(PatStruct {
+                attrs: vec![],
+                qself: pat_struct.qself.clone(),
+                path: pat_struct.path.clone(),
+                brace_token: pat_struct.brace_token,
+                fields,
+                rest: None,
+            }))
+        }
+        Pat::Tuple(pat_tuple) => {
+            let mut elems = syn::punctuated::Punctuated::<syn::Pat, syn::token::Comma>::new();
+            for elem_pat in &pat_tuple.elems {
+                let elem_value = sanitize_pat_for_expr(&elem_pat)?;
+                elems.push(elem_value);
+            }
+            Ok(Pat::Tuple(PatTuple {
+                attrs: vec![],
+                paren_token: pat_tuple.paren_token,
+                elems,
+            }))
+        }
+        Pat::TupleStruct(pat_tuple_struct) => {
+            let mut elems = syn::punctuated::Punctuated::<syn::Pat, syn::token::Comma>::new();
+            for elem_pat in &pat_tuple_struct.elems {
+                let elem_value = sanitize_pat_for_expr(&elem_pat)?;
+                elems.push(elem_value);
+            }
+            Ok(Pat::TupleStruct(PatTupleStruct {
+                attrs: vec![],
+                qself: pat_tuple_struct.qself.clone(),
+                path: pat_tuple_struct.path.clone(),
+                paren_token: pat_tuple_struct.paren_token,
+                elems,
+            }))
+        }
+        Pat::Macro(pat_macro) => Err(syn::Error::new_spanned(
+            &pat_macro,
+            "not allowed here due to `#[spec]`",
+        )),
+        Pat::Or(pat_or) => todo!(),
+        Pat::Rest(pat_rest) => todo!(),
+        Pat::Slice(pat_slice) => todo!(),
+        Pat::Verbatim(token_stream) => todo!(),
+        Pat::Wild(pat_wild) => todo!(),
+        _ => todo!(),
+    }
 }
 
 /// Prefix an identifier with `__anodized_`, preserving the original span.
