@@ -382,6 +382,20 @@ fn build_call_args(
     Ok(args)
 }
 
+/// Prefix an identifier with `__anodized_`, preserving the original span.
+/// Used when generating mangled method names in trait and impl expansion.
+fn mangle_ident(original_ident: &syn::Ident) -> syn::Ident {
+    syn::Ident::new(
+        &format!("__anodized_{original_ident}"),
+        original_ident.span(),
+    )
+}
+
+/// Checks to see if any `#[inline]` (with or without arg) exists in the function's attribs.
+fn has_inline_attr(attrs: &[syn::Attribute]) -> bool {
+    attrs.iter().any(|attr| attr.path().is_ident("inline"))
+}
+
 /// Sanitize a pattern to be valid as an expression that reconstructs the matched value.
 fn sanitize_pat_for_expr(pat: &Pat) -> syn::Result<Pat> {
     match pat {
@@ -513,18 +527,4 @@ fn sanitize_pat_for_expr(pat: &Pat) -> syn::Result<Pat> {
             "not allowed here due to `#[spec]`",
         )),
     }
-}
-
-/// Prefix an identifier with `__anodized_`, preserving the original span.
-/// Used when generating mangled method names in trait and impl expansion.
-fn mangle_ident(original_ident: &syn::Ident) -> syn::Ident {
-    syn::Ident::new(
-        &format!("__anodized_{original_ident}"),
-        original_ident.span(),
-    )
-}
-
-/// Checks to see if any `#[inline]` (with or without arg) exists in the function's attribs.
-fn has_inline_attr(attrs: &[syn::Attribute]) -> bool {
-    attrs.iter().any(|attr| attr.path().is_ident("inline"))
 }
