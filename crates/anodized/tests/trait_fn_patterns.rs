@@ -17,7 +17,7 @@ trait Trait {
     #[spec(
         requires: [
             lower < upper,
-            i >= i,
+            i >= lower,
             i < upper,
         ],
     )]
