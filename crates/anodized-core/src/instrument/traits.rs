@@ -354,9 +354,11 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
 /// Purpose: the wrapper method needs to forward its arguments to the mangled
 /// implementation, so this constructs a usable expression for each input.
 ///
-/// Examples (inputs -> output tokens):
-/// - `fn f(&self, x: i32)` -> `self, x`
-/// - `fn f(self, a: u8, b: u8)` -> `self, a, b`
+/// Examples (inputs -> output expressions):
+/// - `fn f(&self, x: i32)` -> `self`, `x`
+/// - `fn f(self, a: u8, b: u8)` -> `self`, `a`, `b`
+/// - `fn f(input @ (left, right): (i32, i32))` -> `input`
+/// - `fn f(Bounds { lower, upper }: Bounds)` -> `Bounds { lower, upper }`
 ///
 /// The caller is responsible for ensuring these tokens are used in a call
 /// expression like `Self::__anodized_f(#(#args),*)`.
