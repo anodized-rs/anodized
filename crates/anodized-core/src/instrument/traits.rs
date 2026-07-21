@@ -360,8 +360,8 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
 /// - `fn f(input @ (left, right): (i32, i32))` -> `input`
 /// - `fn f(Bounds { lower, upper }: Bounds)` -> `Bounds { lower, upper }`
 ///
-/// The caller is responsible for ensuring these tokens are used in a call
-/// expression like `Self::__anodized_f(#(#args),*)`.
+/// The caller is responsible for ensuring these expressions are used in a call
+/// like `Self::__anodized_f(#(#args),*)`.
 ///
 /// Callers: only `instrument_trait` in this module should use this; it is not
 /// part of the public API.
