@@ -205,7 +205,7 @@ impl CheckSettings {
         spec: &Spec,
         original_body: &Block,
         is_async: bool,
-        return_type: &syn::ReturnType,
+        return_type: &ReturnType,
     ) -> Result<Block> {
         // The identifier for the return value binding.
         let output_ident: Pat = parse_quote!(__anodized_output);
