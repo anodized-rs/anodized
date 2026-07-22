@@ -1,9 +1,10 @@
 use anodized::spec;
 
 #[spec(
+    binds: (a, b),
     ensures: [
-        |(a, b)| a <= b,
-        |(a, b)| (*a, *b) == pair || (*b, *a) == pair,
+        a <= b,
+        (a, b) == pair || (b, a) == pair,
     ],
 )]
 #[allow(unused)]

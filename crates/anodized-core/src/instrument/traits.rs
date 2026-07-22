@@ -79,8 +79,8 @@ impl Mode {
                             default: Some(Self::build_postcondition_fn_body(
                                 &fn_spec.maintains,
                                 &fn_spec.captures,
+                                &fn_spec.binds,
                                 &fn_spec.ensures,
-                                &func.sig.output,
                             )?),
                             semi_token: None,
                         };
@@ -264,8 +264,8 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                             block: Self::build_postcondition_fn_body(
                                 &fn_spec.maintains,
                                 &fn_spec.captures,
+                                &fn_spec.binds,
                                 &fn_spec.ensures,
-                                &func.sig.output,
                             )?,
                             vis: Visibility::Inherited,
                             defaultness: None,

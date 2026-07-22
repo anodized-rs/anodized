@@ -2,7 +2,7 @@ use crate::test_util::assert_tokens_eq;
 
 use super::*;
 use proc_macro2::TokenStream;
-use syn::{Block, ItemFn, Type, parse_quote};
+use syn::{Block, ItemFn, parse_quote};
 
 fn make_complex_spec() -> Spec {
     parse_quote! {
@@ -216,8 +216,8 @@ fn make_fn_body() -> Block {
     }
 }
 
-fn make_return_type() -> Type {
-    parse_quote! { SomeType }
+fn make_return_type() -> ReturnType {
+    parse_quote! { -> SomeType }
 }
 
 #[test]
