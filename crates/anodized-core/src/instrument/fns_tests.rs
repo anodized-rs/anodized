@@ -44,12 +44,12 @@ fn embed_spec_item_fn() {
         #[doc(hidden)]
         #[allow(warnings)]
         fn __anodized_fn_requires_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> bool {
-            let __anodized_clause_1 = (| | -> bool { COND_1 })();
-            let __anodized_clause_2 = (| | -> bool { COND_2 })();
-            let __anodized_clause_3 = (| | -> bool { COND_3 })();
-            let __anodized_clause_4 = (| | -> bool { COND_4 })();
-            let __anodized_clause_5 = (| | -> bool { COND_5 })();
-            let __anodized_clause_6 = (| | -> bool { COND_6 })();
+            let __anodized_clause_1 = (|| -> bool { COND_1 })();
+            let __anodized_clause_2 = (|| -> bool { COND_2 })();
+            let __anodized_clause_3 = (|| -> bool { COND_3 })();
+            let __anodized_clause_4 = (|| -> bool { COND_4 })();
+            let __anodized_clause_5 = (|| -> bool { COND_5 })();
+            let __anodized_clause_6 = (|| -> bool { COND_6 })();
             __anodized_clause_1 && __anodized_clause_2 && __anodized_clause_3
                 && __anodized_clause_4 && __anodized_clause_5 && __anodized_clause_6
         }
@@ -57,9 +57,9 @@ fn embed_spec_item_fn() {
         #[doc(hidden)]
         #[allow(warnings)]
         fn __anodized_fn_ensures_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2, __anodized_output: RET_TYPE) -> bool {
-            let __anodized_clause_1 = (| | -> bool { COND_4 })();
-            let __anodized_clause_2 = (| | -> bool { COND_5 })();
-            let __anodized_clause_3 = (| | -> bool { COND_6 })();
+            let __anodized_clause_1 = (|| -> bool { COND_4 })();
+            let __anodized_clause_2 = (|| -> bool { COND_5 })();
+            let __anodized_clause_3 = (|| -> bool { COND_6 })();
             let (PAT_1, ALIAS_1, (ALIAS_2, ALIAS_3)) = (
                 __anodized_output,
                 (|| EXPR_1)(),
@@ -993,7 +993,7 @@ fn captures() {
                     panic!("precondition failed:{__anodized_errors}");
                 }
             }
-            let (ALIAS_1, ALIAS_2, __anodized_output) = ((| | EXPR_1) (), (| | EXPR_2) (), (|| #ret_type #body)());
+            let (ALIAS_1, ALIAS_2, __anodized_output) = ((|| EXPR_1) (), (|| EXPR_2) (), (|| #ret_type #body)());
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
