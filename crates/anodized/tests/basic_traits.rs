@@ -9,8 +9,8 @@ pub trait TestTrait {
     #[spec(
         requires: x > 0,
         captures: self.current() as old_val,
-        binds: ref output,
-        ensures: *output > old_val,
+        binds: output,
+        ensures: output > old_val,
     )]
     fn add_to(&self, x: i32) -> i32;
 
@@ -18,8 +18,8 @@ pub trait TestTrait {
     #[spec(
         requires: x > 0,
         captures: self.current() as old_val,
-        binds: ref output,
-        ensures: *output > old_val,
+        binds: output,
+        ensures: output > old_val,
     )]
     fn mul_by(&self, x: i32) -> i32 {
         x * 2
@@ -80,7 +80,7 @@ fn should_fail_add_to() {
 #[cfg(all(anodized_print, anodized_panic))]
 #[test]
 #[should_panic(expected = "postcondition failed:\
-\n    * output > old_val")]
+\n    output > old_val")]
 fn should_fail_negative_mul_by() {
     let test = TestStruct(-3);
     assert_eq!(test.mul_by(1), 3);

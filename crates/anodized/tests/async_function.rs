@@ -2,7 +2,7 @@ use anodized::spec;
 
 #[spec(
     requires: x.is_finite(),
-    binds: ref output,
+    binds: output,
     ensures: output + output == x,
 )]
 #[allow(unused)]

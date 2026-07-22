@@ -25,11 +25,11 @@ pub fn find_maximum(seq: &[u8]) -> u8 {
 
 #[spec(
     requires: seq.is_sorted(),
-    binds: ref output,
+    binds: output,
     ensures: [
-        *output <= seq.len(),
-        seq[0..*output].iter().all(|item| item < value),
-        seq[*output..].iter().all(|item| item >= value),
+        output <= seq.len(),
+        seq[0..output].iter().all(|item| item < value),
+        seq[output..].iter().all(|item| item >= value),
     ],
 )]
 pub fn find_insert_position<T: Ord>(seq: &[T], value: &T) -> usize {

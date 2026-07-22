@@ -145,12 +145,12 @@ pub struct DiagonalMatrix<T>(Vec<T>);
 
 #[spec]
 impl<T> Matrix<T> for DiagonalMatrix<T> {
-    #[spec(binds: ref output, ensures: *output == self.count_cols())]
+    #[spec(binds: output, ensures: output == self.count_cols())]
     fn count_rows(&self) -> usize {
         self.0.len()
     }
 
-    #[spec(binds: ref output, ensures: *output == self.count_rows())]
+    #[spec(binds: output, ensures: output == self.count_rows())]
     fn count_cols(&self) -> usize {
         self.0.len()
     }
