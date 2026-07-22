@@ -164,13 +164,15 @@ impl Mode {
         }
 
         {
-            let default_binds = parse_quote! { ref output };
-            let patterns = std::iter::once(binds.as_ref().unwrap_or(&default_binds))
+            let patterns = binds
+                .iter()
                 .chain(captures.iter().map(|capture| &capture.pat));
 
-            let return_value = parse_quote!(__anodized_output);
-            let values =
-                std::iter::once(return_value).chain(captures.iter().map(|capture| -> Expr {
+            let return_value: Option<Expr> =
+                binds.as_ref().map(|_| parse_quote! { __anodized_output });
+            let values = return_value
+                .into_iter()
+                .chain(captures.iter().map(|capture| -> Expr {
                     let expr = &capture.expr;
                     // Wrap in closure to guard against `return`.
                     parse_quote! { (|| #expr)() }
@@ -289,10 +291,10 @@ impl CheckSettings {
                 )
             };
 
-        let output_binder_stmt: Stmt = match &spec.binds {
-            Some(pat) => parse_quote! { let #pat = #output_ident; },
-            None => parse_quote! { let ref output = #output_ident; },
-        };
+        let output_binder_stmt: Option<Stmt> = spec
+            .binds
+            .as_ref()
+            .map(|pat| parse_quote! { let #pat = #output_ident; });
 
         Ok(parse_quote! {
             {
