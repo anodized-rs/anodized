@@ -1,7 +1,7 @@
 #![doc = include_str!("../README.md")]
 
 use proc_macro2::Span;
-use syn::{Error, Expr, ExprClosure, Meta, Pat};
+use syn::{Error, Expr, Meta, Pat};
 
 use crate::qualifiers::FnQualifiers;
 
@@ -135,9 +135,8 @@ pub struct PreCondition {
 /// A postcondition represented by a closure that takes the return value as a reference.
 #[derive(Debug)]
 pub struct PostCondition {
-    /// The closure that validates the postcondition, taking the function's
-    /// return value by reference, e.g. `|output| *output > 0`.
-    pub expr: ExprClosure,
+    /// The expression that validates the postcondition, e.g. `*output > 0`.
+    pub expr: Expr,
     /// **Static analyzers can safely ignore this field.**
     ///
     /// Build configuration filter to decide whether to add runtime checks.
