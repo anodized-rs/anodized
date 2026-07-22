@@ -81,8 +81,8 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                             block: Self::build_postcondition_fn_body(
                                 &fn_spec.maintains,
                                 &fn_spec.captures,
+                                &fn_spec.binds,
                                 &fn_spec.ensures,
-                                &item_fn.sig.output,
                             )?,
                             vis: Visibility::Inherited,
                             defaultness: None,

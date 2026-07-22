@@ -14,13 +14,14 @@ fn simple_spec() {
     let expected = Spec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![PreCondition {
-            closure: parse_quote! { || -> bool { is_valid(x) } },
+            expr: parse_quote! { is_valid(x) },
             cfg: None,
         }],
         maintains: vec![],
         captures: vec![],
+        binds: None,
         ensures: vec![PostCondition {
-            closure: parse_quote! { |output| -> bool { output > x } },
+            expr: parse_quote! { output > x },
             cfg: None,
         }],
         span: Span::call_site(),
@@ -40,6 +41,7 @@ fn fn_qualifiers_functional() {
         requires: vec![],
         maintains: vec![],
         captures: vec![],
+        binds: None,
         ensures: vec![],
         span: Span::call_site(),
     };
@@ -59,6 +61,7 @@ fn fn_qualifiers_pure_total() {
         requires: vec![],
         maintains: vec![],
         captures: vec![],
+        binds: None,
         ensures: vec![],
         span: Span::call_site(),
     };
@@ -83,6 +86,7 @@ fn fn_qualifiers_deterministic_effectfree_infallible_terminating() {
         requires: vec![],
         maintains: vec![],
         captures: vec![],
+        binds: None,
         ensures: vec![],
         span: Span::call_site(),
     };
@@ -188,16 +192,17 @@ fn all_clauses() {
     let expected = Spec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![PreCondition {
-            closure: parse_quote! { || -> bool { x > 0 && x.is_power_of_two() } },
+            expr: parse_quote! { x > 0 && x.is_power_of_two() },
             cfg: None,
         }],
         maintains: vec![PreCondition {
-            closure: parse_quote! { || -> bool { self.is_valid() } },
+            expr: parse_quote! { self.is_valid() },
             cfg: None,
         }],
         captures: vec![],
+        binds: Some(parse_quote! { z }),
         ensures: vec![PostCondition {
-            closure: parse_quote! { |z| -> bool { z >= x } },
+            expr: parse_quote! { z >= x },
             cfg: None,
         }],
         span: Span::call_site(),
@@ -254,7 +259,7 @@ fn array_of_conditions() {
         ],
         ensures: [
             output != x,
-            |output| output.is_some(),
+            output.is_some(),
         ],
     };
 
@@ -262,23 +267,24 @@ fn array_of_conditions() {
         qualifiers: FnQualifiers::empty(),
         requires: vec![
             PreCondition {
-                closure: parse_quote! { || -> bool { x >= 0 } },
+                expr: parse_quote! { x >= 0 },
                 cfg: None,
             },
             PreCondition {
-                closure: parse_quote! { || -> bool { y.len() < 10 } },
+                expr: parse_quote! { y.len() < 10 },
                 cfg: None,
             },
         ],
         maintains: vec![],
         captures: vec![],
+        binds: None,
         ensures: vec![
             PostCondition {
-                closure: parse_quote! { |output| -> bool { output != x } },
+                expr: parse_quote! { output != x },
                 cfg: None,
             },
             PostCondition {
-                closure: parse_quote! { |output| -> bool { output.is_some() } },
+                expr: parse_quote! { output.is_some() },
                 cfg: None,
             },
         ],
@@ -291,7 +297,7 @@ fn array_of_conditions() {
 #[test]
 fn ensures_with_explicit_closure() {
     let spec: Spec = parse_quote! {
-        ensures: |result| result.is_ok() || result.unwrap_err().kind() == ErrorKind::NotFound,
+        ensures: result.is_ok() || result.unwrap_err().kind() == ErrorKind::NotFound,
     };
 
     let expected = Spec {
@@ -299,8 +305,9 @@ fn ensures_with_explicit_closure() {
         requires: vec![],
         maintains: vec![],
         captures: vec![],
+        binds: None,
         ensures: vec![PostCondition {
-            closure: parse_quote! { |result| -> bool { result.is_ok() || result.unwrap_err().kind() == ErrorKind::NotFound } },
+            expr: parse_quote! { result.is_ok() || result.unwrap_err().kind() == ErrorKind::NotFound },
             cfg: None,
         }],
         span: Span::call_site(),
@@ -310,44 +317,29 @@ fn ensures_with_explicit_closure() {
 }
 
 #[test]
-fn condition_closure_explicit_return_type_is_preserved() {
+fn precondition_expression_is_preserved() {
     let spec: Spec = parse_quote! {
-        requires: || -> bool { x > 0 },
-        ensures: |result| -> bool { result > x },
+        requires: x > 0,
+        ensures: result > x,
     };
 
     let expected = Spec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![PreCondition {
-            closure: parse_quote! { || -> bool { x > 0 } },
+            expr: parse_quote! { x > 0 },
             cfg: None,
         }],
         maintains: vec![],
         captures: vec![],
+        binds: None,
         ensures: vec![PostCondition {
-            closure: parse_quote! { |result| -> bool { result > x } },
+            expr: parse_quote! { result > x },
             cfg: None,
         }],
         span: Span::call_site(),
     };
 
     assert_spec_eq(&spec, &expected);
-}
-
-#[test]
-#[should_panic(expected = "predicate must return `bool`")]
-fn precondition_closure_with_non_bool_return_type() {
-    let _: Spec = parse_quote! {
-        requires: || -> usize { 1 },
-    };
-}
-
-#[test]
-#[should_panic(expected = "predicate must return `bool`")]
-fn postcondition_closure_with_non_bool_return_type() {
-    let _: Spec = parse_quote! {
-        ensures: |output| -> usize { *output as usize },
-    };
 }
 
 #[test]
@@ -356,30 +348,31 @@ fn multiple_clauses_of_same_flavor() {
         requires: x > 0 || x < -10,
         requires: y.is_ascii(),
         ensures: output < x,
-        ensures: |output| output.len() >= y.len(),
+        ensures: output.len() >= y.len(),
     };
 
     let expected = Spec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![
             PreCondition {
-                closure: parse_quote! { || -> bool { x > 0 || x < -10 } },
+                expr: parse_quote! { x > 0 || x < -10 },
                 cfg: None,
             },
             PreCondition {
-                closure: parse_quote! { || -> bool { y.is_ascii() } },
+                expr: parse_quote! { y.is_ascii() },
                 cfg: None,
             },
         ],
         maintains: vec![],
         captures: vec![],
+        binds: None,
         ensures: vec![
             PostCondition {
-                closure: parse_quote! { |output| -> bool { output < x } },
+                expr: parse_quote! { output < x },
                 cfg: None,
             },
             PostCondition {
-                closure: parse_quote! { |output| -> bool { output.len() >= y.len() } },
+                expr: parse_quote! { output.len() >= y.len() },
                 cfg: None,
             },
         ],
@@ -399,7 +392,7 @@ fn mixed_single_and_array_clauses() {
         ],
         ensures: [
             output != y,
-            |output| output.starts_with(z),
+            output.starts_with(z),
         ],
         ensures: output.len() > x,
     };
@@ -408,31 +401,32 @@ fn mixed_single_and_array_clauses() {
         qualifiers: FnQualifiers::empty(),
         requires: vec![
             PreCondition {
-                closure: parse_quote! { || -> bool { x == 0 } },
+                expr: parse_quote! { x == 0 },
                 cfg: None,
             },
             PreCondition {
-                closure: parse_quote! { || -> bool { y > 1 } },
+                expr: parse_quote! { y > 1 },
                 cfg: None,
             },
             PreCondition {
-                closure: parse_quote! { || -> bool { z.is_empty() || z.contains("foo") } },
+                expr: parse_quote! { z.is_empty() || z.contains("foo") },
                 cfg: None,
             },
         ],
         maintains: vec![],
         captures: vec![],
+        binds: None,
         ensures: vec![
             PostCondition {
-                closure: parse_quote! { |output| -> bool { output != y } },
+                expr: parse_quote! { output != y },
                 cfg: None,
             },
             PostCondition {
-                closure: parse_quote! { |output| -> bool { output.starts_with(z) } },
+                expr: parse_quote! { output.starts_with(z) },
                 cfg: None,
             },
             PostCondition {
-                closure: parse_quote! { |output| -> bool { output.len() > x } },
+                expr: parse_quote! { output.len() > x },
                 cfg: None,
             },
         ],
@@ -454,13 +448,14 @@ fn cfg_attributes() {
     let expected = Spec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![PreCondition {
-            closure: parse_quote! { || -> bool { x > 0 && is_mode() } },
+            expr: parse_quote! { x > 0 && is_mode() },
             cfg: Some(parse_quote! { test }),
         }],
         maintains: vec![],
         captures: vec![],
+        binds: None,
         ensures: vec![PostCondition {
-            closure: parse_quote! { |output| -> bool { output < x } },
+            expr: parse_quote! { output < x },
             cfg: Some(parse_quote! { not(debug_assertions) }),
         }],
         span: Span::call_site(),
@@ -508,16 +503,17 @@ fn macro_in_condition() {
     let expected = Spec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![PreCondition {
-            closure: parse_quote! { || -> bool { matches!(self.state, State::Idle) } },
+            expr: parse_quote! { matches!(self.state, State::Idle) },
             cfg: None,
         }],
         maintains: vec![PreCondition {
-            closure: parse_quote! { || -> bool { matches!(self.state, State::Idle | State::Running | State::Finished) } },
+            expr: parse_quote! { matches!(self.state, State::Idle | State::Running | State::Finished) },
             cfg: None,
         }],
         captures: vec![],
+        binds: None,
         ensures: vec![PostCondition {
-            closure: parse_quote! { |output| -> bool { matches!(self.state, State::Running) } },
+            expr: parse_quote! { matches!(self.state, State::Running) },
             cfg: None,
         }],
         span: Span::call_site(),
@@ -541,13 +537,14 @@ fn binds_pattern() {
         requires: vec![],
         maintains: vec![],
         captures: vec![],
+        binds: Some(parse_quote! { (a, b) }),
         ensures: vec![
             PostCondition {
-                closure: parse_quote! { |(a, b)| -> bool { a <= b } },
+                expr: parse_quote! { a <= b },
                 cfg: None,
             },
             PostCondition {
-                closure: parse_quote! { |(a, b)| -> bool { (a, b) == pair || (b, a) == pair } },
+                expr: parse_quote! { (a, b) == pair || (b, a) == pair },
                 cfg: None,
             },
         ],
@@ -572,23 +569,24 @@ fn multiple_conditions() {
         qualifiers: FnQualifiers::empty(),
         requires: vec![
             PreCondition {
-                closure: parse_quote! { || -> bool { self.initialized } },
+                expr: parse_quote! { self.initialized },
                 cfg: None,
             },
             PreCondition {
-                closure: parse_quote! { || -> bool { !self.locked } },
+                expr: parse_quote! { !self.locked },
                 cfg: None,
             },
             PreCondition {
-                closure: parse_quote! { || -> bool { index < self.items.len() } },
+                expr: parse_quote! { index < self.items.len() },
                 cfg: None,
             },
         ],
         maintains: vec![PreCondition {
-            closure: parse_quote! { || -> bool { self.items.len() <= self.items.capacity() } },
+            expr: parse_quote! { self.items.len() <= self.items.capacity() },
             cfg: None,
         }],
         captures: vec![],
+        binds: None,
         ensures: vec![],
         span: Span::call_site(),
     };
@@ -602,7 +600,7 @@ fn rename_return_value() {
         binds: result,
         ensures: [
             result > output,
-            |val| val % 2 == 0,
+            val % 2 == 0,
         ],
     };
 
@@ -611,13 +609,14 @@ fn rename_return_value() {
         requires: vec![],
         maintains: vec![],
         captures: vec![],
+        binds: Some(parse_quote! { result }),
         ensures: vec![
             PostCondition {
-                closure: parse_quote! { |result| -> bool { result > output } },
+                expr: parse_quote! { result > output },
                 cfg: None,
             },
             PostCondition {
-                closure: parse_quote! { |val| -> bool { val % 2 == 0 } },
+                expr: parse_quote! { val % 2 == 0 },
                 cfg: None,
             },
         ],
@@ -642,8 +641,9 @@ fn captures_simple_identifier() {
             expr: parse_quote! { count },
             pat: parse_quote! { old_count },
         }],
+        binds: None,
         ensures: vec![PostCondition {
-            closure: parse_quote! { |output| -> bool { output == old_count + 1 } },
+            expr: parse_quote! { output == old_count + 1 },
             cfg: None,
         }],
         span: Span::call_site(),
@@ -667,8 +667,9 @@ fn captures_identifier_with_alias() {
             expr: parse_quote! { value },
             pat: parse_quote! { prev_value },
         }],
+        binds: None,
         ensures: vec![PostCondition {
-            closure: parse_quote! { |output| -> bool { output > prev_value } },
+            expr: parse_quote! { output > prev_value },
             cfg: None,
         }],
         span: Span::call_site(),
@@ -710,17 +711,18 @@ fn captures_array() {
                 pat: parse_quote! { old_value },
             },
         ],
+        binds: None,
         ensures: vec![
             PostCondition {
-                closure: parse_quote! { |output| -> bool { count == old_count + 1 } },
+                expr: parse_quote! { count == old_count + 1 },
                 cfg: None,
             },
             PostCondition {
-                closure: parse_quote! { |output| -> bool { index == old_index + 1 } },
+                expr: parse_quote! { index == old_index + 1 },
                 cfg: None,
             },
             PostCondition {
-                closure: parse_quote! { |output| -> bool { value > old_value } },
+                expr: parse_quote! { value > old_value },
                 cfg: None,
             },
         ],
@@ -743,19 +745,20 @@ fn captures_with_all_clauses() {
     let expected = Spec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![PreCondition {
-            closure: parse_quote! { || -> bool { x > 0 } },
+            expr: parse_quote! { x > 0 },
             cfg: None,
         }],
         maintains: vec![PreCondition {
-            closure: parse_quote! { || -> bool { self.is_valid() } },
+            expr: parse_quote! { self.is_valid() },
             cfg: None,
         }],
         captures: vec![Capture {
             expr: parse_quote! { value },
             pat: parse_quote! { old_val },
         }],
+        binds: Some(parse_quote! { result }),
         ensures: vec![PostCondition {
-            closure: parse_quote! { |result| -> bool { result > old_val } },
+            expr: parse_quote! { result > old_val },
             cfg: None,
         }],
         span: Span::call_site(),
@@ -788,8 +791,9 @@ fn captures_array_expression() {
             expr: parse_quote! { [a, b, c] },
             pat: parse_quote! { slice },
         }],
+        binds: None,
         ensures: vec![PostCondition {
-            closure: parse_quote! { |output| -> bool { slice.len() == 3 } },
+            expr: parse_quote! { slice.len() == 3 },
             cfg: None,
         }],
         span: Span::call_site(),
@@ -883,6 +887,7 @@ fn captures_edge_case_cast_expr() {
             expr: parse_quote! { r as u8 },
             pat: parse_quote! { old_red },
         }],
+        binds: None,
         ensures: vec![],
         span: Span::call_site(),
     };
@@ -914,6 +919,7 @@ fn captures_edge_case_array_of_cast_exprs() {
             },
             pat: parse_quote! { r8g8b8 },
         }],
+        binds: None,
         ensures: vec![],
         span: Span::call_site(),
     };
@@ -949,6 +955,7 @@ fn captures_edge_case_list_of_cast_exprs() {
                 pat: parse_quote! { old_blue },
             },
         ],
+        binds: None,
         ensures: vec![],
         span: Span::call_site(),
     };
@@ -970,6 +977,7 @@ fn captures_pattern_matches_slices() {
             expr: parse_quote! { rgb },
             pat: parse_quote! { [r, g, b] },
         }],
+        binds: None,
         ensures: vec![],
         span: Span::call_site(),
     };
@@ -991,6 +999,7 @@ fn captures_pattern_matches_tuples() {
             expr: parse_quote! { point },
             pat: parse_quote! { (x, y, z) },
         }],
+        binds: None,
         ensures: vec![],
         span: Span::call_site(),
     };
@@ -1012,6 +1021,7 @@ fn captures_pattern_matches_structs() {
             expr: parse_quote! { person.clone() },
             pat: parse_quote! { Person { name, age } },
         }],
+        binds: None,
         ensures: vec![],
         span: Span::call_site(),
     };
@@ -1033,6 +1043,7 @@ fn captures_pattern_matches_nested() {
             expr: parse_quote! { data.as_ref() },
             pat: parse_quote! { Some((a, b)) },
         }],
+        binds: None,
         ensures: vec![],
         span: Span::call_site(),
     };
@@ -1054,6 +1065,7 @@ fn captures_pattern_with_binding_modifier() {
             expr: parse_quote! { data },
             pat: parse_quote! { Some(inner_tuple @ (a, b)) },
         }],
+        binds: None,
         ensures: vec![],
         span: Span::call_site(),
     };

@@ -5,7 +5,7 @@ mod fns_tests;
 use proc_macro2::Span;
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Block, Expr, Ident, Meta, Pat, PatIdent, Path, ReturnType, Signature, Stmt, Type,
+    Attribute, Block, Expr, Ident, Meta, Pat, Path, ReturnType, Signature, Stmt, Type,
     parse::{Parse, Result},
     parse_quote,
 };
@@ -26,14 +26,8 @@ impl Mode {
 
         let is_async = sig.asyncness.is_some();
 
-        // Extract the return type from the function signature
-        let return_type = match &sig.output {
-            syn::ReturnType::Default => syn::parse_quote!(()),
-            syn::ReturnType::Type(_, ty) => ty.as_ref().clone(),
-        };
-
         // Generate the new, instrumented function body.
-        let new_body = check_config.instrument_fn_body(spec, body, is_async, &return_type)?;
+        let new_body = check_config.instrument_fn_body(spec, body, is_async, &sig.output)?;
 
         // Replace the old function body with the new one.
         *body = new_body;
@@ -60,8 +54,8 @@ impl Mode {
     pub fn build_postcondition_fn_sig(prefix: &str, sig: &Signature) -> Signature {
         let mut inputs = sig.inputs.clone();
         let output_binder = match &sig.output {
-            ReturnType::Type(_, return_type) => parse_quote!(__anodized_output: &#return_type),
-            ReturnType::Default => parse_quote!(__anodized_output: &()),
+            ReturnType::Type(_, return_type) => parse_quote! { __anodized_output: #return_type },
+            ReturnType::Default => parse_quote! { __anodized_output: () },
         };
         inputs.push(output_binder);
 
@@ -135,8 +129,8 @@ impl Mode {
         for condition in requires.iter().chain(maintains) {
             let i = clauses.len();
             let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
-            let closure = &condition.closure;
-            statements.push(parse_quote! { let #name = (#closure)(); });
+            let expr = &condition.expr;
+            statements.push(parse_quote! { let #name = (|| -> bool { #expr })(); });
             clauses.push(parse_quote! { #name });
         }
 
@@ -155,8 +149,8 @@ impl Mode {
     pub fn build_postcondition_fn_body(
         maintains: &[PreCondition],
         captures: &[Capture],
+        binds: &Option<Pat>,
         ensures: &[PostCondition],
-        return_type: &ReturnType,
     ) -> Result<Block> {
         let mut statements: Vec<Stmt> = vec![];
         let mut clauses: Vec<Expr> = vec![];
@@ -164,38 +158,31 @@ impl Mode {
         for condition in maintains {
             let i = clauses.len();
             let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
-            let closure = &condition.closure;
-            statements.push(parse_quote! { let #name = (#closure)(); });
+            let expr = &condition.expr;
+            statements.push(parse_quote! { let #name = (|| -> bool { #expr })(); });
             clauses.push(parse_quote! { #name });
         }
 
         {
-            let aliases = captures.iter().map(|capture| &capture.pat);
-            let capture_exprs = captures.iter().map(|capture| -> Expr {
-                let expr = &capture.expr;
-                // Wrap in closure to guard against `return`.
-                parse_quote! { (|| #expr)() }
-            });
-            statements.push(parse_quote! { let (#(#aliases),*) = (#(#capture_exprs),*); });
+            let default_binds = parse_quote! { ref output };
+            let patterns = std::iter::once(binds.as_ref().unwrap_or(&default_binds))
+                .chain(captures.iter().map(|capture| &capture.pat));
+
+            let return_value = parse_quote!(__anodized_output);
+            let values =
+                std::iter::once(return_value).chain(captures.iter().map(|capture| -> Expr {
+                    let expr = &capture.expr;
+                    // Wrap in closure to guard against `return`.
+                    parse_quote! { (|| #expr)() }
+                }));
+            statements.push(parse_quote! { let (#(#patterns),*) = (#(#values),*); });
         }
 
-        let output_type = match return_type {
-            ReturnType::Type(_, return_type) => return_type.as_ref().clone(),
-            ReturnType::Default => parse_quote!(()),
-        };
         for condition in ensures {
             let i = clauses.len();
             let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
-            let closure = &condition.closure;
-            let input = closure.inputs.first().expect("valid postcondition");
-            if let Pat::Type(_) = input {
-                statements.push(parse_quote! { let #name = (#closure)(__anodized_output); });
-            } else {
-                let body = &closure.body;
-                statements.push(parse_quote! {
-                    let #name = (| #input: &#output_type | -> bool { #body })(__anodized_output);
-                });
-            }
+            let expr = &condition.expr;
+            statements.push(parse_quote! { let #name = (|| -> bool { #expr })(); });
             clauses.push(parse_quote! { #name });
         }
 
@@ -218,23 +205,17 @@ impl CheckSettings {
         spec: &Spec,
         original_body: &Block,
         is_async: bool,
-        return_type: &syn::Type,
+        return_type: &ReturnType,
     ) -> Result<Block> {
         // The identifier for the return value binding.
-        let output_ident = Pat::Ident(PatIdent {
-            attrs: vec![],
-            by_ref: None,
-            mutability: None,
-            ident: Ident::new("__anodized_output", Span::mixed_site()),
-            subpat: None,
-        });
+        let output_ident: Pat = parse_quote!(__anodized_output);
 
-        // --- Generate Precondition Clauses ---
+        // Generate precondition checks.
         let mut precondition_clauses: Vec<Expr> = vec![];
         for condition in spec.requires.iter().chain(&spec.maintains) {
-            let closure = &condition.closure;
-            let expr = parse_quote! { __anodized_eval_pre(#closure) };
-            let repr = condition.closure.body.to_token_stream().to_string();
+            let expr = &condition.expr;
+            let repr = expr.to_token_stream().to_string();
+            let expr = parse_quote! { __anodized_eval_pre(|| -> bool { #expr }) };
             let clause = self.build_clause_eval(condition.cfg.as_ref(), &expr, &repr);
             precondition_clauses.push(clause);
         }
@@ -242,68 +223,46 @@ impl CheckSettings {
             precondition_clauses.push(parse_quote!(true));
         }
 
-        // --- Generate Combined Body and Capture Statement ---
-        // Capture values and execute body in a single tuple assignment
-        // This ensures captured values aren't accessible to the body itself
-
-        // Chain capture aliases with output binding
-        let aliases = spec
+        // Bind capture values and function output in a single tuple assignment.
+        // This ensures captured values are inaccessible to the body.
+        let patterns = spec
             .captures
             .iter()
             .map(|cb| &cb.pat)
             .chain(std::iter::once(&output_ident));
 
-        // Chain capture expressions with body expression
-        let capture_exprs = spec.captures.iter().map(|cb| {
-            let expr = &cb.expr;
-            // Evaluate expression in a closure to prevent early return.
-            quote! { (|| #expr)() }
-        });
-
-        // Chain underscore types with return type for tuple type annotation
-        let types = spec
+        let body_expr = if is_async {
+            quote! { (async || #return_type #original_body)().await }
+        } else {
+            quote! { (|| #return_type #original_body)() }
+        };
+        let values = spec
             .captures
             .iter()
-            .map(|_| quote! { _ })
-            .chain(std::iter::once(quote! { #return_type }));
+            .map(|cb| {
+                let expr = &cb.expr;
+                // Evaluate expression in a closure to prevent early return.
+                quote! { (|| #expr)() }
+            })
+            .chain(std::iter::once(body_expr));
 
-        let body_expr = if is_async {
-            quote! { (async || #original_body)().await }
-        } else {
-            quote! { (|| #original_body)() }
+        let captures_and_output = quote! {
+            let (#(#patterns),*) = (#(#values),*);
         };
 
-        let exprs = capture_exprs.chain(std::iter::once(body_expr));
-
-        // Build tuple assignment with type annotation on the tuple
-        let body_and_captures = quote! {
-            let (#(#aliases),*): (#(#types),*) = (#(#exprs),*);
-        };
-
-        // --- Generate Postcondition Clauses ---
+        // Generate postcondition checks.
         let mut postcondition_clauses: Vec<Expr> = vec![];
         for condition in &spec.maintains {
-            let closure = condition.closure.to_token_stream();
-            let expr = parse_quote! { __anodized_eval_inv(#closure) };
-            let repr = condition.closure.body.to_token_stream().to_string();
+            let expr = &condition.expr;
+            let repr = expr.to_token_stream().to_string();
+            let expr = parse_quote! { __anodized_eval_post(|| -> bool { #expr }) };
             let clause = self.build_clause_eval(condition.cfg.as_ref(), &expr, &repr);
             postcondition_clauses.push(clause);
         }
         for postcondition in &spec.ensures {
-            let closure = &postcondition.closure;
-            let input = &closure.inputs.first().unwrap();
-            let output = &closure.output;
-            let body = &closure.body;
-            let closure_expr = match input {
-                Pat::Type(_) => closure.clone(),
-                _ => parse_quote! {
-                    // If the closure's input doesn't have a type ascription, add one.
-                    |#input: &#return_type| #output { #body }
-                },
-            };
-            let expr = parse_quote! { __anodized_eval_post(#closure_expr, &#output_ident) };
-            // Omit the closure's return type for brevity.
-            let repr = quote! { |#input| #body }.to_string();
+            let expr = &postcondition.expr;
+            let repr = expr.to_token_stream().to_string();
+            let expr = parse_quote! { __anodized_eval_post(|| -> bool { #expr }) };
             let clause = self.build_clause_eval(postcondition.cfg.as_ref(), &expr, &repr);
             postcondition_clauses.push(clause);
         }
@@ -330,6 +289,11 @@ impl CheckSettings {
                 )
             };
 
+        let output_binder_stmt: Stmt = match &spec.binds {
+            Some(pat) => parse_quote! { let #pat = #output_ident; },
+            None => parse_quote! { let ref output = #output_ident; },
+        };
+
         Ok(parse_quote! {
             {
                 if #do_run_checks {
@@ -340,11 +304,11 @@ impl CheckSettings {
                         #precond_fail_action
                     }
                 }
-                #body_and_captures
+                #captures_and_output
                 if #do_run_checks {
-                    fn __anodized_eval_inv(c: impl Fn() -> bool) -> bool { c() }
-                    fn __anodized_eval_post<R>(c: impl Fn(&R) -> bool, r: &R) -> bool { c(r) }
+                    fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                     let mut __anodized_errors = ::std::string::String::new();
+                    #output_binder_stmt;
                     let __anodized_postcond = #(#postcondition_clauses)&*;
                     if !__anodized_postcond {
                         #postcond_fail_action

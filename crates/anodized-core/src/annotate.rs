@@ -1,7 +1,6 @@
 use syn::{
     Attribute, Error, Expr, Ident, Meta, Pat, PatIdent,
     parse::{Parse, ParseStream, Result},
-    parse_quote,
     spanned::Spanned,
 };
 
@@ -120,7 +119,7 @@ impl Parse for Spec {
                     }
                 }
                 Keyword::Ensures => {
-                    if let Err(error) = arg.parse_postconditions(&binds_pattern, &mut ensures) {
+                    if let Err(error) = arg.parse_postconditions(&mut ensures) {
                         errors.add(error);
                     }
                 }
@@ -152,6 +151,7 @@ impl Parse for Spec {
             requires,
             maintains,
             captures,
+            binds: binds_pattern,
             ensures,
             span: input.span(),
         })
@@ -295,15 +295,12 @@ impl SpecArg {
         if let Expr::Array(conditions) = expr {
             for expr in conditions.elems {
                 preconditions.push(PreCondition {
-                    closure: interpret_expr_as_precondition(expr)?,
+                    expr,
                     cfg: cfg.clone(),
                 });
             }
         } else {
-            preconditions.push(PreCondition {
-                closure: interpret_expr_as_precondition(expr)?,
-                cfg,
-            });
+            preconditions.push(PreCondition { expr, cfg });
         }
         Ok(())
     }
@@ -343,11 +340,7 @@ impl SpecArg {
         Ok(())
     }
 
-    fn parse_postconditions(
-        self,
-        binds_pattern: &Option<Pat>,
-        postconditions: &mut Vec<PostCondition>,
-    ) -> Result<()> {
+    fn parse_postconditions(self, postconditions: &mut Vec<PostCondition>) -> Result<()> {
         let cfg_attr = find_cfg_attribute(&self.attrs)?;
         let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
             Some(attr.parse_args()?)
@@ -355,19 +348,15 @@ impl SpecArg {
             None
         };
         let expr = self.value.try_into_expr()?;
-        let default_pattern = binds_pattern.clone().unwrap_or(parse_quote! { output });
         if let Expr::Array(conditions) = expr {
             for expr in conditions.elems {
                 postconditions.push(PostCondition {
-                    closure: interpret_expr_as_postcondition(expr, default_pattern.clone())?,
+                    expr,
                     cfg: cfg.clone(),
                 });
             }
         } else {
-            postconditions.push(PostCondition {
-                closure: interpret_expr_as_postcondition(expr, default_pattern)?,
-                cfg,
-            });
+            postconditions.push(PostCondition { expr, cfg });
         }
         Ok(())
     }
@@ -438,96 +427,6 @@ fn interpret_capture_expr_as_capture(capture_expr: CaptureExpr) -> Result<Captur
         (None, _, _) => Err(Error::new(
             span,
             "expected capture: <expression> `as` <pattern>",
-        )),
-    }
-}
-
-/// Interpret expression as precondition, i.e. a closure that returns `bool` and takes no inputs.
-fn interpret_expr_as_precondition(expr: Expr) -> Result<syn::ExprClosure> {
-    match expr {
-        // Already a closure.
-        Expr::Closure(closure) => {
-            // Ensure it returns `bool`.
-            let predicate = interpret_closure_as_predicate(closure)?;
-            // Ensure it takes no inputs.
-            if predicate.inputs.is_empty() {
-                Ok(predicate)
-            } else {
-                Err(Error::new_spanned(
-                    predicate.or1_token,
-                    format!(
-                        "precondition closure must have no arguments, found {}",
-                        predicate.inputs.len()
-                    ),
-                ))
-            }
-        }
-        // Naked expression, wrap in an argumentless closure.
-        expr => Ok(syn::ExprClosure {
-            attrs: vec![],
-            lifetimes: None,
-            constness: None,
-            movability: None,
-            asyncness: None,
-            capture: None,
-            or1_token: Default::default(),
-            inputs: syn::punctuated::Punctuated::new(),
-            or2_token: Default::default(),
-            output: parse_quote!(-> bool),
-            body: Box::new(expr),
-        }),
-    }
-}
-
-/// Interpret expression as postcondition, i.e. a closure that returns `bool` and takes one input.
-fn interpret_expr_as_postcondition(expr: Expr, default_binding: Pat) -> Result<syn::ExprClosure> {
-    match expr {
-        // Already a closure.
-        Expr::Closure(closure) => {
-            // Ensure it returns `bool`.
-            let predicate = interpret_closure_as_predicate(closure)?;
-            // Ensure it takes exactly one input.
-            if predicate.inputs.len() == 1 {
-                Ok(predicate)
-            } else {
-                Err(Error::new_spanned(
-                    predicate.or1_token,
-                    format!(
-                        "postcondition closure must have exactly one argument, found {}",
-                        predicate.inputs.len()
-                    ),
-                ))
-            }
-        }
-        // Naked expression, wrap in a closure with default binding.
-        expr => Ok(syn::ExprClosure {
-            attrs: vec![],
-            lifetimes: None,
-            constness: None,
-            movability: None,
-            asyncness: None,
-            capture: None,
-            or1_token: Default::default(),
-            inputs: syn::punctuated::Punctuated::from_iter([default_binding]),
-            or2_token: Default::default(),
-            output: parse_quote!(-> bool),
-            body: Box::new(expr),
-        }),
-    }
-}
-
-fn interpret_closure_as_predicate(mut closure: syn::ExprClosure) -> Result<syn::ExprClosure> {
-    match &closure.output {
-        syn::ReturnType::Default => {
-            closure.output = parse_quote!(-> bool);
-            Ok(closure)
-        }
-        syn::ReturnType::Type(_, ty) if matches!(ty.as_ref(), syn::Type::Path(path) if path.qself.is_none() && path.path.is_ident("bool")) => {
-            Ok(closure)
-        }
-        syn::ReturnType::Type(_, ty) => Err(Error::new_spanned(
-            ty,
-            "predicate must return `bool`".to_string(),
         )),
     }
 }

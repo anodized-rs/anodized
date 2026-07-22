@@ -28,6 +28,7 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
         requires: left_requires,
         maintains: left_maintains,
         captures: left_captures,
+        binds: left_binds,
         ensures: left_ensures,
         span: _,
     } = left;
@@ -37,6 +38,7 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
         requires: right_requires,
         maintains: right_maintains,
         captures: right_captures,
+        binds: right_binds,
         ensures: right_ensures,
         span: _,
     } = right;
@@ -59,6 +61,10 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
         assert_precondition_eq,
     );
     assert_slice_eq(left_captures, right_captures, "captures", assert_capture_eq);
+    assert_eq!(
+        left_binds, right_binds,
+        "binds patterns do not match: {left_binds:?} vs {right_binds:?}"
+    );
     assert_slice_eq(
         left_ensures,
         right_ensures,
@@ -87,12 +93,12 @@ where
 fn assert_precondition_eq(left: &PreCondition, right: &PreCondition, msg_prefix: &str) {
     // Destructure to ensure we handle all fields
     let PreCondition {
-        closure: left_expr,
+        expr: left_expr,
         cfg: left_cfg,
     } = left;
 
     let PreCondition {
-        closure: right_expr,
+        expr: right_expr,
         cfg: right_cfg,
     } = right;
 
@@ -114,12 +120,12 @@ fn assert_precondition_eq(left: &PreCondition, right: &PreCondition, msg_prefix:
 fn assert_postcondition_eq(left: &PostCondition, right: &PostCondition, msg_prefix: &str) {
     // Destructure to ensure we handle all fields
     let PostCondition {
-        closure: left_closure,
+        expr: left_closure,
         cfg: left_cfg,
     } = left;
 
     let PostCondition {
-        closure: right_closure,
+        expr: right_closure,
         cfg: right_cfg,
     } = right;
 

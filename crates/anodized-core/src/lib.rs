@@ -1,7 +1,7 @@
 #![doc = include_str!("../README.md")]
 
 use proc_macro2::Span;
-use syn::{Error, Expr, ExprClosure, Meta, Pat};
+use syn::{Error, Expr, Meta, Pat};
 
 use crate::qualifiers::FnQualifiers;
 
@@ -24,6 +24,8 @@ pub struct Spec {
     pub maintains: Vec<PreCondition>,
     /// Captures: expressions to snapshot at function entry for use in postconditions.
     pub captures: Vec<Capture>,
+    /// Binds: pattern to bind the output of the function.
+    pub binds: Option<Pat>,
     /// Postconditions: conditions that must hold when the function returns.
     pub ensures: Vec<PostCondition>,
     /// The span in the source code, from which this spec was parsed.
@@ -38,6 +40,7 @@ impl Spec {
             requires: vec![],
             maintains: vec![],
             captures: vec![],
+            binds: None,
             ensures: vec![],
             span: Span::call_site(),
         }
@@ -123,9 +126,8 @@ impl LoopSpec {
 #[derive(Debug)]
 // TODO: Rename to `Condition` for clarity.
 pub struct PreCondition {
-    /// The closure that validates the precondition,
-    /// takes no input, e.g. `|| input.is_valid()`.
-    pub closure: ExprClosure,
+    /// The expression that validates the precondition, e.g. `input.is_valid()`.
+    pub expr: Expr,
     /// **Static analyzers can safely ignore this field.**
     ///
     /// Build configuration filter to decide whether to add runtime checks.
@@ -136,9 +138,8 @@ pub struct PreCondition {
 /// A postcondition represented by a closure that takes the return value as a reference.
 #[derive(Debug)]
 pub struct PostCondition {
-    /// The closure that validates the postcondition, taking the function's
-    /// return value by reference, e.g. `|output| *output > 0`.
-    pub closure: ExprClosure,
+    /// The expression that validates the postcondition, e.g. `*output > 0`.
+    pub expr: Expr,
     /// **Static analyzers can safely ignore this field.**
     ///
     /// Build configuration filter to decide whether to add runtime checks.
