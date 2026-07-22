@@ -135,8 +135,8 @@ impl Mode {
         for condition in requires.iter().chain(maintains) {
             let i = clauses.len();
             let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
-            let closure = &condition.closure;
-            statements.push(parse_quote! { let #name = (#closure)(); });
+            let expr = &condition.expr;
+            statements.push(parse_quote! { let #name = (|| -> bool { #expr })(); });
             clauses.push(parse_quote! { #name });
         }
 
@@ -164,8 +164,8 @@ impl Mode {
         for condition in maintains {
             let i = clauses.len();
             let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
-            let closure = &condition.closure;
-            statements.push(parse_quote! { let #name = (#closure)(); });
+            let expr = &condition.expr;
+            statements.push(parse_quote! { let #name = (|| -> bool { #expr })(); });
             clauses.push(parse_quote! { #name });
         }
 
@@ -232,9 +232,9 @@ impl CheckSettings {
         // --- Generate Precondition Clauses ---
         let mut precondition_clauses: Vec<Expr> = vec![];
         for condition in spec.requires.iter().chain(&spec.maintains) {
-            let closure = &condition.closure;
-            let expr = parse_quote! { __anodized_eval_pre(#closure) };
-            let repr = condition.closure.body.to_token_stream().to_string();
+            let expr = &condition.expr;
+            let repr = expr.to_token_stream().to_string();
+            let expr = parse_quote! { __anodized_eval_pre(|| -> bool { #expr }) };
             let clause = self.build_clause_eval(condition.cfg.as_ref(), &expr, &repr);
             precondition_clauses.push(clause);
         }
@@ -283,9 +283,9 @@ impl CheckSettings {
         // --- Generate Postcondition Clauses ---
         let mut postcondition_clauses: Vec<Expr> = vec![];
         for condition in &spec.maintains {
-            let closure = condition.closure.to_token_stream();
-            let expr = parse_quote! { __anodized_eval_inv(#closure) };
-            let repr = condition.closure.body.to_token_stream().to_string();
+            let expr = &condition.expr;
+            let repr = expr.to_token_stream().to_string();
+            let expr = parse_quote! { __anodized_eval_inv(|| -> bool { #expr }) };
             let clause = self.build_clause_eval(condition.cfg.as_ref(), &expr, &repr);
             postcondition_clauses.push(clause);
         }

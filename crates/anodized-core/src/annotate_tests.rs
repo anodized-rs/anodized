@@ -14,7 +14,7 @@ fn simple_spec() {
     let expected = Spec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![PreCondition {
-            closure: parse_quote! { || -> bool { is_valid(x) } },
+            expr: parse_quote! { || -> bool { is_valid(x) } },
             cfg: None,
         }],
         maintains: vec![],
@@ -188,11 +188,11 @@ fn all_clauses() {
     let expected = Spec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![PreCondition {
-            closure: parse_quote! { || -> bool { x > 0 && x.is_power_of_two() } },
+            expr: parse_quote! { || -> bool { x > 0 && x.is_power_of_two() } },
             cfg: None,
         }],
         maintains: vec![PreCondition {
-            closure: parse_quote! { || -> bool { self.is_valid() } },
+            expr: parse_quote! { || -> bool { self.is_valid() } },
             cfg: None,
         }],
         captures: vec![],
@@ -262,11 +262,11 @@ fn array_of_conditions() {
         qualifiers: FnQualifiers::empty(),
         requires: vec![
             PreCondition {
-                closure: parse_quote! { || -> bool { x >= 0 } },
+                expr: parse_quote! { || -> bool { x >= 0 } },
                 cfg: None,
             },
             PreCondition {
-                closure: parse_quote! { || -> bool { y.len() < 10 } },
+                expr: parse_quote! { || -> bool { y.len() < 10 } },
                 cfg: None,
             },
         ],
@@ -319,7 +319,7 @@ fn condition_closure_explicit_return_type_is_preserved() {
     let expected = Spec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![PreCondition {
-            closure: parse_quote! { || -> bool { x > 0 } },
+            expr: parse_quote! { || -> bool { x > 0 } },
             cfg: None,
         }],
         maintains: vec![],
@@ -363,11 +363,11 @@ fn multiple_clauses_of_same_flavor() {
         qualifiers: FnQualifiers::empty(),
         requires: vec![
             PreCondition {
-                closure: parse_quote! { || -> bool { x > 0 || x < -10 } },
+                expr: parse_quote! { || -> bool { x > 0 || x < -10 } },
                 cfg: None,
             },
             PreCondition {
-                closure: parse_quote! { || -> bool { y.is_ascii() } },
+                expr: parse_quote! { || -> bool { y.is_ascii() } },
                 cfg: None,
             },
         ],
@@ -408,15 +408,15 @@ fn mixed_single_and_array_clauses() {
         qualifiers: FnQualifiers::empty(),
         requires: vec![
             PreCondition {
-                closure: parse_quote! { || -> bool { x == 0 } },
+                expr: parse_quote! { || -> bool { x == 0 } },
                 cfg: None,
             },
             PreCondition {
-                closure: parse_quote! { || -> bool { y > 1 } },
+                expr: parse_quote! { || -> bool { y > 1 } },
                 cfg: None,
             },
             PreCondition {
-                closure: parse_quote! { || -> bool { z.is_empty() || z.contains("foo") } },
+                expr: parse_quote! { || -> bool { z.is_empty() || z.contains("foo") } },
                 cfg: None,
             },
         ],
@@ -454,7 +454,7 @@ fn cfg_attributes() {
     let expected = Spec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![PreCondition {
-            closure: parse_quote! { || -> bool { x > 0 && is_mode() } },
+            expr: parse_quote! { || -> bool { x > 0 && is_mode() } },
             cfg: Some(parse_quote! { test }),
         }],
         maintains: vec![],
@@ -508,11 +508,11 @@ fn macro_in_condition() {
     let expected = Spec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![PreCondition {
-            closure: parse_quote! { || -> bool { matches!(self.state, State::Idle) } },
+            expr: parse_quote! { || -> bool { matches!(self.state, State::Idle) } },
             cfg: None,
         }],
         maintains: vec![PreCondition {
-            closure: parse_quote! { || -> bool { matches!(self.state, State::Idle | State::Running | State::Finished) } },
+            expr: parse_quote! { || -> bool { matches!(self.state, State::Idle | State::Running | State::Finished) } },
             cfg: None,
         }],
         captures: vec![],
@@ -572,20 +572,20 @@ fn multiple_conditions() {
         qualifiers: FnQualifiers::empty(),
         requires: vec![
             PreCondition {
-                closure: parse_quote! { || -> bool { self.initialized } },
+                expr: parse_quote! { || -> bool { self.initialized } },
                 cfg: None,
             },
             PreCondition {
-                closure: parse_quote! { || -> bool { !self.locked } },
+                expr: parse_quote! { || -> bool { !self.locked } },
                 cfg: None,
             },
             PreCondition {
-                closure: parse_quote! { || -> bool { index < self.items.len() } },
+                expr: parse_quote! { || -> bool { index < self.items.len() } },
                 cfg: None,
             },
         ],
         maintains: vec![PreCondition {
-            closure: parse_quote! { || -> bool { self.items.len() <= self.items.capacity() } },
+            expr: parse_quote! { || -> bool { self.items.len() <= self.items.capacity() } },
             cfg: None,
         }],
         captures: vec![],
@@ -743,11 +743,11 @@ fn captures_with_all_clauses() {
     let expected = Spec {
         qualifiers: FnQualifiers::empty(),
         requires: vec![PreCondition {
-            closure: parse_quote! { || -> bool { x > 0 } },
+            expr: parse_quote! { || -> bool { x > 0 } },
             cfg: None,
         }],
         maintains: vec![PreCondition {
-            closure: parse_quote! { || -> bool { self.is_valid() } },
+            expr: parse_quote! { || -> bool { self.is_valid() } },
             cfg: None,
         }],
         captures: vec![Capture {

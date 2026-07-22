@@ -295,15 +295,12 @@ impl SpecArg {
         if let Expr::Array(conditions) = expr {
             for expr in conditions.elems {
                 preconditions.push(PreCondition {
-                    closure: interpret_expr_as_precondition(expr)?,
+                    expr,
                     cfg: cfg.clone(),
                 });
             }
         } else {
-            preconditions.push(PreCondition {
-                closure: interpret_expr_as_precondition(expr)?,
-                cfg,
-            });
+            preconditions.push(PreCondition { expr, cfg });
         }
         Ok(())
     }

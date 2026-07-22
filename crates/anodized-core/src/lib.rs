@@ -123,9 +123,8 @@ impl LoopSpec {
 #[derive(Debug)]
 // TODO: Rename to `Condition` for clarity.
 pub struct PreCondition {
-    /// The closure that validates the precondition,
-    /// takes no input, e.g. `|| input.is_valid()`.
-    pub closure: ExprClosure,
+    /// The expression that validates the precondition, e.g. `input.is_valid()`.
+    pub expr: Expr,
     /// **Static analyzers can safely ignore this field.**
     ///
     /// Build configuration filter to decide whether to add runtime checks.

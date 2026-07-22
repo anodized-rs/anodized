@@ -87,12 +87,12 @@ where
 fn assert_precondition_eq(left: &PreCondition, right: &PreCondition, msg_prefix: &str) {
     // Destructure to ensure we handle all fields
     let PreCondition {
-        closure: left_expr,
+        expr: left_expr,
         cfg: left_cfg,
     } = left;
 
     let PreCondition {
-        closure: right_expr,
+        expr: right_expr,
         cfg: right_cfg,
     } = right;
 
