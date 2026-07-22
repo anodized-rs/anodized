@@ -439,43 +439,6 @@ fn interpret_capture_expr_as_capture(capture_expr: CaptureExpr) -> Result<Captur
     }
 }
 
-/// Interpret expression as precondition, i.e. a closure that returns `bool` and takes no inputs.
-fn interpret_expr_as_precondition(expr: Expr) -> Result<syn::ExprClosure> {
-    match expr {
-        // Already a closure.
-        Expr::Closure(closure) => {
-            // Ensure it returns `bool`.
-            let predicate = interpret_closure_as_predicate(closure)?;
-            // Ensure it takes no inputs.
-            if predicate.inputs.is_empty() {
-                Ok(predicate)
-            } else {
-                Err(Error::new_spanned(
-                    predicate.or1_token,
-                    format!(
-                        "precondition closure must have no arguments, found {}",
-                        predicate.inputs.len()
-                    ),
-                ))
-            }
-        }
-        // Naked expression, wrap in an argumentless closure.
-        expr => Ok(syn::ExprClosure {
-            attrs: vec![],
-            lifetimes: None,
-            constness: None,
-            movability: None,
-            asyncness: None,
-            capture: None,
-            or1_token: Default::default(),
-            inputs: syn::punctuated::Punctuated::new(),
-            or2_token: Default::default(),
-            output: parse_quote!(-> bool),
-            body: Box::new(expr),
-        }),
-    }
-}
-
 /// Interpret expression as postcondition, i.e. a closure that returns `bool` and takes one input.
 fn interpret_expr_as_postcondition(expr: Expr, default_binding: Pat) -> Result<syn::ExprClosure> {
     match expr {
