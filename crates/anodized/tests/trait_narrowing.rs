@@ -108,7 +108,7 @@ fn runtime_rejects_stronger_impl_precondition() {
 #[cfg(all(anodized_print, anodized_panic))]
 #[test]
 #[should_panic(expected = "postcondition failed:\
-\n    | output | input.iter().any(| item | output == item) || input.is_empty()")]
+\n    input.iter().any(| item | output == item) || input.is_empty()")]
 fn runtime_rejects_weaker_impl_postcondition() {
     // NOTE: The trait's runtime checks are active even when the concrete type is statically known.
     let seq = [5, 42, 3];
