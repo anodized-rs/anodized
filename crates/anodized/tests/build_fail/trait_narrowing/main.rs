@@ -11,6 +11,7 @@ trait MinFinder<T: Copy + PartialOrd> {
         requires: [
             input.len() > 0,
         ],
+        binds: ref output,
         ensures: [
             input.iter().all(|item| output <= item),
             input.iter().any(|item| output == item) || input.is_empty(),
@@ -27,6 +28,7 @@ impl<T: Copy + PartialOrd> MinFinder<T> for WeakerImplQualifiers<T> {
         // INVALID - Weaker than trait qualifiers: may panic or run forever.
         deterministic,
         requires: [],
+        binds: ref output,
         ensures: [
             input.iter().all(|item| output <= item),
             input.iter().any(|item| output == item),

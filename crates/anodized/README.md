@@ -50,9 +50,10 @@ use anodized::spec;
         part <= whole,
         whole > 0.0,
     ],
+    binds: output,
     ensures: [
-        *output >= 0.0,
-        *output <= 100.0,
+        output >= 0.0,
+        output <= 100.0,
     ],
 )]
 fn calculate_percentage(part: f64, whole: f64) -> f64 {
