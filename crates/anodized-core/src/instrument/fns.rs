@@ -186,16 +186,8 @@ impl Mode {
         for condition in ensures {
             let i = clauses.len();
             let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
-            let closure = &condition.expr;
-            let input = closure.inputs.first().expect("valid postcondition");
-            if let Pat::Type(_) = input {
-                statements.push(parse_quote! { let #name = (#closure)(__anodized_output); });
-            } else {
-                let body = &closure.body;
-                statements.push(parse_quote! {
-                    let #name = (| #input: &#output_type | -> bool { #body })(__anodized_output);
-                });
-            }
+            let expr = &condition.expr;
+            statements.push(parse_quote! { let #name = (|| -> bool { #expr })(); });
             clauses.push(parse_quote! { #name });
         }
 
@@ -221,7 +213,7 @@ impl CheckSettings {
         return_type: &syn::Type,
     ) -> Result<Block> {
         // The identifier for the return value binding.
-        let output_ident = Pat::Ident(PatIdent {
+        let output_pat: Pat = Pat::Ident(PatIdent {
             attrs: vec![],
             by_ref: None,
             mutability: None,
@@ -251,7 +243,7 @@ impl CheckSettings {
             .captures
             .iter()
             .map(|cb| &cb.pat)
-            .chain(std::iter::once(&output_ident));
+            .chain(std::iter::once(&output_pat));
 
         // Chain capture expressions with body expression
         let capture_exprs = spec.captures.iter().map(|cb| {
@@ -285,25 +277,14 @@ impl CheckSettings {
         for condition in &spec.maintains {
             let expr = &condition.expr;
             let repr = expr.to_token_stream().to_string();
-            let expr = parse_quote! { __anodized_eval_inv(|| -> bool { #expr }) };
+            let expr = parse_quote! { __anodized_eval_post(|| -> bool { #expr }) };
             let clause = self.build_clause_eval(condition.cfg.as_ref(), &expr, &repr);
             postcondition_clauses.push(clause);
         }
         for postcondition in &spec.ensures {
-            let closure = &postcondition.expr;
-            let input = &closure.inputs.first().unwrap();
-            let output = &closure.output;
-            let body = &closure.body;
-            let closure_expr = match input {
-                Pat::Type(_) => closure.clone(),
-                _ => parse_quote! {
-                    // If the closure's input doesn't have a type ascription, add one.
-                    |#input: &#return_type| #output { #body }
-                },
-            };
-            let expr = parse_quote! { __anodized_eval_post(#closure_expr, &#output_ident) };
-            // Omit the closure's return type for brevity.
-            let repr = quote! { |#input| #body }.to_string();
+            let expr = &postcondition.expr;
+            let repr = expr.to_token_stream().to_string();
+            let expr = parse_quote! { __anodized_eval_post(|| -> bool { #expr }) };
             let clause = self.build_clause_eval(postcondition.cfg.as_ref(), &expr, &repr);
             postcondition_clauses.push(clause);
         }
@@ -318,13 +299,13 @@ impl CheckSettings {
                 && panic_settings.has_try_fn
             {
                 (
-                    quote! { Ok(#output_ident) },
+                    quote! { Ok(#output_pat) },
                     Some(parse_quote! { return Err((false, __anodized_errors)); }),
                     Some(parse_quote! { return Err((true, __anodized_errors)); }),
                 )
             } else {
                 (
-                    quote! { #output_ident },
+                    quote! { #output_pat },
                     self.build_fail_action("precondition failed"),
                     self.build_fail_action("postcondition failed"),
                 )
@@ -342,8 +323,7 @@ impl CheckSettings {
                 }
                 #body_and_captures
                 if #do_run_checks {
-                    fn __anodized_eval_inv(c: impl Fn() -> bool) -> bool { c() }
-                    fn __anodized_eval_post<R>(c: impl Fn(&R) -> bool, r: &R) -> bool { c(r) }
+                    fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                     let mut __anodized_errors = ::std::string::String::new();
                     let __anodized_postcond = #(#postcondition_clauses)&*;
                     if !__anodized_postcond {

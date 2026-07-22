@@ -120,7 +120,7 @@ impl Parse for Spec {
                     }
                 }
                 Keyword::Ensures => {
-                    if let Err(error) = arg.parse_postconditions(&binds_pattern, &mut ensures) {
+                    if let Err(error) = arg.parse_postconditions(&mut ensures) {
                         errors.add(error);
                     }
                 }
@@ -152,6 +152,7 @@ impl Parse for Spec {
             requires,
             maintains,
             captures,
+            binds: binds_pattern,
             ensures,
             span: input.span(),
         })
@@ -340,11 +341,7 @@ impl SpecArg {
         Ok(())
     }
 
-    fn parse_postconditions(
-        self,
-        binds_pattern: &Option<Pat>,
-        postconditions: &mut Vec<PostCondition>,
-    ) -> Result<()> {
+    fn parse_postconditions(self, postconditions: &mut Vec<PostCondition>) -> Result<()> {
         let cfg_attr = find_cfg_attribute(&self.attrs)?;
         let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
             Some(attr.parse_args()?)
@@ -352,19 +349,15 @@ impl SpecArg {
             None
         };
         let expr = self.value.try_into_expr()?;
-        let default_pattern = binds_pattern.clone().unwrap_or(parse_quote! { output });
         if let Expr::Array(conditions) = expr {
             for expr in conditions.elems {
                 postconditions.push(PostCondition {
-                    expr: interpret_expr_as_postcondition(expr, default_pattern.clone())?,
+                    expr,
                     cfg: cfg.clone(),
                 });
             }
         } else {
-            postconditions.push(PostCondition {
-                expr: interpret_expr_as_postcondition(expr, default_pattern)?,
-                cfg,
-            });
+            postconditions.push(PostCondition { expr, cfg });
         }
         Ok(())
     }
