@@ -84,7 +84,7 @@ fn default_instrument_item_impl() {
                         & __anodized_eval_pre(|| -> bool { COND_2 });
                     if !__anodized_precond {}
                 }
-                let (__anodized_output) = ((|| -> RET_TYPE { { BODY } })());
+                let (__anodized_output) = ((|| -> RET_TYPE { BODY })());
                 if false {
                     fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                     let mut __anodized_errors = ::std::string::String::new();
@@ -148,7 +148,7 @@ fn emit_try_fn_instrument_item_impl() {
                         return Err((false, __anodized_errors));
                     }
                 }
-                let (__anodized_output) = ((|| -> RET_TYPE { { BODY } })());
+                let (__anodized_output) = ((|| -> RET_TYPE { BODY })());
                 if true {
                     fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                     let mut __anodized_errors = ::std::string::String::new();

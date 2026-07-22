@@ -108,7 +108,7 @@ fn default_instrument_item_fn() {
             let (ALIAS_1, (ALIAS_2, ALIAS_3), __anodized_output) = (
                 (|| EXPR_1)(),
                 (|| EXPR_2)(),
-                (|| -> RET_TYPE { { BODY } })(),
+                (|| -> RET_TYPE { BODY })(),
             );
             if false {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
@@ -175,7 +175,7 @@ fn emit_try_fn_instrument_item_fn() {
             let (ALIAS_1, (ALIAS_2, ALIAS_3), __anodized_output) = (
                 (|| EXPR_1)(),
                 (|| EXPR_2)(),
-                (|| -> RET_TYPE { { BODY } })(),
+                (|| -> RET_TYPE { BODY })(),
             );
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
@@ -240,7 +240,7 @@ fn simple_requires() {
                     panic!("precondition failed:{__anodized_errors}");
                 }
             }
-            let (__anodized_output) = ((|| #ret_type { #body })());
+            let (__anodized_output) = ((|| #ret_type #body)());
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
@@ -280,7 +280,7 @@ fn requires_disable_runtime_checks() {
                 let __anodized_precond = __anodized_eval_pre(|| -> bool { CONDITION_1 });
                 if !__anodized_precond {}
             }
-            let (__anodized_output) = ((|| #ret_type { #body })());
+            let (__anodized_output) = ((|| #ret_type #body)());
             if false {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
@@ -314,7 +314,7 @@ fn requires_no_panic_runtime() {
                     eprintln!("precondition failed:{__anodized_errors}");
                 }
             }
-            let (__anodized_output) = ((|| #ret_type { #body })());
+            let (__anodized_output) = ((|| #ret_type #body)());
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
@@ -354,7 +354,7 @@ fn simple_maintains() {
                     panic!("precondition failed:{__anodized_errors}");
                 }
             }
-            let (__anodized_output) = ((|| #ret_type { #body })());
+            let (__anodized_output) = ((|| #ret_type #body)());
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
@@ -394,7 +394,7 @@ fn simple_ensures() {
                     panic!("precondition failed:{__anodized_errors}");
                 }
             }
-            let (__anodized_output) = ((|| #ret_type { #body })());
+            let (__anodized_output) = ((|| #ret_type #body)());
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
@@ -438,7 +438,7 @@ fn simple_requires_and_maintains() {
                     panic!("precondition failed:{__anodized_errors}");
                 }
             }
-            let (__anodized_output) = ((|| #ret_type { #body })());
+            let (__anodized_output) = ((|| #ret_type #body)());
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
@@ -480,7 +480,7 @@ fn simple_requires_and_ensures() {
                     panic!("precondition failed:{__anodized_errors}");
                 }
             }
-            let (__anodized_output) = ((|| #ret_type { #body })());
+            let (__anodized_output) = ((|| #ret_type #body)());
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
@@ -522,7 +522,7 @@ fn simple_maintains_and_ensures() {
                     panic!("precondition failed:{__anodized_errors}");
                 }
             }
-            let (__anodized_output) = ((|| #ret_type { #body })());
+            let (__anodized_output) = ((|| #ret_type #body)());
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
@@ -569,7 +569,7 @@ fn simple_requires_maintains_and_ensures() {
                     panic!("precondition failed:{__anodized_errors}");
                 }
             }
-            let (__anodized_output) = ((|| #ret_type { #body })());
+            let (__anodized_output) = ((|| #ret_type #body)());
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
@@ -616,7 +616,7 @@ fn simple_async_requires_maintains_and_ensures() {
                     panic!("precondition failed:{__anodized_errors}");
                 }
             }
-            let (__anodized_output) = ((async || #ret_type { #body })().await);
+            let (__anodized_output) = ((async || #ret_type #body)().await);
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
@@ -667,7 +667,7 @@ fn multiple_conditions_in_clauses() {
                     panic!("precondition failed:{__anodized_errors}");
                 }
             }
-            let (__anodized_output) = ((|| #ret_type { #body })());
+            let (__anodized_output) = ((|| #ret_type #body)());
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
@@ -714,7 +714,7 @@ fn binds_parameter() {
                     panic!("precondition failed:{__anodized_errors}");
                 }
             }
-            let (__anodized_output) = ((|| #ret_type { #body })());
+            let (__anodized_output) = ((|| #ret_type #body)());
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
@@ -759,7 +759,7 @@ fn ensures_with_mixed_conditions() {
                     panic!("precondition failed:{__anodized_errors}");
                 }
             }
-            let (__anodized_output) = ((|| #ret_type { #body })());
+            let (__anodized_output) = ((|| #ret_type #body)());
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
@@ -813,7 +813,7 @@ fn cfg_attributes() {
                     panic!("precondition failed:{__anodized_errors}");
                 }
             }
-            let (__anodized_output) = ((|| #ret_type { #body })());
+            let (__anodized_output) = ((|| #ret_type #body)());
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
@@ -865,7 +865,7 @@ fn cfg_on_single_and_list_conditions() {
                     panic!("precondition failed:{__anodized_errors}");
                 }
             }
-            let (__anodized_output) = ((|| #ret_type { #body })());
+            let (__anodized_output) = ((|| #ret_type #body)());
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
@@ -932,7 +932,7 @@ fn complex_mixed_conditions() {
                     panic!("precondition failed:{__anodized_errors}");
                 }
             }
-            let (__anodized_output) = ((|| #ret_type { #body })());
+            let (__anodized_output) = ((|| #ret_type #body)());
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
@@ -993,7 +993,7 @@ fn captures() {
                     panic!("precondition failed:{__anodized_errors}");
                 }
             }
-            let (ALIAS_1, ALIAS_2, __anodized_output) = ((| | EXPR_1) (), (| | EXPR_2) (), (|| #ret_type { #body })());
+            let (ALIAS_1, ALIAS_2, __anodized_output) = ((| | EXPR_1) (), (| | EXPR_2) (), (|| #ret_type #body)());
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();

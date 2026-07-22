@@ -232,9 +232,9 @@ impl CheckSettings {
             .chain(std::iter::once(&output_ident));
 
         let body_expr = if is_async {
-            quote! { (async || #return_type { #original_body })().await }
+            quote! { (async || #return_type #original_body)().await }
         } else {
-            quote! { (|| #return_type { #original_body })() }
+            quote! { (|| #return_type #original_body)() }
         };
         let values = spec
             .captures

@@ -102,7 +102,7 @@ fn default_instrument_item_trait() {
                         & __anodized_eval_pre(|| -> bool { COND_2 });
                     if !__anodized_precond {}
                 }
-                let (__anodized_output) = ((|| -> RET_TYPE { { Self::__anodized_FUNC(self, PARAM_1, PARAM_2) } })());
+                let (__anodized_output) = ((|| -> RET_TYPE { Self::__anodized_FUNC(self, PARAM_1, PARAM_2) })());
                 if false {
                     fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                     let mut __anodized_errors = ::std::string::String::new();
@@ -179,7 +179,7 @@ fn emit_try_fn_instrument_item_trait() {
                         return Err((false, __anodized_errors));
                     }
                 }
-                let (__anodized_output) = ((|| -> RET_TYPE { { Self::__anodized_FUNC(self, PARAM_1, PARAM_2) } })());
+                let (__anodized_output) = ((|| -> RET_TYPE { Self::__anodized_FUNC(self, PARAM_1, PARAM_2) })());
                 if true {
                     fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                     let mut __anodized_errors = ::std::string::String::new();
@@ -297,7 +297,7 @@ fn default_instrument_item_impl_trait() {
                         & __anodized_eval_pre(|| -> bool { COND_2 });
                     if !__anodized_precond {}
                 }
-                let (__anodized_output) = ((|| -> RET_TYPE { { BODY } })());
+                let (__anodized_output) = ((|| -> RET_TYPE { BODY })());
                 if false {
                     fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                     let mut __anodized_errors = ::std::string::String::new();
@@ -362,7 +362,7 @@ fn emit_try_fn_instrument_item_impl_trait() {
                         panic!("precondition failed:{__anodized_errors}");
                     }
                 }
-                let (__anodized_output) = ((|| -> RET_TYPE { { BODY } })());
+                let (__anodized_output) = ((|| -> RET_TYPE { BODY })());
                 if true {
                     fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                     let mut __anodized_errors = ::std::string::String::new();
