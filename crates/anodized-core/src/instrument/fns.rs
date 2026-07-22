@@ -186,7 +186,7 @@ impl Mode {
         for condition in ensures {
             let i = clauses.len();
             let name = Ident::new(&format!("__anodized_clause_{}", i + 1), Span::mixed_site());
-            let closure = &condition.closure;
+            let closure = &condition.expr;
             let input = closure.inputs.first().expect("valid postcondition");
             if let Pat::Type(_) = input {
                 statements.push(parse_quote! { let #name = (#closure)(__anodized_output); });
@@ -290,7 +290,7 @@ impl CheckSettings {
             postcondition_clauses.push(clause);
         }
         for postcondition in &spec.ensures {
-            let closure = &postcondition.closure;
+            let closure = &postcondition.expr;
             let input = &closure.inputs.first().unwrap();
             let output = &closure.output;
             let body = &closure.body;

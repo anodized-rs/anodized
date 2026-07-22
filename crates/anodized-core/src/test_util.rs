@@ -114,12 +114,12 @@ fn assert_precondition_eq(left: &PreCondition, right: &PreCondition, msg_prefix:
 fn assert_postcondition_eq(left: &PostCondition, right: &PostCondition, msg_prefix: &str) {
     // Destructure to ensure we handle all fields
     let PostCondition {
-        closure: left_closure,
+        expr: left_closure,
         cfg: left_cfg,
     } = left;
 
     let PostCondition {
-        closure: right_closure,
+        expr: right_closure,
         cfg: right_cfg,
     } = right;
 

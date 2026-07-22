@@ -356,13 +356,13 @@ impl SpecArg {
         if let Expr::Array(conditions) = expr {
             for expr in conditions.elems {
                 postconditions.push(PostCondition {
-                    closure: interpret_expr_as_postcondition(expr, default_pattern.clone())?,
+                    expr: interpret_expr_as_postcondition(expr, default_pattern.clone())?,
                     cfg: cfg.clone(),
                 });
             }
         } else {
             postconditions.push(PostCondition {
-                closure: interpret_expr_as_postcondition(expr, default_pattern)?,
+                expr: interpret_expr_as_postcondition(expr, default_pattern)?,
                 cfg,
             });
         }

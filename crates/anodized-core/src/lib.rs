@@ -137,7 +137,7 @@ pub struct PreCondition {
 pub struct PostCondition {
     /// The closure that validates the postcondition, taking the function's
     /// return value by reference, e.g. `|output| *output > 0`.
-    pub closure: ExprClosure,
+    pub expr: ExprClosure,
     /// **Static analyzers can safely ignore this field.**
     ///
     /// Build configuration filter to decide whether to add runtime checks.
