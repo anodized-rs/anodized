@@ -1,7 +1,6 @@
 use syn::{
     Attribute, Error, Expr, Ident, Meta, Pat, PatIdent,
     parse::{Parse, ParseStream, Result},
-    parse_quote,
     spanned::Spanned,
 };
 
