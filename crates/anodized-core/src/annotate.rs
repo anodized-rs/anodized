@@ -432,59 +432,6 @@ fn interpret_capture_expr_as_capture(capture_expr: CaptureExpr) -> Result<Captur
     }
 }
 
-/// Interpret expression as postcondition, i.e. a closure that returns `bool` and takes one input.
-fn interpret_expr_as_postcondition(expr: Expr, default_binding: Pat) -> Result<syn::ExprClosure> {
-    match expr {
-        // Already a closure.
-        Expr::Closure(closure) => {
-            // Ensure it returns `bool`.
-            let predicate = interpret_closure_as_predicate(closure)?;
-            // Ensure it takes exactly one input.
-            if predicate.inputs.len() == 1 {
-                Ok(predicate)
-            } else {
-                Err(Error::new_spanned(
-                    predicate.or1_token,
-                    format!(
-                        "postcondition closure must have exactly one argument, found {}",
-                        predicate.inputs.len()
-                    ),
-                ))
-            }
-        }
-        // Naked expression, wrap in a closure with default binding.
-        expr => Ok(syn::ExprClosure {
-            attrs: vec![],
-            lifetimes: None,
-            constness: None,
-            movability: None,
-            asyncness: None,
-            capture: None,
-            or1_token: Default::default(),
-            inputs: syn::punctuated::Punctuated::from_iter([default_binding]),
-            or2_token: Default::default(),
-            output: parse_quote!(-> bool),
-            body: Box::new(expr),
-        }),
-    }
-}
-
-fn interpret_closure_as_predicate(mut closure: syn::ExprClosure) -> Result<syn::ExprClosure> {
-    match &closure.output {
-        syn::ReturnType::Default => {
-            closure.output = parse_quote!(-> bool);
-            Ok(closure)
-        }
-        syn::ReturnType::Type(_, ty) if matches!(ty.as_ref(), syn::Type::Path(path) if path.qself.is_none() && path.path.is_ident("bool")) => {
-            Ok(closure)
-        }
-        syn::ReturnType::Type(_, ty) => Err(Error::new_spanned(
-            ty,
-            "predicate must return `bool`".to_string(),
-        )),
-    }
-}
-
 fn find_cfg_attribute(attrs: &[Attribute]) -> Result<Option<&Attribute>> {
     let mut cfg_attr: Option<&Attribute> = None;
 
