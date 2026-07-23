@@ -5,17 +5,11 @@ use anodized::result::{try_call, PostError, PreError};
 use libfuzzer_sys::arbitrary::{self, Arbitrary, Error, Unstructured};
 use libfuzzer_sys::{fuzz_target, Corpus};
 
-fuzz_target!(|data: &[u8]| -> Corpus {
-    let mut unst = Unstructured::new(data);
-
-    let Ok(inputs) = Inputs::<i32>::arbitrary(&mut unst) else {
-        // Reject data that doesn't generate valid inputs.
-        return Corpus::Reject;
-    };
-
+fuzz_target!(|inputs: Inputs<i32>| -> Corpus {
     // Use Anodized's `try_call!` macro to defer acting on spec violations.
-    let result = try_call! { bin_search::bin_search(&inputs.seq, &inputs.value) };
-
+    let result = try_call! {
+        bin_search::bin_search(&inputs.seq, &inputs.value)
+    };
     match result {
         // Successful call.
         Ok(_) => Corpus::Keep,
