@@ -11,7 +11,7 @@ use syn::{
 };
 
 use crate::{
-    Capture, PostCondition, PreCondition, Spec,
+    Capture, Condition, Spec,
     instrument::{CheckSettings, Mode},
     qualifiers::FnQualifiers,
 };
@@ -119,10 +119,7 @@ impl Mode {
         }
     }
 
-    pub fn build_precondition_fn_body(
-        requires: &[PreCondition],
-        maintains: &[PreCondition],
-    ) -> Block {
+    pub fn build_precondition_fn_body(requires: &[Condition], maintains: &[Condition]) -> Block {
         let mut statements: Vec<Stmt> = vec![];
         let mut clauses: Vec<Expr> = vec![];
 
@@ -147,10 +144,10 @@ impl Mode {
     }
 
     pub fn build_postcondition_fn_body(
-        maintains: &[PreCondition],
+        maintains: &[Condition],
         captures: &[Capture],
         binds: &Option<Pat>,
-        ensures: &[PostCondition],
+        ensures: &[Condition],
     ) -> Result<Block> {
         let mut statements: Vec<Stmt> = vec![];
         let mut clauses: Vec<Expr> = vec![];
@@ -218,7 +215,7 @@ impl CheckSettings {
             let expr = &condition.expr;
             let repr = expr.to_token_stream().to_string();
             let expr = parse_quote! { __anodized_eval_pre(|| -> bool { #expr }) };
-            let clause = self.build_clause_eval(condition.cfg.as_ref(), &expr, &repr);
+            let clause = self.build_clause_eval(&condition.cfg, &expr, &repr);
             precondition_clauses.push(clause);
         }
         if precondition_clauses.is_empty() {
@@ -254,18 +251,11 @@ impl CheckSettings {
 
         // Generate postcondition checks.
         let mut postcondition_clauses: Vec<Expr> = vec![];
-        for condition in &spec.maintains {
+        for condition in spec.maintains.iter().chain(&spec.ensures) {
             let expr = &condition.expr;
             let repr = expr.to_token_stream().to_string();
             let expr = parse_quote! { __anodized_eval_post(|| -> bool { #expr }) };
-            let clause = self.build_clause_eval(condition.cfg.as_ref(), &expr, &repr);
-            postcondition_clauses.push(clause);
-        }
-        for postcondition in &spec.ensures {
-            let expr = &postcondition.expr;
-            let repr = expr.to_token_stream().to_string();
-            let expr = parse_quote! { __anodized_eval_post(|| -> bool { #expr }) };
-            let clause = self.build_clause_eval(postcondition.cfg.as_ref(), &expr, &repr);
+            let clause = self.build_clause_eval(&condition.cfg, &expr, &repr);
             postcondition_clauses.push(clause);
         }
         if postcondition_clauses.is_empty() {
@@ -325,7 +315,7 @@ impl CheckSettings {
         })
     }
 
-    fn build_clause_eval(&self, cfg: Option<&Meta>, expr: &Expr, repr: &str) -> Expr {
+    fn build_clause_eval(&self, cfg: &Option<Meta>, expr: &Expr, repr: &str) -> Expr {
         if self.does_print {
             let br_and_repr = format!("\n    {repr}");
             let cfg_guard = match cfg {

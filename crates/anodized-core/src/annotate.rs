@@ -5,7 +5,7 @@ use syn::{
 };
 
 use crate::{
-    Capture, DataSpec, LoopSpec, LoopVariant, PostCondition, PreCondition, Spec,
+    Capture, Condition, DataSpec, LoopSpec, LoopVariant, Spec,
     annotate::syntax::{CaptureExpr, SpecArg, SpecArgValue},
     qualifiers::FnQualifiers,
 };
@@ -23,11 +23,11 @@ impl Parse for Spec {
 
         let mut errors = MultiError::empty();
         let mut qualifiers = FnQualifiers::empty();
-        let mut requires: Vec<PreCondition> = vec![];
-        let mut maintains: Vec<PreCondition> = vec![];
+        let mut requires: Vec<Condition> = vec![];
+        let mut maintains: Vec<Condition> = vec![];
         let mut captures: Vec<Capture> = vec![];
         let mut binds_pattern: Option<Pat> = None;
-        let mut ensures: Vec<PostCondition> = vec![];
+        let mut ensures: Vec<Condition> = vec![];
 
         let is_sorted = raw_spec.is_sorted();
 
@@ -87,12 +87,12 @@ impl Parse for Spec {
                     }
                 }
                 Keyword::Requires => {
-                    if let Err(error) = arg.parse_preconditions(&mut requires) {
+                    if let Err(error) = arg.parse_conditions(&mut requires) {
                         errors.add(error);
                     }
                 }
                 Keyword::Maintains => {
-                    if let Err(error) = arg.parse_preconditions(&mut maintains) {
+                    if let Err(error) = arg.parse_conditions(&mut maintains) {
                         errors.add(error);
                     }
                 }
@@ -119,7 +119,7 @@ impl Parse for Spec {
                     }
                 }
                 Keyword::Ensures => {
-                    if let Err(error) = arg.parse_postconditions(&mut ensures) {
+                    if let Err(error) = arg.parse_conditions(&mut ensures) {
                         errors.add(error);
                     }
                 }
@@ -163,7 +163,7 @@ impl Parse for DataSpec {
         let raw_spec = syntax::SpecArgs::parse(input)?;
 
         let mut errors = MultiError::empty();
-        let mut maintains: Vec<PreCondition> = vec![];
+        let mut maintains: Vec<Condition> = vec![];
 
         for arg in raw_spec.args {
             match arg.keyword {
@@ -174,7 +174,7 @@ impl Parse for DataSpec {
                     ));
                 }
                 Keyword::Maintains => {
-                    if let Err(error) = arg.parse_preconditions(&mut maintains) {
+                    if let Err(error) = arg.parse_conditions(&mut maintains) {
                         errors.add(error);
                     }
                 }
@@ -206,7 +206,7 @@ impl Parse for LoopSpec {
 
         let mut errors = MultiError::empty();
         let mut decreases = None;
-        let mut maintains: Vec<PreCondition> = vec![];
+        let mut maintains: Vec<Condition> = vec![];
 
         for arg in raw_spec.args {
             match arg.keyword {
@@ -217,7 +217,7 @@ impl Parse for LoopSpec {
                     ));
                 }
                 Keyword::Maintains => {
-                    if let Err(error) = arg.parse_preconditions(&mut maintains) {
+                    if let Err(error) = arg.parse_conditions(&mut maintains) {
                         errors.add(error);
                     }
                 }
@@ -284,7 +284,7 @@ impl SpecArg {
         Ok(())
     }
 
-    fn parse_preconditions(self, preconditions: &mut Vec<PreCondition>) -> Result<()> {
+    fn parse_conditions(self, conditions: &mut Vec<Condition>) -> Result<()> {
         let cfg_attr = find_cfg_attribute(&self.attrs)?;
         let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
             Some(attr.parse_args()?)
@@ -292,15 +292,15 @@ impl SpecArg {
             None
         };
         let expr = self.value.try_into_expr()?;
-        if let Expr::Array(conditions) = expr {
-            for expr in conditions.elems {
-                preconditions.push(PreCondition {
+        if let Expr::Array(items) = expr {
+            for expr in items.elems {
+                conditions.push(Condition {
                     expr,
                     cfg: cfg.clone(),
                 });
             }
         } else {
-            preconditions.push(PreCondition { expr, cfg });
+            conditions.push(Condition { expr, cfg });
         }
         Ok(())
     }
@@ -337,27 +337,6 @@ impl SpecArg {
         }
         let binds_pattern = self.value.try_into_pat()?;
         *pattern = Some(binds_pattern);
-        Ok(())
-    }
-
-    fn parse_postconditions(self, postconditions: &mut Vec<PostCondition>) -> Result<()> {
-        let cfg_attr = find_cfg_attribute(&self.attrs)?;
-        let cfg: Option<Meta> = if let Some(attr) = cfg_attr {
-            Some(attr.parse_args()?)
-        } else {
-            None
-        };
-        let expr = self.value.try_into_expr()?;
-        if let Expr::Array(conditions) = expr {
-            for expr in conditions.elems {
-                postconditions.push(PostCondition {
-                    expr,
-                    cfg: cfg.clone(),
-                });
-            }
-        } else {
-            postconditions.push(PostCondition { expr, cfg });
-        }
         Ok(())
     }
 
