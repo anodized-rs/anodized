@@ -244,7 +244,6 @@ fn simple_requires() {
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
-                let ref output = __anodized_output;
                 let __anodized_postcond = true;
                 if !__anodized_postcond {
                     panic!("postcondition failed:{__anodized_errors}");
@@ -284,7 +283,6 @@ fn requires_disable_runtime_checks() {
             if false {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
-                let ref output = __anodized_output;
                 let __anodized_postcond = true;
                 if !__anodized_postcond {}
             }
@@ -318,7 +316,6 @@ fn requires_no_panic_runtime() {
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
-                let ref output = __anodized_output;
                 let __anodized_postcond = true;
                 if !__anodized_postcond {
                     eprintln!("postcondition failed:{__anodized_errors}");
@@ -358,7 +355,6 @@ fn simple_maintains() {
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
-                let ref output = __anodized_output;
                 let __anodized_postcond = (__anodized_eval_post(|| -> bool { CONDITION_1 })
                     || __anodized_errors.push_str("\n    CONDITION_1") != ());
                 if !__anodized_postcond {
@@ -398,7 +394,6 @@ fn simple_ensures() {
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
-                let ref output = __anodized_output;
                 let __anodized_postcond = (__anodized_eval_post(|| -> bool { CONDITION_1 })
                     || __anodized_errors.push_str("\n    CONDITION_1") != ());
                 if !__anodized_postcond {
@@ -442,7 +437,6 @@ fn simple_requires_and_maintains() {
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
-                let ref output = __anodized_output;
                 let __anodized_postcond = (__anodized_eval_post(|| -> bool { CONDITION_2 })
                     || __anodized_errors.push_str("\n    CONDITION_2") != ());
                 if !__anodized_postcond {
@@ -484,7 +478,6 @@ fn simple_requires_and_ensures() {
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
-                let ref output = __anodized_output;
                 let __anodized_postcond = (__anodized_eval_post(|| -> bool { CONDITION_2 })
                     || __anodized_errors.push_str("\n    CONDITION_2") != ());
                 if !__anodized_postcond {
@@ -526,7 +519,6 @@ fn simple_maintains_and_ensures() {
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
-                let ref output = __anodized_output;
                 let __anodized_postcond = (__anodized_eval_post(|| -> bool { CONDITION_1 })
                     || __anodized_errors.push_str("\n    CONDITION_1") != ())
                     & (__anodized_eval_post(|| -> bool { CONDITION_2 })
@@ -573,7 +565,6 @@ fn simple_requires_maintains_and_ensures() {
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
-                let ref output = __anodized_output;
                 let __anodized_postcond = (__anodized_eval_post(|| -> bool { CONDITION_2 })
                     || __anodized_errors.push_str("\n    CONDITION_2") != ())
                     & (__anodized_eval_post(|| -> bool { CONDITION_3 })
@@ -620,7 +611,6 @@ fn simple_async_requires_maintains_and_ensures() {
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
-                let ref output = __anodized_output;
                 let __anodized_postcond = (__anodized_eval_post(|| -> bool { CONDITION_2 })
                     || __anodized_errors.push_str("\n    CONDITION_2") != ())
                     & (__anodized_eval_post(|| -> bool { CONDITION_3 })
@@ -671,7 +661,6 @@ fn multiple_conditions_in_clauses() {
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
-                let ref output = __anodized_output;
                 let __anodized_postcond = (__anodized_eval_post(|| -> bool { CONDITION_3 })
                     || __anodized_errors.push_str("\n    CONDITION_3") != ())
                     & (__anodized_eval_post(|| -> bool { CONDITION_4 })
@@ -763,7 +752,6 @@ fn ensures_with_mixed_conditions() {
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
-                let ref output = __anodized_output;
                 let __anodized_postcond = (__anodized_eval_post(|| -> bool { CONDITION_1 })
                     || __anodized_errors.push_str("\n    CONDITION_1") != ())
                     & (__anodized_eval_post(|| -> bool { CONDITION_2 })
@@ -817,7 +805,6 @@ fn cfg_attributes() {
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
-                let ref output = __anodized_output;
                 let __anodized_postcond = (!cfg!(SETTING_2) || __anodized_eval_post(|| -> bool { CONDITION_2 })
                     || __anodized_errors.push_str("\n    CONDITION_2") != ())
                     & (!cfg!(SETTING_3)
@@ -869,7 +856,6 @@ fn cfg_on_single_and_list_conditions() {
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
-                let ref output = __anodized_output;
                 let __anodized_postcond = (__anodized_eval_post(|| -> bool { CONDITION_2 })
                     || __anodized_errors.push_str("\n    CONDITION_2") != ())
                     & (__anodized_eval_post(|| -> bool { CONDITION_3 })
@@ -936,7 +922,6 @@ fn complex_mixed_conditions() {
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
-                let ref output = __anodized_output;
                 let __anodized_postcond = (__anodized_eval_post(|| -> bool { CONDITION_4 })
                     || __anodized_errors.push_str("\n    CONDITION_4") != ())
                     & (__anodized_eval_post(|| -> bool { CONDITION_5 })
@@ -997,7 +982,6 @@ fn captures() {
             if true {
                 fn __anodized_eval_post(c: impl Fn() -> bool) -> bool { c() }
                 let mut __anodized_errors = ::std::string::String::new();
-                let ref output = __anodized_output;
                 let __anodized_postcond = (__anodized_eval_post(|| -> bool { CONDITION_2 })
                     || __anodized_errors.push_str("\n    CONDITION_2") != ())
                     & (__anodized_eval_post(|| -> bool { CONDITION_3 })

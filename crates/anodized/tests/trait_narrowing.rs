@@ -11,6 +11,7 @@ trait MinFinder<T: PartialOrd> {
         requires: [
             !input.is_empty(),
         ],
+        binds: ref output,
         ensures: [
             input.iter().all(|item| output <= item),
             input.iter().any(|item| output == item) || input.is_empty(),
@@ -28,6 +29,7 @@ impl MinFinder<f32> for ValidNarrowing {
         functional,
         // Weaker than trait precondition: allows `input` to be empty.
         requires: [],
+        binds: ref output,
         // Stronger than trait postcondition: clarifies what to output when `input` is empty.
         ensures: [
             input.iter().all(|item| output <= item),
@@ -58,6 +60,7 @@ impl MinFinder<i32> for StrongerImplPre {
             !input.is_empty(),
             input.is_sorted(),
         ],
+        binds: ref output,
         ensures: [
             input.iter().all(|item| output <= item),
             input.iter().any(|item| output == item) || input.is_empty(),
@@ -77,6 +80,7 @@ impl MinFinder<u32> for WeakerImplPost {
         requires: [
             !input.is_empty(),
         ],
+        binds: ref output,
         // INVALID - Weaker than trait postcondition: `input` may be ignored completely.
         ensures: [
             input.iter().all(|item| output <= item),
@@ -128,6 +132,7 @@ pub trait Matrix<T> {
         requires: [
             input.count_rows() == self.count_cols(),
         ],
+        binds: ref output,
         ensures: [
             output.count_rows() == self.count_rows(),
             output.count_cols() == input.count_cols(),
@@ -140,12 +145,12 @@ pub struct DiagonalMatrix<T>(Vec<T>);
 
 #[spec]
 impl<T> Matrix<T> for DiagonalMatrix<T> {
-    #[spec(ensures: *output == self.count_cols())]
+    #[spec(binds: output, ensures: output == self.count_cols())]
     fn count_rows(&self) -> usize {
         self.0.len()
     }
 
-    #[spec(ensures: *output == self.count_rows())]
+    #[spec(binds: output, ensures: output == self.count_rows())]
     fn count_cols(&self) -> usize {
         self.0.len()
     }
@@ -154,6 +159,7 @@ impl<T> Matrix<T> for DiagonalMatrix<T> {
         requires: [
             input.count_rows() == self.count_cols(),
         ],
+        binds: ref output,
         ensures: [
             output.count_rows() == input.count_rows(),
             output.count_cols() == input.count_cols(),

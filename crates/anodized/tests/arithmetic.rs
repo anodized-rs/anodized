@@ -3,6 +3,7 @@ use anodized::spec;
 
 #[spec(
     requires: n > 0,
+    binds: ref output,
     ensures: *output == 1,
 )]
 pub fn collatz(mut n: int) -> int {
