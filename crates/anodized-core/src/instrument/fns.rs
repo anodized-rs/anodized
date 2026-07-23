@@ -251,18 +251,11 @@ impl CheckSettings {
 
         // Generate postcondition checks.
         let mut postcondition_clauses: Vec<Expr> = vec![];
-        for condition in &spec.maintains {
+        for condition in spec.maintains.iter().chain(&spec.ensures) {
             let expr = &condition.expr;
             let repr = expr.to_token_stream().to_string();
             let expr = parse_quote! { __anodized_eval_post(|| -> bool { #expr }) };
             let clause = self.build_clause_eval(condition.cfg.as_ref(), &expr, &repr);
-            postcondition_clauses.push(clause);
-        }
-        for postcondition in &spec.ensures {
-            let expr = &postcondition.expr;
-            let repr = expr.to_token_stream().to_string();
-            let expr = parse_quote! { __anodized_eval_post(|| -> bool { #expr }) };
-            let clause = self.build_clause_eval(postcondition.cfg.as_ref(), &expr, &repr);
             postcondition_clauses.push(clause);
         }
         if postcondition_clauses.is_empty() {
