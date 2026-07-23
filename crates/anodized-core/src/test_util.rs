@@ -1,4 +1,4 @@
-use crate::{Capture, PostCondition, PreCondition, Spec};
+use crate::{Capture, Condition, Spec};
 use pretty_assertions::assert_eq;
 use quote::{ToTokens, quote};
 
@@ -52,25 +52,20 @@ pub fn assert_spec_eq(left: &Spec, right: &Spec) {
         left_requires,
         right_requires,
         "requires",
-        assert_precondition_eq,
+        assert_condition_eq,
     );
     assert_slice_eq(
         left_maintains,
         right_maintains,
         "maintains",
-        assert_precondition_eq,
+        assert_condition_eq,
     );
     assert_slice_eq(left_captures, right_captures, "captures", assert_capture_eq);
     assert_eq!(
         left_binds, right_binds,
         "binds patterns do not match: {left_binds:?} vs {right_binds:?}"
     );
-    assert_slice_eq(
-        left_ensures,
-        right_ensures,
-        "ensures",
-        assert_postcondition_eq,
-    );
+    assert_slice_eq(left_ensures, right_ensures, "ensures", assert_condition_eq);
 }
 
 fn assert_slice_eq<T, F>(left: &[T], right: &[T], item_name: &str, assert_item_eq: F)
@@ -90,14 +85,14 @@ where
     }
 }
 
-fn assert_precondition_eq(left: &PreCondition, right: &PreCondition, msg_prefix: &str) {
+fn assert_condition_eq(left: &Condition, right: &Condition, msg_prefix: &str) {
     // Destructure to ensure we handle all fields
-    let PreCondition {
+    let Condition {
         expr: left_expr,
         cfg: left_cfg,
     } = left;
 
-    let PreCondition {
+    let Condition {
         expr: right_expr,
         cfg: right_cfg,
     } = right;
@@ -106,33 +101,6 @@ fn assert_precondition_eq(left: &PreCondition, right: &PreCondition, msg_prefix:
         left_expr.to_token_stream().to_string(),
         right_expr.to_token_stream().to_string(),
         "{}`expr` does not match",
-        msg_prefix
-    );
-
-    assert_eq!(
-        left_cfg.to_token_stream().to_string(),
-        right_cfg.to_token_stream().to_string(),
-        "{}`cfg` does not match",
-        msg_prefix
-    );
-}
-
-fn assert_postcondition_eq(left: &PostCondition, right: &PostCondition, msg_prefix: &str) {
-    // Destructure to ensure we handle all fields
-    let PostCondition {
-        expr: left_closure,
-        cfg: left_cfg,
-    } = left;
-
-    let PostCondition {
-        expr: right_closure,
-        cfg: right_cfg,
-    } = right;
-
-    assert_eq!(
-        left_closure.to_token_stream().to_string(),
-        right_closure.to_token_stream().to_string(),
-        "{}`closure` does not match",
         msg_prefix
     );
 

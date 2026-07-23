@@ -11,7 +11,7 @@ use syn::{
 };
 
 use crate::{
-    Capture, PostCondition, PreCondition, Spec,
+    Capture, Condition, Spec,
     instrument::{CheckSettings, Mode},
     qualifiers::FnQualifiers,
 };
@@ -119,10 +119,7 @@ impl Mode {
         }
     }
 
-    pub fn build_precondition_fn_body(
-        requires: &[PreCondition],
-        maintains: &[PreCondition],
-    ) -> Block {
+    pub fn build_precondition_fn_body(requires: &[Condition], maintains: &[Condition]) -> Block {
         let mut statements: Vec<Stmt> = vec![];
         let mut clauses: Vec<Expr> = vec![];
 
@@ -147,10 +144,10 @@ impl Mode {
     }
 
     pub fn build_postcondition_fn_body(
-        maintains: &[PreCondition],
+        maintains: &[Condition],
         captures: &[Capture],
         binds: &Option<Pat>,
-        ensures: &[PostCondition],
+        ensures: &[Condition],
     ) -> Result<Block> {
         let mut statements: Vec<Stmt> = vec![];
         let mut clauses: Vec<Expr> = vec![];

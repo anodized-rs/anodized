@@ -19,15 +19,15 @@ pub struct Spec {
     /// Qualifiers that constrain the behavior of the computation.
     pub qualifiers: FnQualifiers,
     /// Preconditions: conditions that must hold when the function is called.
-    pub requires: Vec<PreCondition>,
+    pub requires: Vec<Condition>,
     /// Invariants: conditions that must hold both when the function is called and when it returns.
-    pub maintains: Vec<PreCondition>,
+    pub maintains: Vec<Condition>,
     /// Captures: expressions to snapshot at function entry for use in postconditions.
     pub captures: Vec<Capture>,
     /// Binds: pattern to bind the output of the function.
     pub binds: Option<Pat>,
     /// Postconditions: conditions that must hold when the function returns.
-    pub ensures: Vec<PostCondition>,
+    pub ensures: Vec<Condition>,
     /// The span in the source code, from which this spec was parsed.
     span: Span,
 }
@@ -65,7 +65,7 @@ impl Spec {
 #[derive(Debug)]
 pub struct DataSpec {
     /// Invariants: conditions that must hold for all instances of the data type.
-    pub maintains: Vec<PreCondition>,
+    pub maintains: Vec<Condition>,
     /// The span in the source code, from which this spec was parsed.
     span: Span,
 }
@@ -94,7 +94,7 @@ impl DataSpec {
 #[derive(Debug)]
 pub struct LoopSpec {
     /// Loop invariants: conditions that must hold both before and after the loop's body runs.
-    pub maintains: Vec<PreCondition>,
+    pub maintains: Vec<Condition>,
     /// Loop variant: an expression that decreases with each run of the loop's body.
     pub decreases: Option<LoopVariant>,
     /// The span in the source code, from which this spec was parsed.
@@ -122,23 +122,11 @@ impl LoopSpec {
     }
 }
 
-/// A precondition represented by a `bool`-valued expression.
+/// A condition represented by a `bool`-valued expression.
 #[derive(Debug)]
 // TODO: Rename to `Condition` for clarity.
-pub struct PreCondition {
-    /// The expression that validates the precondition, e.g. `input.is_valid()`.
-    pub expr: Expr,
-    /// **Static analyzers can safely ignore this field.**
-    ///
-    /// Build configuration filter to decide whether to add runtime checks.
-    /// Passed to a `cfg!()` guard in the instrumented function.
-    pub cfg: Option<Meta>,
-}
-
-/// A postcondition represented by a closure that takes the return value as a reference.
-#[derive(Debug)]
-pub struct PostCondition {
-    /// The expression that validates the postcondition, e.g. `*output > 0`.
+pub struct Condition {
+    /// The expression that validates the condition, e.g. `value > 42`.
     pub expr: Expr,
     /// **Static analyzers can safely ignore this field.**
     ///
