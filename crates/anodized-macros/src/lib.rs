@@ -90,22 +90,6 @@ pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
     }
 }
 
-/// Try to call a function with a `spec` and defer acting on pre/postcondition failures.
-///
-/// Returns `Result<T, (bool, String)>` where `T` is the original return type:
-///     - `Ok(output)` if pre- and postconditions passed.
-///     - `Err((false, errors))` if preconditions failed.
-///     - `Err((true, errors))` if postconditions failed.
-///
-/// The macro must wrap a call expression, targeting one of the following cases:
-/// - a free function with a qualified name:
-///     - `qualified::free_fn(...)`
-/// - a method:
-///     - `receiver.method(...)`
-/// - a function qualified by a type or trait:
-///     - `Type::associated_fn(...)`
-///     - `<Type>::associated_fn(...)`
-///     - `<Type as Trait>::trait_fn(...)`
 #[proc_macro]
 pub fn try_call(args: TokenStream) -> TokenStream {
     if !CONFIG.emits_try_fn() {

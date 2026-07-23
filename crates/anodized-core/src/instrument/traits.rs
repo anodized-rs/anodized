@@ -138,8 +138,11 @@ impl Mode {
                         // Build a wrapper that forwards to the "try_fn" entry point.
                         let mut wrapper_func = func.clone();
                         let mut wrapper_body: Block = parse_quote!({});
-                        let mangled_ident =
-                            Self::build_try_fn(true, &mut wrapper_func.sig, &mut wrapper_body);
+                        let mangled_ident = Self::build_try_fn_wrapper(
+                            true,
+                            &mut wrapper_func.sig,
+                            &mut wrapper_body,
+                        );
                         wrapper_func.default = Some(wrapper_body);
                         new_trait_items.push(TraitItem::Fn(wrapper_func));
 
@@ -147,10 +150,10 @@ impl Mode {
                         func.sig.ident = mangled_ident;
                         func.sig.output = match func.sig.output {
                             ReturnType::Default => {
-                                parse_quote!(-> Result<(), (bool, ::std::string::String)>)
+                                parse_quote!(-> ::anodized::result::Result<()>)
                             }
                             ReturnType::Type(ra, ty) => {
-                                parse_quote!(#ra ::core::result::Result<#ty, (bool, ::std::string::String)>)
+                                parse_quote!(#ra ::anodized::result::Result<#ty>)
                             }
                         };
                         func.attrs = vec![parse_quote!(#[doc(hidden)]), parse_quote!(#[inline])];

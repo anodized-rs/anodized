@@ -126,16 +126,20 @@ fn emit_try_fn_instrument_item_impl() {
         impl IMPL_TYPE {
             fn FUNC(input_0: TYPE_1, input_1: TYPE_2) -> RET_TYPE {
                 match Self::__anodized_fn_try_FUNC(input_0, input_1) {
-                    Ok(output) => output,
-                    Err((false, errors)) => panic!("precondition failed:{errors}"),
-                    Err((true, errors)) => panic!("postcondition failed:{errors}"),
+                    ::anodized::result::Result::Ok(output) => output,
+                    ::anodized::result::Result::Err(
+                        ::anodized::result::Error::Pre(errors)
+                    ) => panic!("precondition failed:{errors}"),
+                    ::anodized::result::Result::Err(
+                        ::anodized::result::Error::Post(_, errors)
+                    ) => panic!("postcondition failed:{errors}"),
                 }
             }
 
             #[doc(hidden)]
             #[inline]
             fn __anodized_fn_try_FUNC(PARAM_1: TYPE_1, PARAM_2: TYPE_2)
-                -> ::core::result::Result<RET_TYPE, (bool, ::std::string::String)>
+                -> ::anodized::result::Result<RET_TYPE>
             {
                 if true {
                     fn __anodized_eval_pre(c: impl Fn() -> bool) -> bool { c() }
@@ -145,7 +149,7 @@ fn emit_try_fn_instrument_item_impl() {
                         & (__anodized_eval_pre(|| -> bool { COND_2 })
                             || __anodized_errors.push_str("\n    COND_2") != ());
                     if !__anodized_precond {
-                        return Err((false, __anodized_errors));
+                        return ::anodized::result::pre_err(__anodized_errors);
                     }
                 }
                 let (__anodized_output) = ((|| -> RET_TYPE { BODY })());
@@ -158,7 +162,7 @@ fn emit_try_fn_instrument_item_impl() {
                         & (__anodized_eval_post(|| -> bool { COND_3 })
                             || __anodized_errors.push_str("\n    COND_3") != ());
                     if !__anodized_postcond {
-                        return Err((true, __anodized_errors));
+                        return ::anodized::result::post_err(__anodized_output, __anodized_errors);
                     }
                 }
                 Ok(__anodized_output)

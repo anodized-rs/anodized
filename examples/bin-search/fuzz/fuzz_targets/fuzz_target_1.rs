@@ -1,7 +1,7 @@
 //! In the future, an `anodized-fuzz` tool should generate this harness.
 #![no_main]
 
-use anodized::runtime::try_call;
+use anodized::result::{try_call, PostError, PreError};
 use libfuzzer_sys::arbitrary::{self, Arbitrary, Error, Unstructured};
 use libfuzzer_sys::{fuzz_target, Corpus};
 
@@ -13,19 +13,20 @@ fuzz_target!(|data: &[u8]| -> Corpus {
         return Corpus::Reject;
     };
 
-    // Use Anodized's `try_call` macro to defer acting on spec violations.
+    // Use Anodized's `try_call!` macro to defer acting on spec violations.
     let result = try_call! { bin_search::bin_search(&inputs.seq, &inputs.value) };
 
     match result {
         // Successful call.
         Ok(_) => Corpus::Keep,
         // When preconditions are violated, reject the input.
-        Err((false, _)) => Corpus::Reject,
+        Err(PreError(_)) => Corpus::Reject,
         // When postconditions are violated, panic to signal a counter-example.
-        Err((true, errors)) => {
+        Err(PostError(output, errors)) => {
             eprintln!("inputs:");
             dbg!(inputs.seq);
             dbg!(inputs.value);
+            dbg!(output);
             panic!("postcondition failed:{errors}");
         }
     }

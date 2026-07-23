@@ -142,16 +142,20 @@ fn emit_try_fn_instrument_item_fn() {
     let expected: TokenStream = parse_quote! {
         fn FUNC(&self, input_1: TYPE_1, input_2: TYPE_2) -> RET_TYPE {
             match __anodized_fn_try_FUNC(self, input_1, input_2) {
-                Ok(output) => output,
-                Err((false, errors)) => panic!("precondition failed:{errors}"),
-                Err((true, errors)) => panic!("postcondition failed:{errors}"),
+                ::anodized::result::Result::Ok(output) => output,
+                ::anodized::result::Result::Err(
+                    ::anodized::result::Error::Pre(errors)
+                ) => panic!("precondition failed:{errors}"),
+                ::anodized::result::Result::Err(
+                    ::anodized::result::Error::Post(_, errors)
+                ) => panic!("postcondition failed:{errors}"),
             }
         }
 
         #[doc(hidden)]
         #[inline]
         fn __anodized_fn_try_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2)
-            -> ::core::result::Result<RET_TYPE, (bool, ::std::string::String)>
+            -> ::anodized::result::Result<RET_TYPE>
         {
             if true {
                 fn __anodized_eval_pre(c: impl Fn() -> bool) -> bool { c() }
@@ -169,7 +173,7 @@ fn emit_try_fn_instrument_item_fn() {
                     & (!cfg!(META_2) || __anodized_eval_pre(|| -> bool { COND_6 })
                         || __anodized_errors.push_str("\n    COND_6") != ());
                 if !__anodized_precond {
-                    return Err((false, __anodized_errors));
+                    return ::anodized::result::pre_err(__anodized_errors);
                 }
             }
             let (ALIAS_1, (ALIAS_2, ALIAS_3), __anodized_output) = (
@@ -195,7 +199,7 @@ fn emit_try_fn_instrument_item_fn() {
                     & (!cfg!(META_3) || __anodized_eval_post(|| -> bool { COND_9 })
                         || __anodized_errors.push_str("\n    COND_9") != ());
                 if !__anodized_postcond {
-                    return Err((true, __anodized_errors));
+                    return ::anodized::result::post_err(__anodized_output, __anodized_errors);
                 }
             }
             Ok(__anodized_output)
