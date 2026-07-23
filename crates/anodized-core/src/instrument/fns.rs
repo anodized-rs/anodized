@@ -215,7 +215,7 @@ impl CheckSettings {
             let expr = &condition.expr;
             let repr = expr.to_token_stream().to_string();
             let expr = parse_quote! { __anodized_eval_pre(|| -> bool { #expr }) };
-            let clause = self.build_clause_eval(condition.cfg.as_ref(), &expr, &repr);
+            let clause = self.build_clause_eval(&condition.cfg, &expr, &repr);
             precondition_clauses.push(clause);
         }
         if precondition_clauses.is_empty() {
@@ -255,7 +255,7 @@ impl CheckSettings {
             let expr = &condition.expr;
             let repr = expr.to_token_stream().to_string();
             let expr = parse_quote! { __anodized_eval_post(|| -> bool { #expr }) };
-            let clause = self.build_clause_eval(condition.cfg.as_ref(), &expr, &repr);
+            let clause = self.build_clause_eval(&condition.cfg, &expr, &repr);
             postcondition_clauses.push(clause);
         }
         if postcondition_clauses.is_empty() {
@@ -315,7 +315,7 @@ impl CheckSettings {
         })
     }
 
-    fn build_clause_eval(&self, cfg: Option<&Meta>, expr: &Expr, repr: &str) -> Expr {
+    fn build_clause_eval(&self, cfg: &Option<Meta>, expr: &Expr, repr: &str) -> Expr {
         if self.does_print {
             let br_and_repr = format!("\n    {repr}");
             let cfg_guard = match cfg {
