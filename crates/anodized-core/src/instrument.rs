@@ -18,10 +18,16 @@ pub mod traits;
 pub enum Mode {
     /// Make no changes to the code.
     ChangeNothing,
+    /// Embed spec elements as new items without changing existing code.
+    EmbedSpecs(SpecEmbedding),
     /// Inject code to enable compile-time and/or runtime checks.
     InjectChecks(CheckSettings),
-    /// Embed spec elements as new items without changing existing code.
-    EmbedSpecs,
+}
+
+#[derive(Debug, Clone)]
+pub struct SpecEmbedding {
+    /// Emit Charon's `contract` attributes on spec elements.
+    pub uses_charon: bool,
 }
 
 #[derive(Debug, Clone)]
