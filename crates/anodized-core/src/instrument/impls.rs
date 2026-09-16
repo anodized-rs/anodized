@@ -52,7 +52,11 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                             &item_fn.sig.ident,
                         );
                         let spec_requires_fn = ImplItemFn {
-                            attrs: attrs.to_vec(),
+                            attrs: self.build_embedded_spec_fn_attrs(
+                                &attrs,
+                                "precondition",
+                                &item_fn.sig.ident,
+                            ),
                             sig: Self::build_precondition_fn_sig(
                                 "__anodized_fn_requires",
                                 &item_fn.sig,
@@ -65,7 +69,11 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                             defaultness: None,
                         };
                         let spec_ensures_fn = ImplItemFn {
-                            attrs: attrs.to_vec(),
+                            attrs: self.build_embedded_spec_fn_attrs(
+                                &attrs,
+                                "postcondition",
+                                &item_fn.sig.ident,
+                            ),
                             sig: Self::build_postcondition_fn_sig(
                                 "__anodized_fn_ensures",
                                 &item_fn.sig,

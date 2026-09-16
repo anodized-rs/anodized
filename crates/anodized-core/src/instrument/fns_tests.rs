@@ -40,9 +40,10 @@ fn embed_spec_item_fn() {
         #[allow(warnings)]
         const __anodized_fn_qualifiers_FUNC: u32 = #qualifier_bits;
 
-        #[doc(hidden)]
-        #[allow(warnings)]
-        fn __anodized_fn_requires_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> bool {
+            #[doc(hidden)]
+            #[allow(warnings)]
+            #[charon::contract(kind = "precondition", for = "FUNC")]
+            fn __anodized_fn_requires_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2) -> bool {
             let __anodized_pre = true;
             let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_1);
             let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_2);
@@ -53,9 +54,10 @@ fn embed_spec_item_fn() {
             __anodized_pre
         }
 
-        #[doc(hidden)]
-        #[allow(warnings)]
-        fn __anodized_fn_ensures_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2, __anodized_output: RET_TYPE) -> bool {
+            #[doc(hidden)]
+            #[allow(warnings)]
+            #[charon::contract(kind = "postcondition", for = "FUNC")]
+            fn __anodized_fn_ensures_FUNC(&self, PARAM_1: TYPE_1, PARAM_2: TYPE_2, __anodized_output: RET_TYPE) -> bool {
             let (ALIAS_1, (ALIAS_2, ALIAS_3), __anodized_output) = (
                 ::anodized::__::eval(|| EXPR_1),
                 ::anodized::__::eval(|| EXPR_2),
@@ -85,7 +87,7 @@ fn embed_spec_item_fn() {
         }
     };
 
-    let observed = Mode::EmbedSpecs(crate::instrument::SpecEmbedding { uses_charon: false })
+    let observed = Mode::EmbedSpecs(crate::instrument::SpecEmbedding { uses_charon: true })
         .instrument_item_fn(spec_item_fn.spec, spec_item_fn.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);

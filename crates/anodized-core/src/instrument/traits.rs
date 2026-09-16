@@ -48,7 +48,11 @@ impl Mode {
                     if let Self::EmbedSpecs(_) = self {
                         // Embed `spec` elements as `__anodized_fn_*` items.
                         let spec_requires_fn = TraitItemFn {
-                            attrs: attrs.to_vec(),
+                            attrs: self.build_embedded_spec_fn_attrs(
+                                &attrs,
+                                "precondition",
+                                &func.sig.ident,
+                            ),
                             sig: Self::build_precondition_fn_sig(
                                 "__anodized_fn_requires",
                                 &func.sig,
@@ -60,7 +64,11 @@ impl Mode {
                             semi_token: None,
                         };
                         let spec_ensures_fn = TraitItemFn {
-                            attrs: attrs.to_vec(),
+                            attrs: self.build_embedded_spec_fn_attrs(
+                                &attrs,
+                                "postcondition",
+                                &func.sig.ident,
+                            ),
                             sig: Self::build_postcondition_fn_sig(
                                 "__anodized_fn_ensures",
                                 &func.sig,
@@ -218,7 +226,11 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                     if let Self::EmbedSpecs(_) = self {
                         // Embed `spec` elements as `__anodized_fn_*` items.
                         let spec_requires_fn = ImplItemFn {
-                            attrs: attrs.to_vec(),
+                            attrs: self.build_embedded_spec_fn_attrs(
+                                &attrs,
+                                "precondition",
+                                &func.sig.ident,
+                            ),
                             sig: Self::build_precondition_fn_sig(
                                 "__anodized_fn_requires",
                                 &func.sig,
@@ -231,7 +243,11 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                             defaultness: None,
                         };
                         let spec_ensures_fn = ImplItemFn {
-                            attrs: attrs.to_vec(),
+                            attrs: self.build_embedded_spec_fn_attrs(
+                                &attrs,
+                                "postcondition",
+                                &func.sig.ident,
+                            ),
                             sig: Self::build_postcondition_fn_sig(
                                 "__anodized_fn_ensures",
                                 &func.sig,
