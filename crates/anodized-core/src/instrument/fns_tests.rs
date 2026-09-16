@@ -1,4 +1,7 @@
-use crate::test_util::{SpecItemFn, assert_tokens_eq};
+use crate::{
+    instrument::SpecEmbedding,
+    test_util::{SpecItemFn, assert_tokens_eq},
+};
 
 use super::*;
 use proc_macro2::TokenStream;
@@ -87,7 +90,7 @@ fn embed_spec_item_fn() {
         }
     };
 
-    let observed = Mode::EmbedSpecs(crate::instrument::SpecEmbedding { uses_charon: true })
+    let observed = Mode::EmbedSpecs(SpecEmbedding { uses_charon: true })
         .instrument_item_fn(spec_item_fn.spec, spec_item_fn.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
