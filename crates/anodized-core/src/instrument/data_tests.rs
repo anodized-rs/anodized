@@ -48,7 +48,7 @@ fn embed_spec_item_struct() {
         }
     };
 
-    let observed = Mode::EmbedSpecs
+    let observed = Mode::EmbedSpecs(crate::instrument::SpecEmbedding { uses_charon: false })
         .instrument_item_struct(spec_item_struct.spec, spec_item_struct.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -99,7 +99,7 @@ fn embed_spec_item_enum() {
         }
     };
 
-    let observed = Mode::EmbedSpecs
+    let observed = Mode::EmbedSpecs(crate::instrument::SpecEmbedding { uses_charon: false })
         .instrument_item_enum(spec_item_enum.spec, spec_item_enum.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);

@@ -38,7 +38,7 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
 
                     let fn_spec = item_fn.parse_spec_from_attrs()?;
 
-                    if let Self::EmbedSpecs = self {
+                    if let Self::EmbedSpecs(_) = self {
                         // Embed `spec` elements as `__anodized_fn_*` items.
                         let attrs: [Attribute; 2] = [
                             parse_quote!(#[doc(hidden)]),

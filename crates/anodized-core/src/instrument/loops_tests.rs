@@ -35,7 +35,8 @@ fn embed_spec_expr_while() {
     };
 
     let spec = expr_while.parse_spec_from_attrs().unwrap();
-    Mode::EmbedSpecs.instrument_expr_while(spec, &mut expr_while);
+    Mode::EmbedSpecs(crate::instrument::SpecEmbedding { uses_charon: false })
+        .instrument_expr_while(spec, &mut expr_while);
     let observed = expr_while;
 
     assert_tokens_eq(&observed, &expected);
@@ -69,7 +70,8 @@ fn embed_spec_expr_for() {
     };
 
     let spec = expr_for_loop.parse_spec_from_attrs().unwrap();
-    Mode::EmbedSpecs.instrument_expr_for_loop(spec, &mut expr_for_loop);
+    Mode::EmbedSpecs(crate::instrument::SpecEmbedding { uses_charon: false })
+        .instrument_expr_for_loop(spec, &mut expr_for_loop);
     let observed = expr_for_loop;
 
     assert_tokens_eq(&observed, &expected);

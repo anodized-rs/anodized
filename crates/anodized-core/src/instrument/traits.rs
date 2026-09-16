@@ -45,7 +45,7 @@ impl Mode {
                         parse_quote!(#[allow(warnings)]),
                     ];
 
-                    if let Self::EmbedSpecs = self {
+                    if let Self::EmbedSpecs(_) = self {
                         // Embed `spec` elements as `__anodized_fn_*` items.
                         let spec_requires_fn = TraitItemFn {
                             attrs: attrs.to_vec(),
@@ -215,7 +215,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         parse_quote!(#[allow(warnings)]),
                     ];
 
-                    if let Self::EmbedSpecs = self {
+                    if let Self::EmbedSpecs(_) = self {
                         // Embed `spec` elements as `__anodized_fn_*` items.
                         let spec_requires_fn = ImplItemFn {
                             attrs: attrs.to_vec(),

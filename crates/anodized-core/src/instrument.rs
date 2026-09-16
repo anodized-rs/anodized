@@ -69,7 +69,7 @@ impl Mode {
                 };
                 Mode::InjectChecks(check_settings)
             }
-            Mode::EmbedSpecs => Mode::EmbedSpecs,
+            Mode::EmbedSpecs(spec_embedding) => Mode::EmbedSpecs(spec_embedding.clone()),
         }
     }
 
@@ -84,7 +84,7 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
             ));
         }
 
-        if let Self::EmbedSpecs = self {
+        if let Self::EmbedSpecs(_) = self {
             // Embed `spec` elements as `__anodized_fn_*` items.
             let attrs: [Attribute; 2] = [
                 parse_quote!(#[doc(hidden)]),

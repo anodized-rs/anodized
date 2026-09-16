@@ -85,7 +85,7 @@ fn embed_spec_item_fn() {
         }
     };
 
-    let observed = Mode::EmbedSpecs
+    let observed = Mode::EmbedSpecs(crate::instrument::SpecEmbedding { uses_charon: false })
         .instrument_item_fn(spec_item_fn.spec, spec_item_fn.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
