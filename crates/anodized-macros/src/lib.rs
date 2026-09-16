@@ -13,6 +13,8 @@ use anodized_core::{
 
 const CONFIG: Mode = if cfg!(anodized_discard_specs) {
     Mode::ChangeNothing
+} else if cfg!(anodized_embed_specs) {
+    Mode::EmbedSpecs
 } else {
     Mode::InjectChecks(CheckSettings {
         does_print: cfg!(anodized_print),
