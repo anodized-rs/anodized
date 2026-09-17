@@ -1,8 +1,8 @@
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Block, FnArg, Ident, ItemConst, ItemFn, ItemImpl, ItemTrait, LitStr, Result,
-    ReturnType, Signature, parse_quote,
+    Attribute, Block, FnArg, Ident, ItemConst, ItemFn, ItemImpl, ItemTrait, Result, ReturnType,
+    Signature, parse_quote,
 };
 
 use crate::{EmptySpec, FnSpec};
@@ -73,22 +73,6 @@ impl Mode {
         }
     }
 
-    fn build_embedded_spec_fn_attrs(
-        &self,
-        attrs: &[Attribute],
-        kind: &str,
-        sibling: &Ident,
-    ) -> Vec<Attribute> {
-        let mut attrs = attrs.to_vec();
-        if let Self::EmbedSpecs(SpecEmbedding { uses_charon: true }) = self {
-            let sibling = LitStr::new(&sibling.to_string(), sibling.span());
-            attrs.push(parse_quote!(
-                #[charon::contract(kind = #kind, for = #sibling)]
-            ));
-        }
-        attrs
-    }
-
     pub fn instrument_item_fn(&self, spec: FnSpec, mut item_fn: ItemFn) -> Result<TokenStream> {
         let mut tokens = TokenStream::new();
 
@@ -113,27 +97,31 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
                 spec.qualifiers,
                 &item_fn.sig.ident,
             );
+            let mut spec_requires_attrs = attrs.to_vec();
+            let spec_requires_sig = self.build_precondition_fn_sig(
+                &mut spec_requires_attrs,
+                "__anodized_fn_requires",
+                &item_fn.sig,
+            );
             let spec_requires_fn = ItemFn {
-                attrs: self.build_embedded_spec_fn_attrs(
-                    &attrs,
-                    "precondition",
-                    &item_fn.sig.ident,
-                ),
+                attrs: spec_requires_attrs,
                 vis: syn::Visibility::Inherited,
-                sig: Self::build_precondition_fn_sig("__anodized_fn_requires", &item_fn.sig),
+                sig: spec_requires_sig,
                 block: Box::new(Self::build_precondition_fn_body(
                     &spec.requires,
                     &spec.maintains,
                 )),
             };
+            let mut spec_ensures_attrs = attrs.to_vec();
+            let spec_ensures_sig = self.build_postcondition_fn_sig(
+                &mut spec_ensures_attrs,
+                "__anodized_fn_ensures",
+                &item_fn.sig,
+            );
             let spec_ensures_fn = ItemFn {
-                attrs: self.build_embedded_spec_fn_attrs(
-                    &attrs,
-                    "postcondition",
-                    &item_fn.sig.ident,
-                ),
+                attrs: spec_ensures_attrs,
                 vis: syn::Visibility::Inherited,
-                sig: Self::build_postcondition_fn_sig("__anodized_fn_ensures", &item_fn.sig),
+                sig: spec_ensures_sig,
                 block: Box::new(Self::build_postcondition_fn_body(
                     &spec.maintains,
                     &spec.captures,
