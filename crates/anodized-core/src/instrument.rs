@@ -255,6 +255,11 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
 #[cfg(test)]
 impl Mode {
     pub(crate) const DEFAULT: Self = Mode::InjectChecks(CheckSettings::DEFAULT);
+
+    pub(crate) const EMBED_SPECS: Self = Self::EmbedSpecs(SpecEmbedding { uses_charon: false });
+
+    pub(crate) const EMBED_SPECS_CHARON: Self =
+        Self::EmbedSpecs(SpecEmbedding { uses_charon: true });
 }
 
 #[cfg(test)]

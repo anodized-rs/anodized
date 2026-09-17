@@ -1,5 +1,5 @@
 use crate::{
-    instrument::{CheckSettings, SpecEmbedding},
+    instrument::CheckSettings,
     qualifiers::FnQualifiers,
     test_util::{SpecItemImpl, assert_tokens_eq},
 };
@@ -59,7 +59,7 @@ fn embed_spec_item_impl() {
         }
     };
 
-    let observed = Mode::EmbedSpecs(SpecEmbedding { uses_charon: false })
+    let observed = Mode::EMBED_SPECS
         .instrument_item_impl(spec_item_impl.spec, spec_item_impl.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);

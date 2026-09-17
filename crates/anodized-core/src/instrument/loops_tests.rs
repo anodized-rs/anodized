@@ -1,11 +1,7 @@
 use proc_macro2::TokenStream;
 use syn::{ExprForLoop, ExprWhile, parse_quote};
 
-use crate::{
-    annotate::Specified,
-    instrument::{Mode, SpecEmbedding},
-    test_util::assert_tokens_eq,
-};
+use crate::{annotate::Specified, instrument::Mode, test_util::assert_tokens_eq};
 
 #[test]
 fn embed_spec_expr_while() {
@@ -39,8 +35,7 @@ fn embed_spec_expr_while() {
     };
 
     let spec = expr_while.parse_spec_from_attrs().unwrap();
-    Mode::EmbedSpecs(SpecEmbedding { uses_charon: false })
-        .instrument_expr_while(spec, &mut expr_while);
+    Mode::EMBED_SPECS.instrument_expr_while(spec, &mut expr_while);
     let observed = expr_while;
 
     assert_tokens_eq(&observed, &expected);
@@ -74,8 +69,7 @@ fn embed_spec_expr_for() {
     };
 
     let spec = expr_for_loop.parse_spec_from_attrs().unwrap();
-    Mode::EmbedSpecs(SpecEmbedding { uses_charon: false })
-        .instrument_expr_for_loop(spec, &mut expr_for_loop);
+    Mode::EMBED_SPECS.instrument_expr_for_loop(spec, &mut expr_for_loop);
     let observed = expr_for_loop;
 
     assert_tokens_eq(&observed, &expected);
