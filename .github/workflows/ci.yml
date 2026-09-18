@@ -52,25 +52,54 @@ jobs:
       matrix:
         include:
           - cfg: ""
+            toolchain: stable
+            targets: --all-targets
+            tests: --tests
           - cfg: '--config ''build.rustflags=["--cfg","anodized_discard_specs"]'''
+            toolchain: stable
+            targets: --all-targets
+            tests: --tests
           - cfg: '--config ''build.rustflags=["--cfg","anodized_print"]'''
+            toolchain: stable
+            targets: --all-targets
+            tests: --tests
           - cfg: '--config ''build.rustflags=["--cfg","anodized_panic"]'''
+            toolchain: stable
+            targets: --all-targets
+            tests: --tests
           - cfg: '--config ''build.rustflags=["--cfg","anodized_print","--cfg","anodized_panic"]'''
+            toolchain: stable
+            targets: --all-targets
+            tests: --tests
           - cfg: '--config ''build.rustflags=["--cfg","anodized_print","--cfg","anodized_panic","--cfg","anodized_try"]'''
+            toolchain: stable
+            targets: --all-targets
+            tests: --tests
+          - cfg: '--config ''build.rustflags=["--cfg","anodized_embed_specs","--cfg","anodized_charon"]'''
+            toolchain: nightly
+            targets: --lib
+            tests: --test charon
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
+      - name: Install Rust stable toolchain
+        if: matrix.toolchain == 'stable'
         uses: dtolnay/rust-toolchain@1.95.0
         with:
           components: clippy
 
+      - name: Install Rust Nightly toolchain
+        if: matrix.toolchain == 'nightly'
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: clippy
+
       - name: Lint anodized with cfg `${{ matrix.cfg }}`
-        run: cargo ${{ matrix.cfg }} clippy -p anodized --all-targets -- -D warnings
+        run: cargo ${{ matrix.cfg }} clippy -p anodized ${{ matrix.targets }} -- -D warnings
 
       - name: Integration test anodized with cfg `${{ matrix.cfg }}`
-        run: cargo ${{ matrix.cfg }} test -p anodized --tests --no-fail-fast
+        run: cargo ${{ matrix.cfg }} test -p anodized ${{ matrix.tests }} --no-fail-fast
 
   test-anodized-fmt:
     name: Lint and test anodized-fmt
