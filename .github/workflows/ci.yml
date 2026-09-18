@@ -77,8 +77,8 @@ jobs:
             tests: --tests
           - flags: '+nightly --config ''build.rustflags=["--cfg","anodized_embed_specs","--cfg","anodized_charon"]'''
             toolchain: nightly
-            targets: --lib
-            tests: --test backend_charon
+            targets: --all-targets
+            tests: --tests
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
