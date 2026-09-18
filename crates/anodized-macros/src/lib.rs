@@ -16,27 +16,35 @@ use anodized_core::{
 const CONFIG: Mode = validate_config();
 
 const fn validate_config() -> Mode {
-    let raw_cfg = RawCfg {
-        erase: cfg!(anodized_discard_specs),
-        static_specs: cfg!(anodized_embed_specs),
-        static_charon: cfg!(anodized_charon),
-        runtime_panic: cfg!(anodized_panic),
-        runtime_print: cfg!(anodized_print),
-        runtime_try: cfg!(anodized_try),
+    let erase = cfg!(anodized_discard_specs);
+    let static_cfg = StaticCfg {
+        is_enabled: cfg!(anodized_embed_specs),
+        with_charon: cfg!(anodized_charon),
+    };
+    let runtime_cfg = RuntimeCfg {
+        with_panic: cfg!(anodized_panic),
+        with_print: cfg!(anodized_print),
+        with_try: cfg!(anodized_try),
     };
 
-    if raw_cfg.erase {
+    if erase {
+        if static_cfg.any() || runtime_cfg.any() {
+            panic!("`anodized_discard_specs` is incompatible with all other `anodized_*` settings");
+        }
         Mode::ChangeNothing
-    } else if raw_cfg.static_specs {
+    } else if static_cfg.any() {
+        if runtime_cfg.any() {
+            panic!("`anodized_embed_specs` is incompatible with all `anodized_runtime_*` settings");
+        }
         Mode::EmbedSpecs(SpecEmbedding {
-            uses_charon: raw_cfg.static_charon,
+            uses_charon: static_cfg.with_charon,
         })
     } else {
         Mode::InjectChecks(CheckSettings {
-            does_print: raw_cfg.runtime_print,
-            does_panic: if raw_cfg.runtime_panic {
+            does_print: runtime_cfg.with_print,
+            does_panic: if runtime_cfg.with_panic {
                 Some(PanicSettings {
-                    has_try_fn: raw_cfg.runtime_try,
+                    has_try_fn: runtime_cfg.with_try,
                 })
             } else {
                 None
@@ -45,13 +53,36 @@ const fn validate_config() -> Mode {
     }
 }
 
-struct RawCfg {
-    erase: bool,
-    static_charon: bool,
-    static_specs: bool,
-    runtime_panic: bool,
-    runtime_print: bool,
-    runtime_try: bool,
+struct StaticCfg {
+    is_enabled: bool,
+    with_charon: bool,
+}
+
+impl StaticCfg {
+    const fn any(&self) -> bool {
+        let StaticCfg {
+            is_enabled,
+            with_charon,
+        } = *self;
+        is_enabled || with_charon
+    }
+}
+
+struct RuntimeCfg {
+    with_panic: bool,
+    with_print: bool,
+    with_try: bool,
+}
+
+impl RuntimeCfg {
+    const fn any(&self) -> bool {
+        let RuntimeCfg {
+            with_panic,
+            with_print,
+            with_try,
+        } = *self;
+        with_panic || with_print || with_try
+    }
 }
 
 /// **Must** be inside a `#[spec]` attribute's item. May be applied to a `fn`, its inputs, and
