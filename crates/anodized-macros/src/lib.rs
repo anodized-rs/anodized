@@ -42,6 +42,9 @@ const fn validate_config() -> Mode {
             uses_charon: static_cfg.with_charon,
         })
     } else {
+        if runtime_cfg.with_try && !runtime_cfg.with_panic {
+            panic!("`anodized_try` requires `anodized_panic`");
+        }
         Mode::InjectChecks(CheckSettings {
             does_print: runtime_cfg.with_print,
             does_panic: if runtime_cfg.with_panic {
