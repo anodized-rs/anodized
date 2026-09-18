@@ -13,24 +13,28 @@ use anodized_core::{
     syntax::SpecFields,
 };
 
-const CONFIG: Mode = if cfg!(anodized_discard_specs) {
-    Mode::ChangeNothing
-} else if cfg!(anodized_embed_specs) {
-    Mode::EmbedSpecs(SpecEmbedding {
-        uses_charon: cfg!(anodized_charon),
-    })
-} else {
-    Mode::InjectChecks(CheckSettings {
-        does_print: cfg!(anodized_print),
-        does_panic: if cfg!(anodized_panic) {
-            Some(PanicSettings {
-                has_try_fn: cfg!(anodized_try),
-            })
-        } else {
-            None
-        },
-    })
-};
+const CONFIG: Mode = validate_settings();
+
+const fn validate_settings() -> Mode {
+    if cfg!(anodized_discard_specs) {
+        Mode::ChangeNothing
+    } else if cfg!(anodized_embed_specs) {
+        Mode::EmbedSpecs(SpecEmbedding {
+            uses_charon: cfg!(anodized_charon),
+        })
+    } else {
+        Mode::InjectChecks(CheckSettings {
+            does_print: cfg!(anodized_print),
+            does_panic: if cfg!(anodized_panic) {
+                Some(PanicSettings {
+                    has_try_fn: cfg!(anodized_try),
+                })
+            } else {
+                None
+            },
+        })
+    }
+}
 
 /// **Must** be inside a `#[spec]` attribute's item. May be applied to a `fn`, its inputs, and
 /// fields of a `struct` or `enum`.
