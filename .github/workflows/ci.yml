@@ -45,40 +45,40 @@ jobs:
         run: cargo test -p anodized-core --lib --no-fail-fast
 
   test-anodized:
-    name: Lint and test anodized with cfg `${{ matrix.cfg }}`
+    name: Lint and test anodized with flags `${{ matrix.flags }}`
     runs-on: ubuntu-latest
     needs: fmt
     strategy:
       matrix:
         include:
-          - cfg: ""
+          - flags: ""
             toolchain: stable
             targets: --all-targets
             tests: --tests
-          - cfg: '--config ''build.rustflags=["--cfg","anodized_discard_specs"]'''
+          - flags: '--config ''build.rustflags=["--cfg","anodized_discard_specs"]'''
             toolchain: stable
             targets: --all-targets
             tests: --tests
-          - cfg: '--config ''build.rustflags=["--cfg","anodized_print"]'''
+          - flags: '--config ''build.rustflags=["--cfg","anodized_print"]'''
             toolchain: stable
             targets: --all-targets
             tests: --tests
-          - cfg: '--config ''build.rustflags=["--cfg","anodized_panic"]'''
+          - flags: '--config ''build.rustflags=["--cfg","anodized_panic"]'''
             toolchain: stable
             targets: --all-targets
             tests: --tests
-          - cfg: '--config ''build.rustflags=["--cfg","anodized_print","--cfg","anodized_panic"]'''
+          - flags: '--config ''build.rustflags=["--cfg","anodized_print","--cfg","anodized_panic"]'''
             toolchain: stable
             targets: --all-targets
             tests: --tests
-          - cfg: '--config ''build.rustflags=["--cfg","anodized_print","--cfg","anodized_panic","--cfg","anodized_try"]'''
+          - flags: '--config ''build.rustflags=["--cfg","anodized_print","--cfg","anodized_panic","--cfg","anodized_try"]'''
             toolchain: stable
             targets: --all-targets
             tests: --tests
-          - cfg: '--config ''build.rustflags=["--cfg","anodized_embed_specs","--cfg","anodized_charon"]'''
+          - flags: '--config ''build.rustflags=["--cfg","anodized_embed_specs","--cfg","anodized_charon"]'''
             toolchain: nightly
             targets: --lib
-            tests: --test charon
+            tests: --test backend_charon
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -95,11 +95,11 @@ jobs:
         with:
           components: clippy
 
-      - name: Lint anodized with cfg `${{ matrix.cfg }}`
-        run: cargo ${{ matrix.cfg }} clippy -p anodized ${{ matrix.targets }} -- -D warnings
+      - name: Lint anodized with flags `${{ matrix.flags }}`
+        run: cargo ${{ matrix.flags }} clippy -p anodized ${{ matrix.targets }} -- -D warnings
 
-      - name: Integration test anodized with cfg `${{ matrix.cfg }}`
-        run: cargo ${{ matrix.cfg }} test -p anodized ${{ matrix.tests }} --no-fail-fast
+      - name: Integration test anodized with flags `${{ matrix.flags }}`
+        run: cargo ${{ matrix.flags }} test -p anodized ${{ matrix.tests }} --no-fail-fast
 
   test-anodized-fmt:
     name: Lint and test anodized-fmt
