@@ -1,6 +1,5 @@
 #![cfg_attr(anodized_charon, feature(register_tool))]
 #![cfg_attr(anodized_charon, register_tool(charon))]
-
 #![allow(clippy::unit_cmp, clippy::needless_return)]
 
 use anodized::spec;

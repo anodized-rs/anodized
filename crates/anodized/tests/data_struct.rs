@@ -1,7 +1,7 @@
 #![cfg_attr(anodized_charon, feature(register_tool))]
 #![cfg_attr(anodized_charon, register_tool(charon))]
-
 #![allow(unused)]
+
 use anodized::spec;
 
 #[spec(maintains: self.a.pow(2) + self.b.pow(2) == self.c.pow(2))]
