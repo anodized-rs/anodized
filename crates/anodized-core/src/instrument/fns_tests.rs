@@ -85,7 +85,46 @@ fn embed_spec_item_fn() {
         }
     };
 
-    let observed = Mode::EmbedSpecs
+    let observed = Mode::EMBED_SPECS
+        .instrument_item_fn(spec_item_fn.spec, spec_item_fn.node)
+        .unwrap();
+    assert_tokens_eq(&observed, &expected);
+}
+
+#[test]
+fn embed_spec_charon_item_fn() {
+    let spec_item_fn: SpecItemFn = parse_quote! {
+        #[spec]
+        fn FUNC() {}
+    };
+
+    let qualifier_bits = FnQualifiers::empty().bits();
+    let expected: TokenStream = parse_quote! {
+        #[doc(hidden)]
+        #[allow(warnings)]
+        const __anodized_fn_qualifiers_FUNC: u32 = #qualifier_bits;
+
+        #[doc(hidden)]
+        #[allow(warnings)]
+        #[charon::contract(kind = "precondition", for = "FUNC")]
+        fn __anodized_fn_requires_FUNC() -> bool {
+            let __anodized_pre = true;
+            __anodized_pre
+        }
+
+        #[doc(hidden)]
+        #[allow(warnings)]
+        #[charon::contract(kind = "postcondition", for = "FUNC")]
+        fn __anodized_fn_ensures_FUNC(__anodized_output: ()) -> bool {
+            let __anodized_output = ::anodized::__::eval_once(|| { __anodized_output });
+            let __anodized_post = true;
+            __anodized_post
+        }
+
+        fn FUNC() {}
+    };
+
+    let observed = Mode::EMBED_SPECS_CHARON
         .instrument_item_fn(spec_item_fn.spec, spec_item_fn.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);

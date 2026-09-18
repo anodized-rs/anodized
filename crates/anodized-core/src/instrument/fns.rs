@@ -12,7 +12,7 @@ use syn::{
 
 use crate::{
     Capture, Condition, FnSpec, PostCondition,
-    instrument::{CheckSettings, Mode, patterns::TamePat},
+    instrument::{CheckSettings, Mode, SpecEmbedding, patterns::TamePat},
     qualifiers::FnQualifiers,
 };
 
@@ -35,7 +35,18 @@ impl Mode {
         Ok(())
     }
 
-    pub fn build_precondition_fn_sig(prefix: &str, sig: &Signature) -> Signature {
+    pub fn build_precondition_fn_sig(
+        &self,
+        attrs: &mut Vec<Attribute>,
+        prefix: &str,
+        sig: &Signature,
+    ) -> Signature {
+        if let Self::EmbedSpecs(SpecEmbedding { uses_charon: true }) = self {
+            let sibling = syn::LitStr::new(&sig.ident.to_string(), sig.ident.span());
+            attrs.push(parse_quote!(
+                #[charon::contract(kind = "precondition", for = #sibling)]
+            ));
+        }
         Signature {
             constness: sig.constness,
             asyncness: sig.asyncness,
@@ -51,7 +62,18 @@ impl Mode {
         }
     }
 
-    pub fn build_postcondition_fn_sig(prefix: &str, sig: &Signature) -> Signature {
+    pub fn build_postcondition_fn_sig(
+        &self,
+        attrs: &mut Vec<Attribute>,
+        prefix: &str,
+        sig: &Signature,
+    ) -> Signature {
+        if let Self::EmbedSpecs(SpecEmbedding { uses_charon: true }) = self {
+            let sibling = syn::LitStr::new(&sig.ident.to_string(), sig.ident.span());
+            attrs.push(parse_quote!(
+                #[charon::contract(kind = "postcondition", for = #sibling)]
+            ));
+        }
         let mut inputs = sig.inputs.clone();
         let output_binder = match &sig.output {
             ReturnType::Type(_, return_type) => parse_quote! { __anodized_output: #return_type },

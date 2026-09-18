@@ -18,10 +18,16 @@ pub mod traits;
 pub enum Mode {
     /// Make no changes to the code.
     ChangeNothing,
+    /// Embed spec elements as new items without changing existing code.
+    EmbedSpecs(SpecEmbedding),
     /// Inject code to enable compile-time and/or runtime checks.
     InjectChecks(CheckSettings),
-    /// Embed spec elements as new items without changing existing code.
-    EmbedSpecs,
+}
+
+#[derive(Debug, Clone)]
+pub struct SpecEmbedding {
+    /// Emit Charon's `contract` attributes on spec elements.
+    pub uses_charon: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -63,7 +69,7 @@ impl Mode {
                 };
                 Mode::InjectChecks(check_settings)
             }
-            Mode::EmbedSpecs => Mode::EmbedSpecs,
+            Mode::EmbedSpecs(spec_embedding) => Mode::EmbedSpecs(spec_embedding.clone()),
         }
     }
 
@@ -78,7 +84,7 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
             ));
         }
 
-        if let Self::EmbedSpecs = self {
+        if let Self::EmbedSpecs(_) = self {
             // Embed `spec` elements as `__anodized_fn_*` items.
             let attrs: [Attribute; 2] = [
                 parse_quote!(#[doc(hidden)]),
@@ -91,19 +97,31 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
                 spec.qualifiers,
                 &item_fn.sig.ident,
             );
+            let mut spec_requires_attrs = attrs.to_vec();
+            let spec_requires_sig = self.build_precondition_fn_sig(
+                &mut spec_requires_attrs,
+                "__anodized_fn_requires",
+                &item_fn.sig,
+            );
             let spec_requires_fn = ItemFn {
-                attrs: attrs.to_vec(),
+                attrs: spec_requires_attrs,
                 vis: syn::Visibility::Inherited,
-                sig: Self::build_precondition_fn_sig("__anodized_fn_requires", &item_fn.sig),
+                sig: spec_requires_sig,
                 block: Box::new(Self::build_precondition_fn_body(
                     &spec.requires,
                     &spec.maintains,
                 )),
             };
+            let mut spec_ensures_attrs = attrs.to_vec();
+            let spec_ensures_sig = self.build_postcondition_fn_sig(
+                &mut spec_ensures_attrs,
+                "__anodized_fn_ensures",
+                &item_fn.sig,
+            );
             let spec_ensures_fn = ItemFn {
-                attrs: attrs.to_vec(),
+                attrs: spec_ensures_attrs,
                 vis: syn::Visibility::Inherited,
-                sig: Self::build_postcondition_fn_sig("__anodized_fn_ensures", &item_fn.sig),
+                sig: spec_ensures_sig,
                 block: Box::new(Self::build_postcondition_fn_body(
                     &spec.maintains,
                     &spec.captures,
@@ -225,6 +243,11 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
 #[cfg(test)]
 impl Mode {
     pub(crate) const DEFAULT: Self = Mode::InjectChecks(CheckSettings::DEFAULT);
+
+    pub(crate) const EMBED_SPECS: Self = Self::EmbedSpecs(SpecEmbedding { uses_charon: false });
+
+    pub(crate) const EMBED_SPECS_CHARON: Self =
+        Self::EmbedSpecs(SpecEmbedding { uses_charon: true });
 }
 
 #[cfg(test)]

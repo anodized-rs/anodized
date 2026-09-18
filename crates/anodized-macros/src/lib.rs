@@ -7,12 +7,18 @@ use syn::{Expr, Item, TraitItemFn, parse_macro_input};
 
 use anodized_core::{
     annotate::Specified as _,
-    instrument::{CheckSettings, Mode, PanicSettings, fns::make_try_call, make_item_error},
+    instrument::{
+        CheckSettings, Mode, PanicSettings, SpecEmbedding, fns::make_try_call, make_item_error,
+    },
     syntax::SpecFields,
 };
 
 const CONFIG: Mode = if cfg!(anodized_discard_specs) {
     Mode::ChangeNothing
+} else if cfg!(anodized_embed_specs) {
+    Mode::EmbedSpecs(SpecEmbedding {
+        uses_charon: cfg!(anodized_charon),
+    })
 } else {
     Mode::InjectChecks(CheckSettings {
         does_print: cfg!(anodized_print),

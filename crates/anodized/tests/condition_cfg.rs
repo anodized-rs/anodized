@@ -1,3 +1,6 @@
+#![cfg_attr(anodized_charon, feature(register_tool))]
+#![cfg_attr(anodized_charon, register_tool(charon))]
+
 //! A `#[cfg]` on a condition must gate the check in every build configuration.
 //!
 //! These tests are gated on `anodized_panic` alone, not on `all(anodized_print,

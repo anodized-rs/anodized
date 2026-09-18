@@ -45,26 +45,32 @@ impl Mode {
                         parse_quote!(#[allow(warnings)]),
                     ];
 
-                    if let Self::EmbedSpecs = self {
+                    if let Self::EmbedSpecs(_) = self {
                         // Embed `spec` elements as `__anodized_fn_*` items.
+                        let mut spec_requires_attrs = attrs.to_vec();
+                        let spec_requires_sig = self.build_precondition_fn_sig(
+                            &mut spec_requires_attrs,
+                            "__anodized_fn_requires",
+                            &func.sig,
+                        );
                         let spec_requires_fn = TraitItemFn {
-                            attrs: attrs.to_vec(),
-                            sig: Self::build_precondition_fn_sig(
-                                "__anodized_fn_requires",
-                                &func.sig,
-                            ),
+                            attrs: spec_requires_attrs,
+                            sig: spec_requires_sig,
                             default: Some(Self::build_precondition_fn_body(
                                 &fn_spec.requires,
                                 &fn_spec.maintains,
                             )),
                             semi_token: None,
                         };
+                        let mut spec_ensures_attrs = attrs.to_vec();
+                        let spec_ensures_sig = self.build_postcondition_fn_sig(
+                            &mut spec_ensures_attrs,
+                            "__anodized_fn_ensures",
+                            &func.sig,
+                        );
                         let spec_ensures_fn = TraitItemFn {
-                            attrs: attrs.to_vec(),
-                            sig: Self::build_postcondition_fn_sig(
-                                "__anodized_fn_ensures",
-                                &func.sig,
-                            ),
+                            attrs: spec_ensures_attrs,
+                            sig: spec_ensures_sig,
                             default: Some(Self::build_postcondition_fn_body(
                                 &fn_spec.maintains,
                                 &fn_spec.captures,
@@ -215,14 +221,17 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         parse_quote!(#[allow(warnings)]),
                     ];
 
-                    if let Self::EmbedSpecs = self {
+                    if let Self::EmbedSpecs(_) = self {
                         // Embed `spec` elements as `__anodized_fn_*` items.
+                        let mut spec_requires_attrs = attrs.to_vec();
+                        let spec_requires_sig = self.build_precondition_fn_sig(
+                            &mut spec_requires_attrs,
+                            "__anodized_fn_requires",
+                            &func.sig,
+                        );
                         let spec_requires_fn = ImplItemFn {
-                            attrs: attrs.to_vec(),
-                            sig: Self::build_precondition_fn_sig(
-                                "__anodized_fn_requires",
-                                &func.sig,
-                            ),
+                            attrs: spec_requires_attrs,
+                            sig: spec_requires_sig,
                             block: Self::build_precondition_fn_body(
                                 &fn_spec.requires,
                                 &fn_spec.maintains,
@@ -230,12 +239,15 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                             vis: Visibility::Inherited,
                             defaultness: None,
                         };
+                        let mut spec_ensures_attrs = attrs.to_vec();
+                        let spec_ensures_sig = self.build_postcondition_fn_sig(
+                            &mut spec_ensures_attrs,
+                            "__anodized_fn_ensures",
+                            &func.sig,
+                        );
                         let spec_ensures_fn = ImplItemFn {
-                            attrs: attrs.to_vec(),
-                            sig: Self::build_postcondition_fn_sig(
-                                "__anodized_fn_ensures",
-                                &func.sig,
-                            ),
+                            attrs: spec_ensures_attrs,
+                            sig: spec_ensures_sig,
                             block: Self::build_postcondition_fn_body(
                                 &fn_spec.maintains,
                                 &fn_spec.captures,

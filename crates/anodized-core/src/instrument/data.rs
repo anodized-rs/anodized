@@ -47,7 +47,7 @@ impl Mode {
 
         item_enum.to_tokens(&mut tokens);
 
-        if let Mode::EmbedSpecs = self {
+        if let Mode::EmbedSpecs(_) = self {
             let spec_impl: ItemImpl = parse_quote! {
                 #[doc(hidden)]
                 #[allow(warnings)]
