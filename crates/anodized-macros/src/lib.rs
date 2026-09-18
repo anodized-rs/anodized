@@ -13,27 +13,45 @@ use anodized_core::{
     syntax::SpecFields,
 };
 
-const CONFIG: Mode = validate_settings();
+const CONFIG: Mode = validate_config();
 
-const fn validate_settings() -> Mode {
-    if cfg!(anodized_discard_specs) {
+const fn validate_config() -> Mode {
+    let raw_cfg = RawCfg {
+        erase: cfg!(anodized_discard_specs),
+        specs: cfg!(anodized_embed_specs),
+        specs_charon: cfg!(anodized_charon),
+        runtime_panic: cfg!(anodized_panic),
+        runtime_print: cfg!(anodized_print),
+        runtime_try: cfg!(anodized_try),
+    };
+
+    if raw_cfg.erase {
         Mode::ChangeNothing
-    } else if cfg!(anodized_embed_specs) {
+    } else if raw_cfg.specs {
         Mode::EmbedSpecs(SpecEmbedding {
-            uses_charon: cfg!(anodized_charon),
+            uses_charon: raw_cfg.specs_charon,
         })
     } else {
         Mode::InjectChecks(CheckSettings {
-            does_print: cfg!(anodized_print),
-            does_panic: if cfg!(anodized_panic) {
+            does_print: raw_cfg.runtime_print,
+            does_panic: if raw_cfg.runtime_panic {
                 Some(PanicSettings {
-                    has_try_fn: cfg!(anodized_try),
+                    has_try_fn: raw_cfg.runtime_try,
                 })
             } else {
                 None
             },
         })
     }
+}
+
+struct RawCfg {
+    erase: bool,
+    specs_charon: bool,
+    specs: bool,
+    runtime_panic: bool,
+    runtime_print: bool,
+    runtime_try: bool,
 }
 
 /// **Must** be inside a `#[spec]` attribute's item. May be applied to a `fn`, its inputs, and
