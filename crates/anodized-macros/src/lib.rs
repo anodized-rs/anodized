@@ -18,8 +18,8 @@ const CONFIG: Mode = validate_config();
 const fn validate_config() -> Mode {
     let raw_cfg = RawCfg {
         erase: cfg!(anodized_discard_specs),
-        specs: cfg!(anodized_embed_specs),
-        specs_charon: cfg!(anodized_charon),
+        static_specs: cfg!(anodized_embed_specs),
+        static_charon: cfg!(anodized_charon),
         runtime_panic: cfg!(anodized_panic),
         runtime_print: cfg!(anodized_print),
         runtime_try: cfg!(anodized_try),
@@ -27,9 +27,9 @@ const fn validate_config() -> Mode {
 
     if raw_cfg.erase {
         Mode::ChangeNothing
-    } else if raw_cfg.specs {
+    } else if raw_cfg.static_specs {
         Mode::EmbedSpecs(SpecEmbedding {
-            uses_charon: raw_cfg.specs_charon,
+            uses_charon: raw_cfg.static_charon,
         })
     } else {
         Mode::InjectChecks(CheckSettings {
@@ -47,8 +47,8 @@ const fn validate_config() -> Mode {
 
 struct RawCfg {
     erase: bool,
-    specs_charon: bool,
-    specs: bool,
+    static_charon: bool,
+    static_specs: bool,
     runtime_panic: bool,
     runtime_print: bool,
     runtime_try: bool,
