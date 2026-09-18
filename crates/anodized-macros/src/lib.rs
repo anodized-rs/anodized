@@ -34,7 +34,9 @@ const fn validate_config() -> Mode {
         Mode::ChangeNothing
     } else if static_cfg.any() {
         if runtime_cfg.any() {
-            panic!("`anodized_embed_specs` is incompatible with all `anodized_runtime_*` settings");
+            panic!(
+                "`anodized_embed_specs` is incompatible with `anodized_panic/print/try` settings"
+            );
         }
         Mode::EmbedSpecs(SpecEmbedding {
             uses_charon: static_cfg.with_charon,
