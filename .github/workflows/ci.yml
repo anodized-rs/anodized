@@ -75,7 +75,7 @@ jobs:
             toolchain: stable
             targets: --all-targets
             tests: --tests
-          - flags: '--config ''build.rustflags=["--cfg","anodized_embed_specs","--cfg","anodized_charon"]'''
+          - flags: '+nightly --config ''build.rustflags=["--cfg","anodized_embed_specs","--cfg","anodized_charon"]'''
             toolchain: nightly
             targets: --lib
             tests: --test backend_charon
