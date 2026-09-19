@@ -81,21 +81,21 @@ impl Mode {
                     "`anodized_discard_specs` is incompatible with all other `anodized_*` settings"
                 );
             }
-            Mode::ChangeNothing
+            Self::ChangeNothing
         } else if any_static {
             if any_runtime {
                 panic!(
                     "`anodized_embed_specs` is incompatible with `anodized_panic/print/try` settings"
                 );
             }
-            Mode::EmbedSpecs(SpecEmbedding {
+            Self::EmbedSpecs(SpecEmbedding {
                 uses_charon: raw_cfg.anodized_charon,
             })
         } else {
             if raw_cfg.anodized_try && !raw_cfg.anodized_panic {
                 panic!("`anodized_try` requires `anodized_panic`");
             }
-            Mode::InjectChecks(CheckSettings {
+            Self::InjectChecks(CheckSettings {
                 does_print: raw_cfg.anodized_print,
                 does_panic: if raw_cfg.anodized_panic {
                     Some(PanicSettings {
