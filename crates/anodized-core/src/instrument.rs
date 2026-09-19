@@ -44,6 +44,7 @@ pub struct PanicSettings {
     pub has_try_fn: bool,
 }
 
+#[derive(Debug, Clone)]
 pub struct RawCfg {
     pub anodized_discard_specs: bool,
     pub anodized_embed_specs: bool,
@@ -54,7 +55,7 @@ pub struct RawCfg {
 }
 
 impl RawCfg {
-    pub const fn decompose_static_runtime(&self) -> (bool, bool) {
+    pub const fn get_any_static_any_runtime(&self) -> (bool, bool) {
         let RawCfg {
             anodized_discard_specs: _,
             anodized_embed_specs,
@@ -72,7 +73,7 @@ impl RawCfg {
 
 impl Mode {
     pub const fn from_raw_cfg(raw_cfg: RawCfg) -> Self {
-        let (any_static, any_runtime) = raw_cfg.decompose_static_runtime();
+        let (any_static, any_runtime) = raw_cfg.get_any_static_any_runtime();
 
         if raw_cfg.anodized_discard_specs {
             if any_static || any_runtime {
