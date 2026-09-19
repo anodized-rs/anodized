@@ -7,30 +7,18 @@ use syn::{Expr, Item, TraitItemFn, parse_macro_input};
 
 use anodized_core::{
     annotate::Specified as _,
-    instrument::{
-        CheckSettings, Mode, PanicSettings, SpecEmbedding, fns::make_try_call, make_item_error,
-    },
+    instrument::{Mode, RawCfg, fns::make_try_call, make_item_error},
     syntax::SpecFields,
 };
 
-const CONFIG: Mode = if cfg!(anodized_discard_specs) {
-    Mode::ChangeNothing
-} else if cfg!(anodized_embed_specs) {
-    Mode::EmbedSpecs(SpecEmbedding {
-        uses_charon: cfg!(anodized_charon),
-    })
-} else {
-    Mode::InjectChecks(CheckSettings {
-        does_print: cfg!(anodized_print),
-        does_panic: if cfg!(anodized_panic) {
-            Some(PanicSettings {
-                has_try_fn: cfg!(anodized_try),
-            })
-        } else {
-            None
-        },
-    })
-};
+const CONFIG: Mode = Mode::from_raw_cfg(RawCfg {
+    anodized_discard_specs: cfg!(anodized_discard_specs),
+    anodized_embed_specs: cfg!(anodized_embed_specs),
+    anodized_charon: cfg!(anodized_charon),
+    anodized_panic: cfg!(anodized_panic),
+    anodized_print: cfg!(anodized_print),
+    anodized_try: cfg!(anodized_try),
+});
 
 /// **Must** be inside a `#[spec]` attribute's item. May be applied to a `fn`, its inputs, and
 /// fields of a `struct` or `enum`.

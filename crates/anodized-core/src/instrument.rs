@@ -44,7 +44,70 @@ pub struct PanicSettings {
     pub has_try_fn: bool,
 }
 
+#[derive(Debug, Clone)]
+pub struct RawCfg {
+    pub anodized_discard_specs: bool,
+    pub anodized_embed_specs: bool,
+    pub anodized_charon: bool,
+    pub anodized_panic: bool,
+    pub anodized_print: bool,
+    pub anodized_try: bool,
+}
+
+impl RawCfg {
+    pub const fn get_any_static_any_runtime(&self) -> (bool, bool) {
+        let RawCfg {
+            anodized_discard_specs: _,
+            anodized_embed_specs,
+            anodized_charon,
+            anodized_panic,
+            anodized_print,
+            anodized_try,
+        } = *self;
+        (
+            anodized_embed_specs || anodized_charon,
+            anodized_panic || anodized_print || anodized_try,
+        )
+    }
+}
+
 impl Mode {
+    pub const fn from_raw_cfg(raw_cfg: RawCfg) -> Self {
+        let (any_static, any_runtime) = raw_cfg.get_any_static_any_runtime();
+
+        if raw_cfg.anodized_discard_specs {
+            if any_static || any_runtime {
+                panic!(
+                    "`anodized_discard_specs` is incompatible with all other `anodized_*` settings"
+                );
+            }
+            Self::ChangeNothing
+        } else if any_static {
+            if any_runtime {
+                panic!(
+                    "`anodized_embed_specs` is incompatible with `anodized_panic/print/try` settings"
+                );
+            }
+            Self::EmbedSpecs(SpecEmbedding {
+                uses_charon: raw_cfg.anodized_charon,
+            })
+        } else {
+            if raw_cfg.anodized_try && !raw_cfg.anodized_panic {
+                panic!("`anodized_try` requires `anodized_panic`");
+            }
+            Self::InjectChecks(CheckSettings {
+                does_print: raw_cfg.anodized_print,
+                does_panic: if raw_cfg.anodized_panic {
+                    Some(PanicSettings {
+                        has_try_fn: raw_cfg.anodized_try,
+                    })
+                } else {
+                    None
+                },
+            })
+        }
+    }
+
     pub fn changes_anything(&self) -> bool {
         !matches!(self, Mode::ChangeNothing)
     }
@@ -242,12 +305,32 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
 
 #[cfg(test)]
 impl Mode {
-    pub(crate) const DEFAULT: Self = Mode::InjectChecks(CheckSettings::DEFAULT);
+    pub(crate) const DEFAULT: Self = Self::from_raw_cfg(RawCfg {
+        anodized_discard_specs: false,
+        anodized_embed_specs: false,
+        anodized_charon: false,
+        anodized_panic: false,
+        anodized_print: false,
+        anodized_try: false,
+    });
 
-    pub(crate) const EMBED_SPECS: Self = Self::EmbedSpecs(SpecEmbedding { uses_charon: false });
+    pub(crate) const EMBED_SPECS: Self = Self::from_raw_cfg(RawCfg {
+        anodized_discard_specs: false,
+        anodized_embed_specs: true,
+        anodized_charon: false,
+        anodized_panic: false,
+        anodized_print: false,
+        anodized_try: false,
+    });
 
-    pub(crate) const EMBED_SPECS_CHARON: Self =
-        Self::EmbedSpecs(SpecEmbedding { uses_charon: true });
+    pub(crate) const EMBED_SPECS_CHARON: Self = Self::from_raw_cfg(RawCfg {
+        anodized_discard_specs: false,
+        anodized_embed_specs: false,
+        anodized_charon: true,
+        anodized_panic: false,
+        anodized_print: false,
+        anodized_try: false,
+    });
 }
 
 #[cfg(test)]
