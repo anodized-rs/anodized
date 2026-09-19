@@ -44,7 +44,69 @@ pub struct PanicSettings {
     pub has_try_fn: bool,
 }
 
+pub struct RawCfg {
+    pub anodized_discard_specs: bool,
+    pub anodized_embed_specs: bool,
+    pub anodized_charon: bool,
+    pub anodized_panic: bool,
+    pub anodized_print: bool,
+    pub anodized_try: bool,
+}
+
+impl RawCfg {
+    pub const fn decompose_static_runtime(&self) -> (bool, bool) {
+        let RawCfg {
+            anodized_discard_specs: _,
+            anodized_embed_specs,
+            anodized_charon,
+            anodized_panic,
+            anodized_print,
+            anodized_try,
+        } = *self;
+        (
+            anodized_embed_specs || anodized_charon,
+            anodized_panic || anodized_print || anodized_try,
+        )
+    }
+}
+
 impl Mode {
+    pub const fn from_raw_cfg(raw_cfg: RawCfg) -> Self {
+        let (any_static, any_runtime) = raw_cfg.decompose_static_runtime();
+
+        if raw_cfg.anodized_discard_specs {
+            if any_static || any_runtime {
+                panic!(
+                    "`anodized_discard_specs` is incompatible with all other `anodized_*` settings"
+                );
+            }
+            Mode::ChangeNothing
+        } else if any_static {
+            if any_runtime {
+                panic!(
+                    "`anodized_embed_specs` is incompatible with `anodized_panic/print/try` settings"
+                );
+            }
+            Mode::EmbedSpecs(SpecEmbedding {
+                uses_charon: raw_cfg.anodized_charon,
+            })
+        } else {
+            if raw_cfg.anodized_try && !raw_cfg.anodized_panic {
+                panic!("`anodized_try` requires `anodized_panic`");
+            }
+            Mode::InjectChecks(CheckSettings {
+                does_print: raw_cfg.anodized_print,
+                does_panic: if raw_cfg.anodized_panic {
+                    Some(PanicSettings {
+                        has_try_fn: raw_cfg.anodized_try,
+                    })
+                } else {
+                    None
+                },
+            })
+        }
+    }
+
     pub fn changes_anything(&self) -> bool {
         !matches!(self, Mode::ChangeNothing)
     }
