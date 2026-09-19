@@ -305,12 +305,32 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
 
 #[cfg(test)]
 impl Mode {
-    pub(crate) const DEFAULT: Self = Mode::InjectChecks(CheckSettings::DEFAULT);
+    pub(crate) const DEFAULT: Self = Self::from_raw_cfg(RawCfg {
+        anodized_discard_specs: false,
+        anodized_embed_specs: false,
+        anodized_charon: false,
+        anodized_panic: false,
+        anodized_print: false,
+        anodized_try: false,
+    });
 
-    pub(crate) const EMBED_SPECS: Self = Self::EmbedSpecs(SpecEmbedding { uses_charon: false });
+    pub(crate) const EMBED_SPECS: Self = Self::from_raw_cfg(RawCfg {
+        anodized_discard_specs: false,
+        anodized_embed_specs: true,
+        anodized_charon: false,
+        anodized_panic: false,
+        anodized_print: false,
+        anodized_try: false,
+    });
 
-    pub(crate) const EMBED_SPECS_CHARON: Self =
-        Self::EmbedSpecs(SpecEmbedding { uses_charon: true });
+    pub(crate) const EMBED_SPECS_CHARON: Self = Self::from_raw_cfg(RawCfg {
+        anodized_discard_specs: false,
+        anodized_embed_specs: false,
+        anodized_charon: true,
+        anodized_panic: false,
+        anodized_print: false,
+        anodized_try: false,
+    });
 }
 
 #[cfg(test)]
