@@ -242,7 +242,7 @@ fn check_data_instrument_item_fn() {
     };
 
     let observed = Mode::InjectChecks(CheckSettings::CHECK_DATA)
-        .instrument_item_fn(fn_spec, item_fn)
+        .instrument_item_fn(spec_item_fn.spec, spec_item_fn.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
@@ -276,7 +276,7 @@ fn check_data_unspec_input_in() {
     };
 
     let observed = Mode::InjectChecks(CheckSettings::CHECK_DATA)
-        .instrument_item_fn(Spec::empty(), item_fn)
+        .instrument_item_fn(spec_item_fn.spec, spec_item_fn.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
@@ -308,7 +308,7 @@ fn check_data_unspec_input_out() {
     };
 
     let observed = Mode::InjectChecks(CheckSettings::CHECK_DATA)
-        .instrument_item_fn(Spec::empty(), item_fn)
+        .instrument_item_fn(spec_item_fn.spec, spec_item_fn.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
@@ -338,7 +338,7 @@ fn check_data_unspec_input() {
     };
 
     let observed = Mode::InjectChecks(CheckSettings::CHECK_DATA)
-        .instrument_item_fn(Spec::empty(), item_fn)
+        .instrument_item_fn(spec_item_fn.spec, spec_item_fn.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
@@ -364,7 +364,7 @@ fn check_data_unspec_output_out() {
     };
 
     let observed = Mode::InjectChecks(CheckSettings::CHECK_DATA)
-        .instrument_item_fn(Spec::empty(), item_fn)
+        .instrument_item_fn(spec_item_fn.spec, spec_item_fn.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
@@ -449,7 +449,7 @@ fn emit_try_fn_instrument_item_fn() {
 
 #[test]
 fn simple_requires() {
-    let spec_item_fn: SpecItemFn = parse_quote! {
+    let mut spec_item_fn: SpecItemFn = parse_quote! {
         #[spec(requires: CONDITION_1)]
         fn FUNCTION() -> RET_TYPE { BODY }
     };
@@ -472,14 +472,18 @@ fn simple_requires() {
     };
 
     CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
+        .instrument_fn_sig_and_body(
+            &spec_item_fn.spec,
+            &mut spec_item_fn.node.sig,
+            &mut spec_item_fn.node.block,
+        )
         .unwrap();
-    assert_tokens_eq(&func.block, &expected);
+    assert_tokens_eq(&spec_item_fn.node.block, &expected);
 }
 
 #[test]
 fn requires_disable_runtime_checks() {
-    let spec_item_fn: SpecItemFn = parse_quote! {
+    let mut spec_item_fn: SpecItemFn = parse_quote! {
         #[spec(requires: CONDITION_1)]
         fn FUNCTION() -> RET_TYPE { BODY }
     };
@@ -498,14 +502,18 @@ fn requires_disable_runtime_checks() {
     };
 
     CheckSettings::DEFAULT
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
+        .instrument_fn_sig_and_body(
+            &spec_item_fn.spec,
+            &mut spec_item_fn.node.sig,
+            &mut spec_item_fn.node.block,
+        )
         .unwrap();
-    assert_tokens_eq(&func.block, &expected);
+    assert_tokens_eq(&spec_item_fn.node.block, &expected);
 }
 
 #[test]
 fn requires_no_panic_runtime() {
-    let spec_item_fn: SpecItemFn = parse_quote! {
+    let mut spec_item_fn: SpecItemFn = parse_quote! {
         #[spec(requires: CONDITION_1)]
         fn FUNCTION() -> RET_TYPE { BODY }
     };
@@ -524,14 +532,18 @@ fn requires_no_panic_runtime() {
     };
 
     CheckSettings::PRINT
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
+        .instrument_fn_sig_and_body(
+            &spec_item_fn.spec,
+            &mut spec_item_fn.node.sig,
+            &mut spec_item_fn.node.block,
+        )
         .unwrap();
-    assert_tokens_eq(&func.block, &expected);
+    assert_tokens_eq(&spec_item_fn.node.block, &expected);
 }
 
 #[test]
 fn simple_maintains() {
-    let spec_item_fn: SpecItemFn = parse_quote! {
+    let mut spec_item_fn: SpecItemFn = parse_quote! {
         #[spec(maintains: CONDITION_1)]
         fn FUNCTION() -> RET_TYPE { BODY }
     };
@@ -556,14 +568,18 @@ fn simple_maintains() {
     };
 
     CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
+        .instrument_fn_sig_and_body(
+            &spec_item_fn.spec,
+            &mut spec_item_fn.node.sig,
+            &mut spec_item_fn.node.block,
+        )
         .unwrap();
-    assert_tokens_eq(&func.block, &expected);
+    assert_tokens_eq(&spec_item_fn.node.block, &expected);
 }
 
 #[test]
 fn simple_ensures() {
-    let spec_item_fn: SpecItemFn = parse_quote! {
+    let mut spec_item_fn: SpecItemFn = parse_quote! {
         #[spec(ensures: CONDITION_1)]
         fn FUNCTION() -> RET_TYPE { BODY }
     };
@@ -586,14 +602,18 @@ fn simple_ensures() {
     };
 
     CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
+        .instrument_fn_sig_and_body(
+            &spec_item_fn.spec,
+            &mut spec_item_fn.node.sig,
+            &mut spec_item_fn.node.block,
+        )
         .unwrap();
-    assert_tokens_eq(&func.block, &expected);
+    assert_tokens_eq(&spec_item_fn.node.block, &expected);
 }
 
 #[test]
 fn simple_requires_and_maintains() {
-    let spec_item_fn: SpecItemFn = parse_quote! {
+    let mut spec_item_fn: SpecItemFn = parse_quote! {
         #[spec(
             requires: CONDITION_1,
             maintains: CONDITION_2,
@@ -623,14 +643,18 @@ fn simple_requires_and_maintains() {
     };
 
     CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
+        .instrument_fn_sig_and_body(
+            &spec_item_fn.spec,
+            &mut spec_item_fn.node.sig,
+            &mut spec_item_fn.node.block,
+        )
         .unwrap();
-    assert_tokens_eq(&func.block, &expected);
+    assert_tokens_eq(&spec_item_fn.node.block, &expected);
 }
 
 #[test]
 fn simple_requires_and_ensures() {
-    let spec_item_fn: SpecItemFn = parse_quote! {
+    let mut spec_item_fn: SpecItemFn = parse_quote! {
         #[spec(
             requires: CONDITION_1,
             ensures: CONDITION_2,
@@ -658,14 +682,18 @@ fn simple_requires_and_ensures() {
     };
 
     CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
+        .instrument_fn_sig_and_body(
+            &spec_item_fn.spec,
+            &mut spec_item_fn.node.sig,
+            &mut spec_item_fn.node.block,
+        )
         .unwrap();
-    assert_tokens_eq(&func.block, &expected);
+    assert_tokens_eq(&spec_item_fn.node.block, &expected);
 }
 
 #[test]
 fn simple_maintains_and_ensures() {
-    let spec_item_fn: SpecItemFn = parse_quote! {
+    let mut spec_item_fn: SpecItemFn = parse_quote! {
         #[spec(
             maintains: CONDITION_1,
             ensures: CONDITION_2,
@@ -695,14 +723,18 @@ fn simple_maintains_and_ensures() {
     };
 
     CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
+        .instrument_fn_sig_and_body(
+            &spec_item_fn.spec,
+            &mut spec_item_fn.node.sig,
+            &mut spec_item_fn.node.block,
+        )
         .unwrap();
-    assert_tokens_eq(&func.block, &expected);
+    assert_tokens_eq(&spec_item_fn.node.block, &expected);
 }
 
 #[test]
 fn simple_requires_maintains_and_ensures() {
-    let spec_item_fn: SpecItemFn = parse_quote! {
+    let mut spec_item_fn: SpecItemFn = parse_quote! {
         #[spec(
             requires: CONDITION_1,
             maintains: CONDITION_2,
@@ -735,14 +767,18 @@ fn simple_requires_maintains_and_ensures() {
     };
 
     CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
+        .instrument_fn_sig_and_body(
+            &spec_item_fn.spec,
+            &mut spec_item_fn.node.sig,
+            &mut spec_item_fn.node.block,
+        )
         .unwrap();
-    assert_tokens_eq(&func.block, &expected);
+    assert_tokens_eq(&spec_item_fn.node.block, &expected);
 }
 
 #[test]
 fn simple_async_requires_maintains_and_ensures() {
-    let spec_item_fn: SpecItemFn = parse_quote! {
+    let mut spec_item_fn: SpecItemFn = parse_quote! {
         #[spec(
             requires: CONDITION_1,
             maintains: CONDITION_2,
@@ -775,14 +811,18 @@ fn simple_async_requires_maintains_and_ensures() {
     };
 
     CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
+        .instrument_fn_sig_and_body(
+            &spec_item_fn.spec,
+            &mut spec_item_fn.node.sig,
+            &mut spec_item_fn.node.block,
+        )
         .unwrap();
-    assert_tokens_eq(&func.block, &expected);
+    assert_tokens_eq(&spec_item_fn.node.block, &expected);
 }
 
 #[test]
 fn multiple_conditions_in_clauses() {
-    let spec_item_fn: SpecItemFn = parse_quote! {
+    let mut spec_item_fn: SpecItemFn = parse_quote! {
         #[spec(
             requires: [CONDITION_1, CONDITION_2],
             maintains: [CONDITION_3, CONDITION_4],
@@ -823,14 +863,18 @@ fn multiple_conditions_in_clauses() {
     };
 
     CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
+        .instrument_fn_sig_and_body(
+            &spec_item_fn.spec,
+            &mut spec_item_fn.node.sig,
+            &mut spec_item_fn.node.block,
+        )
         .unwrap();
-    assert_tokens_eq(&func.block, &expected);
+    assert_tokens_eq(&spec_item_fn.node.block, &expected);
 }
 
 #[test]
 fn postcond_closure_form() {
-    let spec_item_fn: SpecItemFn = parse_quote! {
+    let mut spec_item_fn: SpecItemFn = parse_quote! {
         #[spec(ensures: |OUTPUT_PATTERN| CONDITION_1)]
         fn FUNCTION() -> RET_TYPE { BODY }
     };
@@ -861,14 +905,18 @@ fn postcond_closure_form() {
     };
 
     CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
+        .instrument_fn_sig_and_body(
+            &spec_item_fn.spec,
+            &mut spec_item_fn.node.sig,
+            &mut spec_item_fn.node.block,
+        )
         .unwrap();
-    assert_tokens_eq(&func.block, &expected);
+    assert_tokens_eq(&spec_item_fn.node.block, &expected);
 }
 
 #[test]
 fn postcond_borrowing_closure_form() {
-    let spec_item_fn: SpecItemFn = parse_quote! {
+    let mut spec_item_fn: SpecItemFn = parse_quote! {
         #[spec(ensures: |ref OUTPUT_PATTERN| CONDITION_1)]
         fn FUNCTION() -> RET_TYPE { BODY }
     };
@@ -902,14 +950,18 @@ fn postcond_borrowing_closure_form() {
     };
 
     CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
+        .instrument_fn_sig_and_body(
+            &spec_item_fn.spec,
+            &mut spec_item_fn.node.sig,
+            &mut spec_item_fn.node.block,
+        )
         .unwrap();
-    assert_tokens_eq(&func.block, &expected);
+    assert_tokens_eq(&spec_item_fn.node.block, &expected);
 }
 
 #[test]
 fn ensures_with_mixed_conditions() {
-    let spec_item_fn: SpecItemFn = parse_quote! {
+    let mut spec_item_fn: SpecItemFn = parse_quote! {
         #[spec(ensures: [
             CONDITION_1,
             CONDITION_2,
@@ -943,14 +995,18 @@ fn ensures_with_mixed_conditions() {
     };
 
     CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
+        .instrument_fn_sig_and_body(
+            &spec_item_fn.spec,
+            &mut spec_item_fn.node.sig,
+            &mut spec_item_fn.node.block,
+        )
         .unwrap();
-    assert_tokens_eq(&func.block, &expected);
+    assert_tokens_eq(&spec_item_fn.node.block, &expected);
 }
 
 #[test]
 fn cfg_attributes() {
-    let spec_item_fn: SpecItemFn = parse_quote! {
+    let mut spec_item_fn: SpecItemFn = parse_quote! {
         #[spec(
             #[cfg(SETTING_1)]
             requires: CONDITION_1,
@@ -994,14 +1050,18 @@ fn cfg_attributes() {
     };
 
     CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
+        .instrument_fn_sig_and_body(
+            &spec_item_fn.spec,
+            &mut spec_item_fn.node.sig,
+            &mut spec_item_fn.node.block,
+        )
         .unwrap();
-    assert_tokens_eq(&func.block, &expected);
+    assert_tokens_eq(&spec_item_fn.node.block, &expected);
 }
 
 #[test]
 fn cfg_on_single_and_list_conditions() {
-    let spec_item_fn: SpecItemFn = parse_quote! {
+    let mut spec_item_fn: SpecItemFn = parse_quote! {
         #[spec(
             #[cfg(SETTING_1)]
             requires: CONDITION_1,
@@ -1048,14 +1108,18 @@ fn cfg_on_single_and_list_conditions() {
     };
 
     CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
+        .instrument_fn_sig_and_body(
+            &spec_item_fn.spec,
+            &mut spec_item_fn.node.sig,
+            &mut spec_item_fn.node.block,
+        )
         .unwrap();
-    assert_tokens_eq(&func.block, &expected);
+    assert_tokens_eq(&spec_item_fn.node.block, &expected);
 }
 
 #[test]
 fn complex_mixed_conditions() {
-    let spec_item_fn: SpecItemFn = parse_quote! {
+    let mut spec_item_fn: SpecItemFn = parse_quote! {
         #[spec(
             requires: CONDITION_1,
             #[cfg(SETTING_1)]
@@ -1122,14 +1186,18 @@ fn complex_mixed_conditions() {
     };
 
     CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
+        .instrument_fn_sig_and_body(
+            &spec_item_fn.spec,
+            &mut spec_item_fn.node.sig,
+            &mut spec_item_fn.node.block,
+        )
         .unwrap();
-    assert_tokens_eq(&func.block, &expected);
+    assert_tokens_eq(&spec_item_fn.node.block, &expected);
 }
 
 #[test]
 fn captures() {
-    let spec_item_fn: SpecItemFn = parse_quote! {
+    let mut spec_item_fn: SpecItemFn = parse_quote! {
         #[spec(
             requires: CONDITION_1,
             captures: [
@@ -1170,9 +1238,13 @@ fn captures() {
     };
 
     CheckSettings::PRINT_AND_PANIC
-        .instrument_fn_sig_and_body(&spec, &mut func.sig, &mut func.block)
+        .instrument_fn_sig_and_body(
+            &spec_item_fn.spec,
+            &mut spec_item_fn.node.sig,
+            &mut spec_item_fn.node.block,
+        )
         .unwrap();
-    assert_tokens_eq(&func.block, &expected);
+    assert_tokens_eq(&spec_item_fn.node.block, &expected);
 }
 
 #[test]
