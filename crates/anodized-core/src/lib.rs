@@ -38,13 +38,13 @@ pub struct FnSpec {
     span: Span,
 }
 
-/// Determines where the input in a `fn` signature satisfies its type spec.
+/// Determines where the type spec of an input in a `fn` signature must hold.
 #[derive(Debug)]
 pub struct InputSpecFlags {
-    /// Whether the input satisfies its type spec on entry.
+    /// Whether the type spec must hold on entry.
     pub on_entry: bool,
-    /// Whether the input satisfies its type spec on exit.
-    pub on_exit: bool,
+    /// Whether the type spec must hold on exit. The pattern must be tame for runtime checks.
+    pub on_exit: Option<TamePat>,
 }
 
 impl FnSpec {
@@ -59,7 +59,7 @@ impl FnSpec {
             && !self
                 .input_spec_flags
                 .iter()
-                .any(|input_spec| input_spec.on_entry || input_spec.on_exit)
+                .any(|input_spec| input_spec.on_entry || input_spec.on_exit.is_some())
     }
 
     /// Construct an error from the whole spec.
@@ -72,7 +72,7 @@ impl Default for InputSpecFlags {
     fn default() -> Self {
         Self {
             on_entry: true,
-            on_exit: true,
+            on_exit: None,
         }
     }
 }

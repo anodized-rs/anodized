@@ -28,7 +28,8 @@ impl Mode {
 
     fn instrument_loop_body(&self, spec: LoopSpec, stmts: &mut Vec<Stmt>) {
         if let Self::EmbedSpecs(_) = self {
-            let maintains_block = Self::build_precondition_fn_body(&[], &[], &spec.maintains);
+            let maintains_block =
+                Self::build_precondition_fn_body(std::iter::empty(), &[], &spec.maintains);
             stmts.insert(
                 0,
                 parse_quote! {

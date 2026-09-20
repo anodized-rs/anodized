@@ -38,9 +38,7 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                     }
 
                     let fn_spec = item_fn.parse_spec_from_attrs()?;
-
-                    // TODO: Fill `inputs`.
-                    let mut inputs: Vec<(&FnArg, &InputSpecFlags, Option<TamePat>)> = todo!();
+                    let inputs = item_fn.sig.inputs.iter().zip(&fn_spec.input_spec_flags);
 
                     if let Self::EmbedSpecs(_) = self {
                         // Embed `spec` elements as `__anodized_fn_*` items.
@@ -65,7 +63,7 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                             attrs: spec_requires_attrs,
                             sig: spec_requires_sig,
                             block: Self::build_precondition_fn_body(
-                                &inputs,
+                                inputs.clone(),
                                 &fn_spec.requires,
                                 &fn_spec.maintains,
                             ),
@@ -82,7 +80,7 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                             attrs: spec_ensures_attrs,
                             sig: spec_ensures_sig,
                             block: Self::build_postcondition_fn_body(
-                                &inputs,
+                                inputs,
                                 &fn_spec.maintains,
                                 &fn_spec.captures,
                                 &fn_spec.ensures,

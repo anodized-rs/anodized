@@ -176,32 +176,30 @@ impl FnSpec {
     ) -> Result<(Vec<InputSpecFlags>, bool)> {
         let mut input_specs = Vec::with_capacity(inputs.len());
 
+        let mut id_gen = IdentGenerator::new();
         for input in inputs {
-            let attrs = match input {
-                FnArg::Receiver(receiver) => &mut receiver.attrs,
-                FnArg::Typed(pat_type) => &mut pat_type.attrs,
+            let (attrs, pat) = match input {
+                FnArg::Receiver(receiver) => (&mut receiver.attrs, parse_quote!(self)),
+                FnArg::Typed(pat_type) => (&mut pat_type.attrs, (*pat_type.pat).clone()),
             };
 
-            let input_spec = if let Some(attr) = remove_unique_attr("unspec", attrs)? {
+            let (on_entry, on_exit) = if let Some(attr) = remove_unique_attr("unspec", attrs)? {
                 let unspec: UnspecAttr = attr.try_into()?;
                 match unspec.arg {
-                    None => InputSpecFlags {
-                        on_entry: false,
-                        on_exit: false,
-                    },
-                    Some((_, UnspecArg::In(_))) => InputSpecFlags {
-                        on_entry: false,
-                        on_exit: true,
-                    },
-                    Some((_, UnspecArg::Out(_))) => InputSpecFlags {
-                        on_entry: true,
-                        on_exit: false,
-                    },
+                    None => (false, false),
+                    Some((_, UnspecArg::In(_))) => (false, true),
+                    Some((_, UnspecArg::Out(_))) => (true, false),
                 }
             } else {
-                InputSpecFlags::default()
+                (true, true)
             };
-            input_specs.push(input_spec);
+
+            input_specs.push(InputSpecFlags {
+                on_entry,
+                on_exit: on_exit
+                    .then(|| tame_pattern(&mut id_gen, pat))
+                    .transpose()?,
+            });
         }
 
         let output_spec_on_exit = if let Some(attr) = remove_unique_attr("unspec", attrs)? {

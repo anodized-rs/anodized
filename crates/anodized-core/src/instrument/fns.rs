@@ -5,9 +5,10 @@ mod fns_tests;
 use quote::ToTokens;
 use syn::{
     Attribute, Block, Expr, FnArg, Ident, Meta, Pat, Path, Receiver, ReturnType, Signature, Stmt,
-    Type,
+    Token, Type,
     parse::{Parse, Result},
     parse_quote, parse_quote_spanned,
+    punctuated::Punctuated,
     spanned::Spanned,
 };
 
@@ -145,8 +146,8 @@ impl Mode {
         }
     }
 
-    pub fn build_precondition_fn_body(
-        inputs: &[(&FnArg, &InputSpecFlags, Option<TamePat>)],
+    pub fn build_precondition_fn_body<'a, 'b>(
+        inputs: impl Iterator<Item = (&'a FnArg, &'b InputSpecFlags)>,
         requires: &[Condition],
         maintains: &[Condition],
     ) -> Block {
@@ -162,8 +163,8 @@ impl Mode {
         }
     }
 
-    pub fn build_postcondition_fn_body(
-        inputs: &[(&FnArg, &InputSpecFlags, Option<TamePat>)],
+    pub fn build_postcondition_fn_body<'a, 'b>(
+        inputs: impl Iterator<Item = (&'a FnArg, &'b InputSpecFlags)> + Clone,
         maintains: &[Condition],
         captures: &[Capture],
         ensures: &[PostCondition],
@@ -172,7 +173,7 @@ impl Mode {
         let output_eval: Expr = parse_quote! {
             ::anodized::__::eval_once(|| { __anodized_output })
         };
-        emit_captures_and_output_binding(captures, output_eval, &mut stmts);
+        emit_captures_and_output_binding(inputs.clone(), captures, output_eval, &mut stmts);
         emit_postcondition_checks(inputs, maintains, ensures, &mut stmts, |eval, _, _, _| {
             eval.clone()
         });
@@ -192,8 +193,8 @@ impl CheckSettings {
         sig: &mut Signature,
         body: &mut Block,
     ) -> Result<()> {
-        // The identifier for the return value binding.
-        let output_ident: Pat = parse_quote!(__anodized_output);
+        let inputs = sig.inputs.iter().zip(&spec.input_spec_flags);
+
         let (output_expr, precond_fail_action, postcond_fail_action) =
             if let Some(ref panic_settings) = self.does_panic
                 && panic_settings.has_try_fn
@@ -213,33 +214,9 @@ impl CheckSettings {
 
         let mut stmts: Vec<Stmt> = vec![];
 
-        let mut inputs: Vec<(&FnArg, &InputSpecFlags, Option<TamePat>)> = vec![];
-        // TODO: Fill `inputs`.
-        let mut id_gen = IdentGenerator::new();
-        if self.check_data {
-            for (i, (input, flags)) in sig.inputs.iter().zip(&spec.input_spec_flags).enumerate() {
-                match input {
-                    FnArg::Receiver(receiver) => {
-                        let pat: Pat = parse_quote! { self };
-                        let expr: Expr = parse_quote! { self };
-                        inputs.push((&input, flags, None));
-                    }
-                    FnArg::Typed(pat_type) => {
-                        let coercion = parse_quote! {
-                            #[allow(unused)]
-                            let _ = |#input| ();
-                        };
-                        stmts.push(coercion);
-                        // TODO
-                        inputs.push((&input, flags, None));
-                    }
-                }
-            }
-        }
-
         // Generate precondition checks.
         emit_precondition_checks(
-            &inputs,
+            inputs.clone(),
             &spec.requires,
             &spec.maintains,
             &mut stmts,
@@ -262,11 +239,11 @@ impl CheckSettings {
                 ::anodized::__::eval_once(|| #return_type #body)
             }
         };
-        emit_captures_and_output_binding(&spec.captures, output_eval, &mut stmts);
+        emit_captures_and_output_binding(inputs.clone(), &spec.captures, output_eval, &mut stmts);
 
         // Generate postcondition checks.
         emit_postcondition_checks(
-            &inputs,
+            inputs,
             &spec.maintains,
             &spec.ensures,
             &mut stmts,
@@ -330,8 +307,8 @@ impl CheckSettings {
 trait FnInstrumentEval: Fn(&Expr, &Option<Meta>, &str, &Expr) -> Expr {}
 impl<F: Fn(&Expr, &Option<Meta>, &str, &Expr) -> Expr> FnInstrumentEval for F {}
 
-fn emit_precondition_checks(
-    inputs: &[(&FnArg, &InputSpecFlags, Option<TamePat>)],
+fn emit_precondition_checks<'a, 'b>(
+    inputs: impl Iterator<Item = (&'a FnArg, &'b InputSpecFlags)>,
     requires: &[Condition],
     maintains: &[Condition],
     statements: &mut Vec<Stmt>,
@@ -341,8 +318,11 @@ fn emit_precondition_checks(
         let __anodized_pre = true;
     });
 
+    let mut input_idents = vec![];
+    let mut input_pats = vec![];
+
     // Check data specs of inputs.
-    for (i, (input, flags, _)) in inputs.iter().enumerate() {
+    for (i, (input, flags)) in inputs.enumerate() {
         if !flags.on_entry {
             continue;
         }
@@ -351,17 +331,28 @@ fn emit_precondition_checks(
                 let message = "precondition failed: type spec of `self`";
                 let self_token = &receiver.self_token;
                 let expr = parse_quote! {
-                    <Self as ::anodized::types::Refine>::predicate(#self_token)
+                    <Self as ::anodized::types::Refine>::predicate(&#self_token)
                 };
+
                 instrument_eval(&expr, &None, message, &expr)
             }
             FnArg::Typed(pat_type) => {
                 let message = format!("precondition failed: type spec of input {}", i + 1);
-                let pat = &pat_type.pat;
+                let ident = Ident::new(&format!("__anodized_input_{}", i + 1), pat_type.pat.span());
                 let ty = &pat_type.ty;
                 let expr = parse_quote! {
-                    <#ty as ::anodized::types::Refine>::predicate(&#pat)
+                    <#ty as ::anodized::types::Refine>::predicate(&#ident)
                 };
+
+                input_idents.push(ident);
+                // IMPORTANT: Use the tame pattern if present for compatibility with the exit check.
+                let pat = flags
+                    .on_exit
+                    .as_ref()
+                    .map(TamePat::get_pat)
+                    .unwrap_or(&pat_type.pat);
+                input_pats.push(pat);
+
                 instrument_eval(&expr, &None, &message, &expr)
             }
         };
@@ -369,17 +360,6 @@ fn emit_precondition_checks(
         statements.push(check);
     }
 
-    // Bind input patterns.
-    let mut input_idents = vec![];
-    let mut input_pats = vec![];
-
-    for (input, _, maybe_tame_pat) in inputs {
-        let Some(TamePat::Borrowing(pat) | TamePat::Invertible(pat, _)) = maybe_tame_pat else {
-            continue;
-        };
-        input_idents.push(input);
-        input_pats.push(pat);
-    }
     if !input_pats.is_empty() {
         statements.push(parse_quote! {
             let (#(#input_pats),*) = (#(#input_idents),*) else { unreachable!() };
@@ -411,7 +391,8 @@ fn emit_precondition_checks(
     }
 }
 
-fn emit_captures_and_output_binding(
+fn emit_captures_and_output_binding<'a, 'b>(
+    inputs: impl Iterator<Item = (&'a FnArg, &'b InputSpecFlags)>,
     captures: &[Capture],
     output_eval: Expr,
     statements: &mut Vec<Stmt>,
@@ -420,14 +401,25 @@ fn emit_captures_and_output_binding(
     let mut values = vec![];
 
     for capture in captures {
-        patterns.push(&capture.pat);
+        patterns.push(capture.pat.clone());
         let capture_eval = build_capture_eval(&capture.expr);
         values.push(capture_eval);
     }
 
     let output_ident = Pat::Path(parse_quote! { __anodized_output });
-    patterns.push(&output_ident);
+    patterns.push(output_ident);
     values.push(output_eval);
+
+    for (i, (input, flags)) in inputs.enumerate() {
+        let (FnArg::Typed(pat_type), Some(TamePat::Invertible(_, inv_expr))) =
+            (input, &flags.on_exit)
+        else {
+            continue;
+        };
+        let ident = Ident::new(&format!("__anodized_input_{}", i + 1), pat_type.pat.span());
+        patterns.push(parse_quote! { #ident });
+        values.push(*inv_expr.clone());
+    }
 
     let binding = if patterns.len() > 1 {
         parse_quote! { let (#(#patterns,)*) = (#(#values,)*); }
@@ -438,8 +430,8 @@ fn emit_captures_and_output_binding(
     statements.push(binding);
 }
 
-fn emit_postcondition_checks(
-    inputs: &[(&FnArg, &InputSpecFlags, Option<TamePat>)],
+fn emit_postcondition_checks<'a, 'b>(
+    inputs: impl Iterator<Item = (&'a FnArg, &'b InputSpecFlags)>,
     maintains: &[Condition],
     ensures: &[PostCondition],
     statements: &mut Vec<Stmt>,
@@ -448,6 +440,48 @@ fn emit_postcondition_checks(
     statements.push(parse_quote! {
         let __anodized_post = true;
     });
+
+    let mut input_idents = vec![];
+    let mut input_pats = vec![];
+    for (i, (input, flags)) in inputs.enumerate() {
+        let Some(tame_pat) = &flags.on_exit else {
+            continue;
+        };
+        let instrumented_eval = match input {
+            FnArg::Receiver(receiver) => {
+                let message = "postcondition failed: type spec of `self`";
+                let self_token = &receiver.self_token;
+                let expr = parse_quote! {
+                    <Self as ::anodized::types::Refine>::predicate(&#self_token)
+                };
+
+                instrument_eval(&expr, &None, message, &expr)
+            }
+            FnArg::Typed(pat_type) => {
+                let message = format!("postcondition failed: type spec of input {}", i + 1);
+                let ident = Ident::new(&format!("__anodized_input_{}", i + 1), pat_type.pat.span());
+                let ty = &pat_type.ty;
+                let expr = parse_quote! {
+                    <#ty as ::anodized::types::Refine>::predicate(&#ident)
+                };
+
+                if let TamePat::Invertible(pat, _) = tame_pat {
+                    input_idents.push(ident);
+                    input_pats.push(pat);
+                }
+
+                instrument_eval(&expr, &None, &message, &expr)
+            }
+        };
+        let check = build_postcond_check(&None, &instrumented_eval);
+        statements.push(check);
+    }
+
+    if !input_pats.is_empty() {
+        statements.push(parse_quote! {
+            let (#(#input_pats),*) = (#(#input_idents),*) else { unreachable!() };
+        });
+    }
 
     for postinvariant in maintains {
         let eval = build_cond_eval(&postinvariant.expr);

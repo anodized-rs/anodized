@@ -152,8 +152,7 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
             ));
         }
 
-        // TODO: Fill `inputs`.
-        let mut inputs: Vec<(&FnArg, &InputSpecFlags, Option<TamePat>)> = todo!();
+        let inputs = item_fn.sig.inputs.iter().zip(&spec.input_spec_flags);
 
         if let Self::EmbedSpecs(_) = self {
             // Embed `spec` elements as `__anodized_fn_*` items.
@@ -179,7 +178,7 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
                 vis: syn::Visibility::Inherited,
                 sig: spec_requires_sig,
                 block: Box::new(Self::build_precondition_fn_body(
-                    &inputs,
+                    inputs.clone(),
                     &spec.requires,
                     &spec.maintains,
                 )),
@@ -195,7 +194,7 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
                 vis: syn::Visibility::Inherited,
                 sig: spec_ensures_sig,
                 block: Box::new(Self::build_postcondition_fn_body(
-                    &inputs,
+                    inputs,
                     &spec.maintains,
                     &spec.captures,
                     &spec.ensures,
