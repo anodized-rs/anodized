@@ -194,12 +194,13 @@ impl FnSpec {
                 (true, true)
             };
 
-            input_specs.push(InputSpecFlags {
-                on_entry,
-                on_exit: on_exit
-                    .then(|| tame_pattern(&mut id_gen, pat))
-                    .transpose()?,
-            });
+            let input_spec = match (on_entry, on_exit) {
+                (false, false) => InputSpecFlags::Neither,
+                (true, false) => InputSpecFlags::In(pat),
+                (false, true) => InputSpecFlags::Out(tame_pattern(&mut id_gen, pat)?),
+                (true, true) => InputSpecFlags::Both(tame_pattern(&mut id_gen, pat)?),
+            };
+            input_specs.push(input_spec);
         }
 
         let output_spec_on_exit = if let Some(attr) = remove_unique_attr("unspec", attrs)? {

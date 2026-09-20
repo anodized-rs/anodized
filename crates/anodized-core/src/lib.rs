@@ -85,21 +85,14 @@ impl FnSpec {
             && !self
                 .input_spec_flags
                 .iter()
-                .any(|input_spec| input_spec.on_entry || input_spec.on_exit.is_some())
+                .any(|input_spec| {
+                    input_spec.on_entry().is_some() || input_spec.on_exit().is_some()
+                })
     }
 
     /// Construct an error from the whole spec.
     pub fn spec_err(&self, message: &str) -> Error {
         Error::new::<&str>(self.span, message)
-    }
-}
-
-impl Default for InputSpecFlags {
-    fn default() -> Self {
-        Self {
-            on_entry: true,
-            on_exit: None,
-        }
     }
 }
 

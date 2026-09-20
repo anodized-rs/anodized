@@ -301,7 +301,7 @@ fn check_data_unspec_input_out() {
                 (true || <TYPE as ::anodized::types::Refine>::predicate(&__anodized_input_1));
             let (INPUT) = (__anodized_input_1) else { unreachable!() };
             if !__anodized_pre {}
-            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
             let __anodized_post = true;
             let __anodized_post = __anodized_post &
                 (true || <RET_TYPE as ::anodized::types::Refine>::predicate(&__anodized_output));
@@ -328,7 +328,7 @@ fn check_data_unspec_input() {
         fn FUNC(INPUT: TYPE) -> RET_TYPE {
             let __anodized_pre = true;
             if !__anodized_pre {}
-            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
             let __anodized_post = true;
             let __anodized_post = __anodized_post &
                 (true || <RET_TYPE as ::anodized::types::Refine>::predicate(&__anodized_output));
@@ -356,7 +356,7 @@ fn check_data_unspec_output_out() {
         fn FUNC() -> RET_TYPE {
             let __anodized_pre = true;
             if !__anodized_pre {}
-            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
             let __anodized_post = true;
             if !__anodized_post {}
             __anodized_output

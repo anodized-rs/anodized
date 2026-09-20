@@ -30,21 +30,12 @@ fn unspec_attributes_on_function_inputs_and_output() {
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         input_spec_flags: vec![
-            InputSpecFlags {
-                on_entry: true,
-                on_exit: None,
-            },
-            InputSpecFlags {
-                on_entry: false,
-                on_exit: Some(TamePat::Invertible(
+            InputSpecFlags::In(parse_quote!(x)),
+            InputSpecFlags::Out(TamePat::Invertible(
                     parse_quote!(y),
                     Box::new(parse_quote!(y)),
-                )),
-            },
-            InputSpecFlags {
-                on_entry: false,
-                on_exit: None,
-            },
+            )),
+            InputSpecFlags::Neither,
         ],
         output_spec_flag: false,
         requires: vec![],
