@@ -1,7 +1,7 @@
 #![cfg_attr(anodized_charon, feature(register_tool))]
 #![cfg_attr(anodized_charon, register_tool(charon))]
 
-use anodized::spec;
+use anodized::{spec, types::Refine};
 
 #[spec(
     ensures: |(a, b)| [
