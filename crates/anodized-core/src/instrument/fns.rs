@@ -380,9 +380,11 @@ fn emit_precondition_checks(
         input_idents.push(input);
         input_pats.push(pat);
     }
-    statements.push(parse_quote! {
-        let (#(#input_pats),*) = (#(#input_idents),*) else { unreachable!() };
-    });
+    if !input_pats.is_empty() {
+        statements.push(parse_quote! {
+            let (#(#input_pats),*) = (#(#input_idents),*) else { unreachable!() };
+        });
+    }
 
     for precondition in requires {
         let eval = build_cond_eval(&precondition.expr);
