@@ -5,7 +5,7 @@ use syn::{
     Signature, parse_quote,
 };
 
-use crate::{EmptySpec, FnSpec, InputSpecFlags, instrument::patterns::TamePat};
+use crate::{EmptySpec, FnSpec};
 
 pub mod data;
 pub mod fns;
@@ -26,18 +26,20 @@ pub enum Mode {
 
 #[derive(Debug, Clone)]
 pub struct SpecEmbedding {
+    /// Enforce data type refinements at function boundaries.
+    pub check_data: bool,
     /// Emit Charon's `contract` attributes on spec elements.
     pub uses_charon: bool,
 }
 
 #[derive(Debug, Clone)]
 pub struct CheckSettings {
+    /// Enforce data type refinements at function boundaries.
+    pub check_data: bool,
     /// Print errors about violated clauses.
     pub does_print: bool,
     /// Panic on a violated pre/postcondition or invariant.
     pub does_panic: Option<PanicSettings>,
-    /// Check data type refinements at function boundaries.
-    pub check_data: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -93,6 +95,7 @@ impl Mode {
                 );
             }
             Self::EmbedSpecs(SpecEmbedding {
+                check_data: raw_cfg.anodized_check_data,
                 uses_charon: raw_cfg.anodized_charon,
             })
         } else {
@@ -100,6 +103,7 @@ impl Mode {
                 panic!("`anodized_try` requires `anodized_panic`");
             }
             Self::InjectChecks(CheckSettings {
+                check_data: raw_cfg.anodized_check_data,
                 does_print: raw_cfg.anodized_print,
                 does_panic: if raw_cfg.anodized_panic {
                     Some(PanicSettings {
@@ -108,7 +112,6 @@ impl Mode {
                 } else {
                     None
                 },
-                check_data: raw_cfg.anodized_check_data,
             })
         }
     }
@@ -152,9 +155,13 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
             ));
         }
 
-        let inputs = item_fn.sig.inputs.iter().zip(&spec.input_spec_flags);
+        if let Self::EmbedSpecs(embedding) = self {
+            let inputs = if embedding.check_data {
+                Some(item_fn.sig.inputs.iter().zip(&spec.input_spec_flags))
+            } else {
+                None
+            };
 
-        if let Self::EmbedSpecs(_) = self {
             // Embed `spec` elements as `__anodized_fn_*` items.
             let attrs: [Attribute; 2] = [
                 parse_quote!(#[doc(hidden)]),

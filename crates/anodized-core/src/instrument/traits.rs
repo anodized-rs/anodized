@@ -39,14 +39,19 @@ impl Mode {
                     //   not going to work in every situation.
 
                     let fn_spec = func.parse_spec_from_attrs()?;
-                    let inputs = func.sig.inputs.iter().zip(&fn_spec.input_spec_flags);
 
                     let attrs: [Attribute; 2] = [
                         parse_quote!(#[doc(hidden)]),
                         parse_quote!(#[allow(warnings)]),
                     ];
 
-                    if let Self::EmbedSpecs(_) = self {
+                    if let Self::EmbedSpecs(embedding) = self {
+                        let inputs = if embedding.check_data {
+                            Some(func.sig.inputs.iter().zip(&fn_spec.input_spec_flags))
+                        } else {
+                            None
+                        };
+
                         // Embed `spec` elements as `__anodized_fn_*` items.
                         let mut spec_requires_attrs = attrs.to_vec();
                         let spec_requires_sig = self.build_precondition_fn_sig(
@@ -218,14 +223,19 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                     }
 
                     let fn_spec = func.parse_spec_from_attrs()?;
-                    let inputs = func.sig.inputs.iter().zip(&fn_spec.input_spec_flags);
 
                     let attrs: [Attribute; 2] = [
                         parse_quote!(#[doc(hidden)]),
                         parse_quote!(#[allow(warnings)]),
                     ];
 
-                    if let Self::EmbedSpecs(_) = self {
+                    if let Self::EmbedSpecs(embedding) = self {
+                        let inputs = if embedding.check_data {
+                            Some(func.sig.inputs.iter().zip(&fn_spec.input_spec_flags))
+                        } else {
+                            None
+                        };
+
                         // Embed `spec` elements as `__anodized_fn_*` items.
                         let mut spec_requires_attrs = attrs.to_vec();
                         let spec_requires_sig = self.build_precondition_fn_sig(

@@ -38,9 +38,14 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                     }
 
                     let fn_spec = item_fn.parse_spec_from_attrs()?;
-                    let inputs = item_fn.sig.inputs.iter().zip(&fn_spec.input_spec_flags);
 
-                    if let Self::EmbedSpecs(_) = self {
+                    if let Self::EmbedSpecs(embedding) = self {
+                        let inputs = if embedding.check_data {
+                            Some(item_fn.sig.inputs.iter().zip(&fn_spec.input_spec_flags))
+                        } else {
+                            None
+                        };
+
                         // Embed `spec` elements as `__anodized_fn_*` items.
                         let attrs: [Attribute; 2] = [
                             parse_quote!(#[doc(hidden)]),
