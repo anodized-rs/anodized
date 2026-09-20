@@ -280,6 +280,11 @@ impl CheckSettings {
 
         stmts.push(Stmt::Expr(output_expr, None));
 
+        *body = Block {
+            brace_token: body.brace_token,
+            stmts,
+        };
+
         Ok(())
     }
 
