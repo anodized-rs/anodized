@@ -9,9 +9,9 @@ use syn::{
 };
 
 use crate::{
-    EmptySpec, InputSpecFlags,
+    EmptySpec,
     annotate::Specified as _,
-    instrument::{Mode, make_item_error, patterns::TamePat},
+    instrument::{Mode, make_item_error},
     syntax::remove_unique_attr,
 };
 

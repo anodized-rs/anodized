@@ -3,14 +3,13 @@
 mod impls_tests;
 
 use syn::{
-    Attribute, Error, FnArg, ImplItem, ImplItemFn, ItemImpl, Result, ReturnType, Visibility,
-    parse_quote,
+    Attribute, Error, ImplItem, ImplItemFn, ItemImpl, Result, ReturnType, Visibility, parse_quote,
 };
 
 use crate::{
-    EmptySpec, InputSpecFlags,
+    EmptySpec,
     annotate::Specified as _,
-    instrument::{Mode, make_item_error, patterns::TamePat},
+    instrument::{Mode, make_item_error},
     syntax::remove_unique_attr,
 };
 

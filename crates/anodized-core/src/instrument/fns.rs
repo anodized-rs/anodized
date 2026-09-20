@@ -4,20 +4,15 @@ mod fns_tests;
 
 use quote::ToTokens;
 use syn::{
-    Attribute, Block, Expr, FnArg, Ident, Meta, Pat, Path, Receiver, ReturnType, Signature, Stmt,
-    Token, Type,
+    Attribute, Block, Expr, FnArg, Ident, Meta, Pat, Path, ReturnType, Signature, Stmt, Type,
     parse::{Parse, Result},
     parse_quote, parse_quote_spanned,
-    punctuated::Punctuated,
     spanned::Spanned,
 };
 
 use crate::{
     Capture, Condition, FnSpec, InputSpecFlags, PostCondition,
-    instrument::{
-        CheckSettings, Mode, SpecEmbedding,
-        patterns::{IdentGenerator, TamePat, tame_pattern},
-    },
+    instrument::{CheckSettings, Mode, patterns::TamePat},
     qualifiers::FnQualifiers,
 };
 
