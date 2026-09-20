@@ -90,18 +90,16 @@ pub fn assert_spec_eq(left: &FnSpec, right: &FnSpec) {
         left_input_specs,
         right_input_specs,
         "input specs",
-        |left, right, message| {
-            match (left, right) {
-                (crate::InputSpecFlags::Neither, crate::InputSpecFlags::Neither) => {}
-                (crate::InputSpecFlags::In(left), crate::InputSpecFlags::In(right)) => {
-                    assert_tokens_eq(left, right);
-                }
-                (crate::InputSpecFlags::Out(left), crate::InputSpecFlags::Out(right))
-                | (crate::InputSpecFlags::Both(left), crate::InputSpecFlags::Both(right)) => {
-                    assert_eq!(left, right, "{message} exit patterns do not match");
-                }
-                _ => panic!("{message} flags do not match"),
+        |left, right, message| match (left, right) {
+            (crate::InputSpecFlags::Neither, crate::InputSpecFlags::Neither) => {}
+            (crate::InputSpecFlags::In(left), crate::InputSpecFlags::In(right)) => {
+                assert_tokens_eq(left, right);
             }
+            (crate::InputSpecFlags::Out(left), crate::InputSpecFlags::Out(right))
+            | (crate::InputSpecFlags::Both(left), crate::InputSpecFlags::Both(right)) => {
+                assert_eq!(left, right, "{message} exit patterns do not match");
+            }
+            _ => panic!("{message} flags do not match"),
         },
     );
 

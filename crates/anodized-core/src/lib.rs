@@ -85,9 +85,7 @@ impl FnSpec {
             && !self
                 .input_spec_flags
                 .iter()
-                .any(|input_spec| {
-                    input_spec.on_entry().is_some() || input_spec.on_exit().is_some()
-                })
+                .any(|input_spec| input_spec.on_entry().is_some() || input_spec.on_exit().is_some())
     }
 
     /// Construct an error from the whole spec.

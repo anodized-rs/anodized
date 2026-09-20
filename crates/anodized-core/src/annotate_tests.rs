@@ -32,8 +32,8 @@ fn unspec_attributes_on_function_inputs_and_output() {
         input_spec_flags: vec![
             InputSpecFlags::In(parse_quote!(x)),
             InputSpecFlags::Out(TamePat::Invertible(
-                    parse_quote!(y),
-                    Box::new(parse_quote!(y)),
+                parse_quote!(y),
+                Box::new(parse_quote!(y)),
             )),
             InputSpecFlags::Neither,
         ],

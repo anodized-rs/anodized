@@ -23,8 +23,8 @@ impl Mode {
             let (impl_generics, ty_generics, where_clause) = item_struct.generics.split_for_impl();
             // TODO: Handle structural induction.
             let statements =
-            Self::build_precondition_fn_body(Some(std::iter::empty()), &[], &spec.maintains)
-                .stmts;
+                Self::build_precondition_fn_body(Some(std::iter::empty()), &[], &spec.maintains)
+                    .stmts;
 
             let spec_impl: ItemImpl = parse_quote! {
                 #[doc(hidden)]
@@ -50,8 +50,7 @@ impl Mode {
         let (impl_generics, ty_generics, where_clause) = item_enum.generics.split_for_impl();
         // TODO: Handle structural induction.
         let statements =
-            Self::build_precondition_fn_body(Some(std::iter::empty()), &[], &spec.maintains)
-                .stmts;
+            Self::build_precondition_fn_body(Some(std::iter::empty()), &[], &spec.maintains).stmts;
 
         item_enum.to_tokens(&mut tokens);
 
