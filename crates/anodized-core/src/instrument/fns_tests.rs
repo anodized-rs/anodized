@@ -210,14 +210,15 @@ fn check_data_instrument_item_fn() {
             let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_1));
             let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_2));
             if !__anodized_pre {}
-            // Evaluate captures and the output.
-            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            // Evaluate captures and the output, and unbind invertible input patterns.
+            let (__anodized_output, __anodized_input_1) = (
+                ::anodized::__::eval_once(|| -> RET_TYPE { BODY }),
+                INPUT_1,
+            );
             // Check output type spec.
             let __anodized_post = true;
             let __anodized_post = __anodized_post &
                 (true || <RET_TYPE as ::anodized::types::Refine>::predicate(&__anodized_output));
-            // Unbind invertible input patterns.
-            let (__anodized_input_1) = (INPUT_1);
             // Check input type specs again. Needed to correctly handle e.g. `&mut T` inputs.
             let __anodized_post = __anodized_post &
                 (true || <TYPE_1 as ::anodized::types::Refine>::predicate(&__anodized_input_1));
@@ -262,11 +263,13 @@ fn check_data_unspec_input_in() {
             let __anodized_pre = true;
             let (INPUT) = (__anodized_input_1) else { unreachable!() };
             if !__anodized_pre {}
-            let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
+            let (__anodized_output, __anodized_input_1) = (
+                ::anodized::__::eval_once(|| -> RET_TYPE { BODY }),
+                INPUT,
+            );
             let __anodized_post = true;
             let __anodized_post = __anodized_post &
                 (true || <RET_TYPE as ::anodized::types::Refine>::predicate(&__anodized_output));
-            let (__anodized_input_1) = (INPUT);
             let __anodized_post = __anodized_post &
                 (true || <TYPE as ::anodized::types::Refine>::predicate(&__anodized_input_1));
             let (INPUT) = (__anodized_input_1) else { unreachable!() };
@@ -322,11 +325,8 @@ fn check_data_unspec_input() {
     };
 
     let expected: TokenStream = parse_quote! {
-        fn FUNC(__anodized_input_1: TYPE) -> RET_TYPE {
-            #[allow(unused)]
-            let _ = |INPUT: TYPE| ();
+        fn FUNC(INPUT: TYPE) -> RET_TYPE {
             let __anodized_pre = true;
-            let (INPUT) = (__anodized_input_1) else { unreachable!() };
             if !__anodized_pre {}
             let (__anodized_output) = (::anodized::__::eval_once(|| -> RET_TYPE { BODY }));
             let __anodized_post = true;
