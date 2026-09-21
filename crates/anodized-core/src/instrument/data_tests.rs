@@ -35,7 +35,7 @@ fn embed_spec_item_struct() {
 
         #[doc(hidden)]
         #[allow(warnings)]
-        impl<'LT_1, TYPE_1: BOUND_1, const CONST_1: TYPE_2> ::anodized::logic::Spec
+        impl<'LT_1, TYPE_1: BOUND_1, const CONST_1: TYPE_2> ::anodized::types::Spec
             for STRUCT<'LT_1, TYPE_1, CONST_1>
         where
             'LT_1: 'LT_2,
@@ -91,7 +91,7 @@ fn embed_spec_item_enum() {
 
         #[doc(hidden)]
         #[allow(warnings)]
-        impl<'LT_1, TYPE_1: BOUND_1, const CONST_1: TYPE_2> ::anodized::logic::Spec
+        impl<'LT_1, TYPE_1: BOUND_1, const CONST_1: TYPE_2> ::anodized::types::Spec
             for ENUM<'LT_1, TYPE_1, CONST_1>
         where
             'LT_1: 'LT_2,
@@ -146,7 +146,7 @@ fn embed_spec_item_data_omits_unspecified_fields() {
 
         #[doc(hidden)]
         #[allow(warnings)]
-        impl ::anodized::logic::Spec for ENUM {
+        impl ::anodized::types::Spec for ENUM {
             fn predicate(&self) -> bool {
                 use ENUM::*;
                 let __anodized_inv = match self {
