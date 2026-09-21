@@ -2,7 +2,7 @@
 #![cfg_attr(anodized_charon, register_tool(charon))]
 #![allow(unused)]
 
-use anodized::spec;
+use anodized::{spec, types::Spec};
 
 #[spec(maintains: self.a.pow(2) + self.b.pow(2) == self.c.pow(2))]
 struct PythagoreanTriple {
@@ -12,15 +12,15 @@ struct PythagoreanTriple {
 }
 
 #[spec(maintains: !self.0.is_empty())]
-struct NonEmptyVec<T>(Vec<T>);
+struct NonEmptyVec<T: Spec>(Vec<T>);
 
 #[spec(maintains: self.0.iter().rev().eq(&self.0))]
-struct PalindromeVec<T: Eq>(Vec<T>);
+struct PalindromeVec<T: Eq + Spec>(Vec<T>);
 
 #[spec(
     maintains: (&self.0).into_iter().rev().eq((&self.0).into_iter())
 )]
-struct PalindromeContainer<T: Eq, C>(C)
+struct PalindromeContainer<T: Eq + Spec, C: Spec>(C)
 where
     for<'a> &'a C: IntoIterator<Item = &'a T>,
     for<'a> <&'a C as IntoIterator>::IntoIter: DoubleEndedIterator;
@@ -39,4 +39,4 @@ struct SliceBackedString<const BUFFER_SIZE: usize = 1024> {
 #[spec(
     maintains: std::mem::size_of::<T>() * DIM * 8 == SIMD_BITS
 )]
-struct SimdVector<const DIM: usize, T = f32, const SIMD_BITS: usize = 128>([T; DIM]);
+struct SimdVector<const DIM: usize, T: Spec = f32, const SIMD_BITS: usize = 128>([T; DIM]);

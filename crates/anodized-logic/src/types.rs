@@ -35,6 +35,12 @@ impl<T: Spec> Spec for [T] {
     }
 }
 
+impl<T: Spec, const N: usize> Spec for [T; N] {
+    fn predicate(&self) -> bool {
+        self.iter().all(<T as Spec>::predicate)
+    }
+}
+
 impl<T: Spec> Spec for Option<T> {
     fn predicate(&self) -> bool {
         match self {
