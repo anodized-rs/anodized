@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Block, Expr, FnArg, Ident, ItemConst, ItemFn, ItemImpl, ItemTrait, Meta, Result,
+    Attribute, Block, Expr, FnArg, Ident, ItemConst, ItemFn, ItemImpl, ItemTrait, Result,
     ReturnType, Signature, parse_quote, parse_quote_spanned, spanned::Spanned,
 };
 
