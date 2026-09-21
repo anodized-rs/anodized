@@ -41,16 +41,15 @@ fn embed_spec_item_struct() {
             'LT_1: 'LT_2,
         {
             fn predicate(&self) -> bool {
-                let __anodized_pre = true;
-                let __anodized_pre = __anodized_pre
-                    & ::anodized::logic::Spec::predicate(&self.FIELD_1);
-                let __anodized_pre = __anodized_pre
-                    & ::anodized::logic::Spec::predicate(&self.FIELD_2);
-                let __anodized_pre = __anodized_pre
-                    & ::anodized::logic::Spec::predicate(&self.FIELD_3);
-                let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_1);
-                let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_2);
-                __anodized_pre
+                let __anodized_inv = match self {
+                    STRUCT { FIELD_1, FIELD_2, FIELD_3 } => {
+                        ::anodized::logic::Spec::predicate(FIELD_1)
+                            & ::anodized::logic::Spec::predicate(FIELD_2)
+                            & ::anodized::logic::Spec::predicate(FIELD_3)
+                    }
+                };
+                let __anodized_inv = __anodized_inv & ::anodized::__::eval::<bool>(|| COND_1);
+                let __anodized_inv = __anodized_inv & ::anodized::__::eval::<bool>(|| COND_2);
             }
         }
     };
@@ -99,8 +98,7 @@ fn embed_spec_item_enum() {
         {
             fn predicate(&self) -> bool {
                 use ENUM::*;
-                let __anodized_pre = true;
-                let __anodized_pre = __anodized_pre & match self {
+                let __anodized_inv = match self {
                     VARIANT_1(field_0) => ::anodized::logic::Spec::predicate(field_0),
                     VARIANT_2 { FIELD_1, FIELD_2 } => {
                         ::anodized::logic::Spec::predicate(FIELD_1)
@@ -109,9 +107,8 @@ fn embed_spec_item_enum() {
                     VARIANT_3 => true,
                     VARIANT_4(field_0) => ::anodized::logic::Spec::predicate(field_0),
                 };
-                let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_1);
-                let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_2);
-                __anodized_pre
+                let __anodized_inv = __anodized_inv & ::anodized::__::eval::<bool>(|| COND_1);
+                let __anodized_inv = __anodized_inv & ::anodized::__::eval::<bool>(|| COND_2);
             }
         }
     };
@@ -152,8 +149,7 @@ fn embed_spec_item_data_omits_unspecified_fields() {
         impl ::anodized::logic::Spec for ENUM {
             fn predicate(&self) -> bool {
                 use ENUM::*;
-                let __anodized_pre = true;
-                let __anodized_pre = __anodized_pre & match self {
+                let __anodized_inv = match self {
                     TUPLE(field_0, _, field_2) => {
                         ::anodized::logic::Spec::predicate(field_0)
                             & ::anodized::logic::Spec::predicate(field_2)
@@ -161,7 +157,6 @@ fn embed_spec_item_data_omits_unspecified_fields() {
                     STRUCT { included, .. } => ::anodized::logic::Spec::predicate(included),
                     UNIT => true,
                 };
-                __anodized_pre
             }
         }
     };
