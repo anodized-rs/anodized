@@ -2,10 +2,10 @@
 #[path = "data_tests.rs"]
 mod data_tests;
 
-use proc_macro2::TokenStream;
-use quote::{ToTokens, quote};
+use proc_macro2::{Span, TokenStream};
+use quote::ToTokens;
 use syn::{
-    Arm, Expr, Fields, Ident, ItemEnum, ItemImpl, ItemStruct, Result, Stmt, Variant, parse_quote,
+    Arm, Expr, Fields, Ident, ItemEnum, ItemImpl, ItemStruct, Pat, Result, Stmt, parse_quote,
 };
 
 use crate::{
@@ -101,10 +101,10 @@ impl Mode {
 
     fn build_enum_inductive_predicate<'a>(
         variants: impl Iterator<Item = (&'a Ident, &'a Fields)>,
-        field_spec_flags: &[Vec<bool>],
+        variant_spec_flags: &[Vec<bool>],
     ) -> Expr {
         let arms = variants
-            .zip(field_spec_flags)
+            .zip(variant_spec_flags)
             .map(|((ident, fields), field_spec_flags)| {
                 Self::build_variant_inductive_predicate(ident, fields, field_spec_flags)
             });
@@ -121,63 +121,71 @@ impl Mode {
         fields: &Fields,
         field_spec_flags: &[bool],
     ) -> Arm {
-        let mut predicate_calls = Vec::new();
+        let mut field_predicate_calls: Vec<Expr> = vec![];
 
-        let pattern = match fields {
+        let variant_pattern: Pat = match fields {
             Fields::Named(fields) => {
-                let included_fields = fields
-                    .named
-                    .iter()
-                    .zip(field_spec_flags)
-                    .filter_map(|(field, field_spec_flag)| {
-                        field_spec_flag.then(|| field.ident.as_ref().unwrap())
-                    })
-                    .collect::<Vec<_>>();
-
-                for field in &included_fields {
-                    predicate_calls.push(quote!(::anodized::logic::Spec::predicate(#field)));
-                }
-
-                if included_fields.len() == fields.named.len() {
-                    quote!({ #(#included_fields),* })
-                } else if included_fields.is_empty() {
-                    quote!({ .. })
-                } else {
-                    quote!({ #(#included_fields),*, .. })
-                }
-            }
-            Fields::Unnamed(fields) => {
-                let patterns = fields.unnamed.iter().zip(field_spec_flags).enumerate().map(
-                    |(index, (_, field_spec_flag))| {
-                        if *field_spec_flag {
-                            let ident = Ident::new(
-                                &format!("field_{index}"),
-                                proc_macro2::Span::call_site(),
-                            );
-                            predicate_calls
-                                .push(quote!(::anodized::logic::Spec::predicate(#ident)));
-                            quote!(#ident)
+                let field_names = fields.named.iter().zip(field_spec_flags).flat_map(
+                    |(field, spec_flag)| -> Option<&Ident> {
+                        let Some(field_name) = &field.ident else {
+                            unreachable!("named field with no ident");
+                        };
+                        if *spec_flag {
+                            field_predicate_calls.push(parse_quote! {
+                                ::anodized::logic::Spec::predicate(#field_name)
+                            });
+                            Some(field_name)
                         } else {
-                            quote!(_)
+                            None
                         }
                     },
                 );
-                quote!((#(#patterns),*))
+
+                if field_spec_flags.iter().all(|flag| *flag) {
+                    parse_quote! {
+                        #ident { #(#field_names),* }
+                    }
+                } else {
+                    parse_quote! {
+                        #ident { #(#field_names,)* .. }
+                    }
+                }
             }
-            Fields::Unit => quote!(),
+            Fields::Unnamed(fields) => {
+                let field_patterns = fields.unnamed.iter().zip(field_spec_flags).enumerate().map(
+                    |(index, (_, spec_flag))| -> Pat {
+                        if *spec_flag {
+                            let field_name =
+                                Ident::new(&format!("field_{index}"), Span::call_site());
+                            field_predicate_calls.push(parse_quote! {
+                                ::anodized::logic::Spec::predicate(#field_name)
+                            });
+                            parse_quote! { #field_name }
+                        } else {
+                            parse_quote! { _ }
+                        }
+                    },
+                );
+
+                parse_quote! {
+                    #ident(#(#field_patterns),*)
+                }
+            }
+            Fields::Unit => parse_quote! { #ident },
         };
 
-        let predicate: TokenStream = match predicate_calls.as_slice() {
-            [] => parse_quote!(true),
-            [predicate] => syn::parse2(predicate.clone()).unwrap(),
-            [first, rest @ ..] => {
-                let predicate = rest
-                    .iter()
-                    .fold(first.clone(), |predicate, next| quote!(#predicate & #next));
-                syn::parse2(predicate).unwrap()
-            }
-        };
-
-        parse_quote! { #ident #pattern => #predicate }
+        match field_predicate_calls.as_slice() {
+            [] => parse_quote! {
+                #variant_pattern => true
+            },
+            [single] => parse_quote! {
+                #variant_pattern => #single
+            },
+            many => parse_quote! {
+                #variant_pattern => {
+                    #(#many)&*
+                }
+            },
+        }
     }
 }
