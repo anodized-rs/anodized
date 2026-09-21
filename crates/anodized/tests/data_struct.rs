@@ -6,18 +6,18 @@ use anodized::{spec, types::Spec};
 #[spec(maintains: self.a.pow(2) + self.b.pow(2) == self.c.pow(2))]
 pub struct PythagoreanTriple {
     #[unspec]
-    a: u32,
+    pub a: u32,
     #[unspec]
-    b: u32,
+    pub b: u32,
     #[unspec]
-    c: u32,
+    pub c: u32,
 }
 
 #[spec(maintains: !self.0.is_empty())]
-pub struct NonEmptyVec<T: Spec>(Vec<T>);
+pub struct NonEmptyVec<T: Spec>(pub Vec<T>);
 
 #[spec(maintains: self.0.iter().rev().eq(&self.0))]
-pub struct PalindromeVec<T: Eq + Spec>(Vec<T>);
+pub struct PalindromeVec<T: Eq + Spec>(pub Vec<T>);
 
 #[spec(
     maintains: (&self.0).into_iter().rev().eq((&self.0).into_iter())
@@ -35,12 +35,14 @@ where
 )]
 pub struct SliceBackedString<const BUFFER_SIZE: usize = 1024> {
     #[unspec]
-    size: usize,
+    pub size: usize,
     #[unspec]
-    buffer: [u8; BUFFER_SIZE],
+    pub buffer: [u8; BUFFER_SIZE],
 }
 
 #[spec(
     maintains: std::mem::size_of::<T>() * DIM * 8 == SIMD_BITS
 )]
-pub struct SimdVector<const DIM: usize, T = f32, const SIMD_BITS: usize = 128>(#[unspec] [T; DIM]);
+pub struct SimdVector<const DIM: usize, T = f32, const SIMD_BITS: usize = 128>(
+    #[unspec] pub [T; DIM],
+);
