@@ -35,12 +35,19 @@ fn embed_spec_item_struct() {
 
         #[doc(hidden)]
         #[allow(warnings)]
-        impl<'LT_1, TYPE_1: BOUND_1, const CONST_1: TYPE_2> STRUCT<'LT_1, TYPE_1, CONST_1>
+        impl<'LT_1, TYPE_1: BOUND_1, const CONST_1: TYPE_2> ::anodized::logic::Spec
+            for STRUCT<'LT_1, TYPE_1, CONST_1>
         where
             'LT_1: 'LT_2,
         {
-            fn __anodized_data_maintains(&self) -> bool {
+            fn predicate(&self) -> bool {
                 let __anodized_pre = true;
+                let __anodized_pre = __anodized_pre
+                    & ::anodized::logic::Spec::predicate(&self.FIELD_1);
+                let __anodized_pre = __anodized_pre
+                    & ::anodized::logic::Spec::predicate(&self.FIELD_2);
+                let __anodized_pre = __anodized_pre
+                    & ::anodized::logic::Spec::predicate(&self.FIELD_3);
                 let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_1);
                 let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_2);
                 __anodized_pre
@@ -66,7 +73,7 @@ fn embed_spec_item_enum() {
             'LT_1: 'LT_2,
         {
             VARIANT_1(&'LT_1 TYPE_2),
-            VARIANT_2 { FIELD_2: TYPE_1 },
+            VARIANT_2 { FIELD_1: TYPE_1, FIELD_2: TYPE_2 },
             VARIANT_3,
             VARIANT_4([TYPE_4; CONST_1]),
         }
@@ -78,22 +85,82 @@ fn embed_spec_item_enum() {
             'LT_1: 'LT_2,
         {
             VARIANT_1(&'LT_1 TYPE_2),
-            VARIANT_2 { FIELD_2: TYPE_1 },
+            VARIANT_2 { FIELD_1: TYPE_1, FIELD_2: TYPE_2 },
             VARIANT_3,
             VARIANT_4([TYPE_4; CONST_1]),
         }
 
         #[doc(hidden)]
         #[allow(warnings)]
-        impl<'LT_1, TYPE_1: BOUND_1, const CONST_1: TYPE_2> ENUM<'LT_1, TYPE_1, CONST_1>
+        impl<'LT_1, TYPE_1: BOUND_1, const CONST_1: TYPE_2> ::anodized::logic::Spec
+            for ENUM<'LT_1, TYPE_1, CONST_1>
         where
             'LT_1: 'LT_2,
         {
-            fn __anodized_data_maintains(&self) -> bool {
+            fn predicate(&self) -> bool {
                 use ENUM::*;
                 let __anodized_pre = true;
+                let __anodized_pre = __anodized_pre & match self {
+                    VARIANT_1(field_0) => ::anodized::logic::Spec::predicate(field_0),
+                    VARIANT_2 { FIELD_1, FIELD_2 } => {
+                        ::anodized::logic::Spec::predicate(FIELD_1)
+                            & ::anodized::logic::Spec::predicate(FIELD_2)
+                    }
+                    VARIANT_3 => true,
+                    VARIANT_4(field_0) => ::anodized::logic::Spec::predicate(field_0),
+                };
                 let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_1);
                 let __anodized_pre = __anodized_pre & ::anodized::__::eval::<bool>(|| COND_2);
+                __anodized_pre
+            }
+        }
+    };
+
+    let observed = Mode::EMBED_SPECS
+        .instrument_item_enum(spec_item_enum.spec, spec_item_enum.node)
+        .unwrap();
+    assert_tokens_eq(&observed, &expected);
+}
+
+#[test]
+fn embed_spec_item_data_omits_unspecified_fields() {
+    let spec_item_enum: SpecItemEnum = parse_quote! {
+        #[spec]
+        enum ENUM {
+            TUPLE(CHILD_1, #[unspec] CHILD_2, CHILD_3),
+            STRUCT {
+                included: CHILD_4,
+                #[unspec]
+                omitted: CHILD_5,
+            },
+            UNIT,
+        }
+    };
+
+    let expected: TokenStream = parse_quote! {
+        enum ENUM {
+            TUPLE(CHILD_1, CHILD_2, CHILD_3),
+            STRUCT {
+                included: CHILD_4,
+                omitted: CHILD_5,
+            },
+            UNIT,
+        }
+
+        #[doc(hidden)]
+        #[allow(warnings)]
+        impl ::anodized::logic::Spec for ENUM {
+            fn predicate(&self) -> bool {
+                use ENUM::*;
+                let __anodized_pre = true;
+                let __anodized_pre = __anodized_pre & match self {
+                    TUPLE(field_0, _, field_2) => {
+                        ::anodized::logic::Spec::predicate(field_0)
+                            & ::anodized::logic::Spec::predicate(field_2)
+                    }
+                    STRUCT { included, .. } => ::anodized::logic::Spec::predicate(included),
+                    UNIT => true,
+                };
                 __anodized_pre
             }
         }
