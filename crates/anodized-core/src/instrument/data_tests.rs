@@ -50,6 +50,7 @@ fn embed_spec_item_struct() {
                 };
                 let __anodized_inv = __anodized_inv & ::anodized::__::eval::<bool>(|| COND_1);
                 let __anodized_inv = __anodized_inv & ::anodized::__::eval::<bool>(|| COND_2);
+                __anodized_inv
             }
         }
     };
@@ -109,6 +110,7 @@ fn embed_spec_item_enum() {
                 };
                 let __anodized_inv = __anodized_inv & ::anodized::__::eval::<bool>(|| COND_1);
                 let __anodized_inv = __anodized_inv & ::anodized::__::eval::<bool>(|| COND_2);
+                __anodized_inv
             }
         }
     };
@@ -157,6 +159,7 @@ fn embed_spec_item_data_omits_unspecified_fields() {
                     STRUCT { included, .. } => ::anodized::types::Spec::predicate(included),
                     UNIT => true,
                 };
+                __anodized_inv
             }
         }
     };

@@ -39,6 +39,7 @@ impl Mode {
                 impl #impl_generics ::anodized::types::Spec for #ident #ty_generics #where_clause {
                     fn predicate(&self) -> bool {
                         #(#statements)*
+                        __anodized_inv
                     }
                 }
             };
@@ -74,6 +75,7 @@ impl Mode {
                         // Bring all variants into scope for convenience.
                         use #ident::*;
                         #(#statements)*
+                        __anodized_inv
                     }
                 }
             };
