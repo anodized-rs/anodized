@@ -12,7 +12,7 @@ use syn::{
 
 use crate::{
     Capture, Condition, FnSpec, PostCondition,
-    instrument::{CheckSettings, Mode, SpecEmbedding, patterns::TamePat},
+    instrument::{CheckSettings, Mode, SpecEmbedding, build_cond_eval, patterns::TamePat},
     qualifiers::FnQualifiers,
 };
 
@@ -384,11 +384,6 @@ fn emit_postcondition_checks(
         let check = build_postcond_check(&postcondition.pat, &instrumented_eval);
         statements.push(check);
     }
-}
-
-fn build_cond_eval(expr: &Expr) -> Expr {
-    let span = expr.span();
-    parse_quote_spanned! { span => ::anodized::__::eval::<bool>(|| #expr) }
 }
 
 fn build_capture_eval(expr: &Expr) -> Expr {
