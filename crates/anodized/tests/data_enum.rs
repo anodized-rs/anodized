@@ -1,7 +1,7 @@
 #![cfg_attr(anodized_charon, feature(register_tool))]
 #![cfg_attr(anodized_charon, register_tool(charon))]
 
-use anodized::spec;
+use anodized::{spec, types::Spec};
 
 #[spec(
     maintains: match self {
@@ -10,8 +10,8 @@ use anodized::spec;
     }
 )]
 pub enum MonotonicVec<T: Ord> {
-    Ascending(Vec<T>),
-    Descending(Vec<T>),
+    Ascending(#[unspec] Vec<T>),
+    Descending(#[unspec] Vec<T>),
 }
 
 #[spec(
@@ -20,10 +20,11 @@ pub enum MonotonicVec<T: Ord> {
         Large(vec) => vec.len() > UNBOXED_CAPACITY,
     }
 )]
-pub enum SmallVec<T: Default, const UNBOXED_CAPACITY: usize = 128> {
+pub enum SmallVec<T: Default + Spec, const UNBOXED_CAPACITY: usize = 128> {
     Small {
+        #[unspec]
         count: usize,
         buffer: [T; UNBOXED_CAPACITY],
     },
-    Large(Vec<T>),
+    Large(#[unspec] Vec<T>),
 }

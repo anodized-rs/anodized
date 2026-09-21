@@ -5,8 +5,11 @@ use anodized::{spec, types::Spec};
 
 #[spec(maintains: self.a.pow(2) + self.b.pow(2) == self.c.pow(2))]
 pub struct PythagoreanTriple {
+    #[unspec]
     a: u32,
+    #[unspec]
     b: u32,
+    #[unspec]
     c: u32,
 }
 
@@ -31,11 +34,13 @@ where
     ]
 )]
 pub struct SliceBackedString<const BUFFER_SIZE: usize = 1024> {
+    #[unspec]
     size: usize,
+    #[unspec]
     buffer: [u8; BUFFER_SIZE],
 }
 
 #[spec(
     maintains: std::mem::size_of::<T>() * DIM * 8 == SIMD_BITS
 )]
-pub struct SimdVector<const DIM: usize, T: Spec = f32, const SIMD_BITS: usize = 128>([T; DIM]);
+pub struct SimdVector<const DIM: usize, T = f32, const SIMD_BITS: usize = 128>(#[unspec] [T; DIM]);

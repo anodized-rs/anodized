@@ -94,24 +94,3 @@ impl<T1: Spec, T2: Spec, T3: Spec + ?Sized> Spec for (T1, T2, T3) {
         self.0.predicate() && self.1.predicate() && self.2.predicate()
     }
 }
-
-/// Implement `Spec` for concrete types, with `predicate` always `true`.
-#[macro_export]
-macro_rules! trivial_refinement {
-    ($($ty:ty),+ $(,)?) => {
-        $(
-            impl $crate::types::Spec for $ty {
-                fn predicate(&self) -> bool { true }
-            }
-        )+
-    };
-}
-
-#[rustfmt::skip]
-trivial_refinement!(
-    bool,
-    u8, u16, u32, u64, u128, usize,
-    i8, i16, i32, i64, i128, isize,
-    f32, f64,
-    char, str, String,
-);
