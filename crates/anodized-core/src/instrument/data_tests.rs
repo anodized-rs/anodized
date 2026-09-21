@@ -55,14 +55,14 @@ fn embed_spec_item_struct() {
         }
     };
 
-    let observed = Mode::EMBED_SPECS
+    let observed = Mode::DEFAULT
         .instrument_item_struct(spec_item_struct.spec, spec_item_struct.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
-fn embed_spec_item_enum() {
+fn default_instrument_item_enum() {
     let spec_item_enum: SpecItemEnum = parse_quote! {
         #[spec(maintains: [
             COND_1,
@@ -115,7 +115,7 @@ fn embed_spec_item_enum() {
         }
     };
 
-    let observed = Mode::EMBED_SPECS
+    let observed = Mode::DEFAULT
         .instrument_item_enum(spec_item_enum.spec, spec_item_enum.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);

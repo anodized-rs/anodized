@@ -54,7 +54,7 @@ impl Mode {
 
         item_enum.to_tokens(&mut tokens);
 
-        if let Mode::EmbedSpecs(_) = self {
+        if self.changes_anything() {
             let inductive_predicate = Self::build_enum_inductive_predicate(
                 item_enum
                     .variants
