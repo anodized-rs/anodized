@@ -2,7 +2,7 @@
 #![cfg_attr(anodized_charon, register_tool(charon))]
 #![allow(unused)]
 
-use anodized::{spec, unspec};
+use anodized::{spec, types::Spec};
 
 /// A `struct` with a type spec, a.k.a. refinement.
 #[spec(
@@ -13,48 +13,46 @@ use anodized::{spec, unspec};
 )]
 struct T;
 
-/// Default: all inputs satisfy their type specs on both entry and exit, and the output on exit.
+/// Default: inputs and outputs are not checked against their type specs.
 #[spec]
 fn one(x: T, y: &mut T) -> T {
     todo!()
 }
 
-/// Input `x` may not satisfy its type spec on exit.
+/// Input `x` is checked on entry.
 #[spec]
-fn two(#[unspec(out)] x: T, y: &mut T) -> T {
+fn two(x: spec!(T), y: &mut T) -> T {
     todo!()
 }
 
-/// Input `y` may not satisfy its type spec on entry.
+/// Input `y` is checked on exit.
 #[spec]
-fn three(x: T, #[unspec(in)] y: &mut T) -> T {
+fn three(x: T, y: spec!(&mut T, out)) -> T {
     todo!()
 }
 
-/// Input `y` may not satisfy its type spec on both entry and exit.
+/// Input `y` is checked on entry and exit.
 #[spec]
-fn four(x: T, #[unspec] y: &mut T) -> T {
+fn four(x: T, y: spec!(&mut T, inout)) -> T {
     todo!()
 }
 
-/// The output may not satisfy its type spec on exit.
+/// The output is checked on exit.
 #[spec]
-#[unspec(out)]
-fn five(x: T, y: &mut T) -> T {
+fn five(x: T, y: &mut T) -> spec!(T) {
     todo!()
 }
 
-/// Default: all fields must satisfy their type specs.
+/// Default: fields are not checked against their type specs.
 #[spec]
 struct Six {
     pub a: T,
     pub b: T,
 }
 
-/// The field `b` may not satisfy its type spec.
+/// The field `b` is checked against its type spec.
 #[spec]
 struct Seven {
     pub a: T,
-    #[unspec]
-    pub b: T,
+    pub b: spec!(T),
 }

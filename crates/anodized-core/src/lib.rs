@@ -71,8 +71,8 @@ impl FnSpec {
 impl Default for InputSpecFlags {
     fn default() -> Self {
         Self {
-            on_entry: true,
-            on_exit: true,
+            on_entry: false,
+            on_exit: false,
         }
     }
 }

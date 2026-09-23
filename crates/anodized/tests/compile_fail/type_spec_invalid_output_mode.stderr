@@ -1,0 +1,5 @@
+error: an output type marker cannot have an enforcement mode
+ --> tests/compile_fail/type_spec_invalid_output_mode.rs:7:11
+  |
+7 | fn f() -> spec!(i32, out) {
+  |           ^^^^

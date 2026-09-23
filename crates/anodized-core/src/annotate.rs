@@ -1,8 +1,8 @@
 use proc_macro2::TokenStream;
 use syn::{
     Attribute, Error, Expr, ExprAssign, ExprForLoop, ExprWhile, FieldValue, Fields, FnArg,
-    ImplItemFn, ItemEnum, ItemFn, ItemImpl, ItemStruct, ItemTrait, Meta, Token, TraitItemFn,
-    parse::Result, parse_quote, punctuated::Punctuated, spanned::Spanned,
+    ImplItemFn, ItemEnum, ItemFn, ItemImpl, ItemStruct, ItemTrait, Meta, TraitItemFn,
+    parse::Result, parse_quote, spanned::Spanned,
 };
 
 use crate::{
@@ -10,7 +10,9 @@ use crate::{
     PostCondition,
     instrument::patterns::{IdentGenerator, tame_pattern},
     qualifiers::FnQualifiers,
-    syntax::{Keyword, SpecFields, UnspecArg, UnspecAttr, get_attr_input, remove_unique_attr},
+    syntax::{
+        Keyword, SpecFields, TypeSpecMode, extract_type_spec, get_attr_input, remove_unique_attr,
+    },
 };
 
 #[cfg(test)]
@@ -58,7 +60,7 @@ impl Specified for ItemFn {
     }
 
     fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
-        FnSpec::from_spec_and_inputs_attrs(fields, &mut self.sig.inputs, &mut self.attrs)
+        FnSpec::from_spec_and_signature(fields, &mut self.sig)
     }
 }
 
@@ -70,7 +72,7 @@ impl Specified for ImplItemFn {
     }
 
     fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
-        FnSpec::from_spec_and_inputs_attrs(fields, &mut self.sig.inputs, &mut self.attrs)
+        FnSpec::from_spec_and_signature(fields, &mut self.sig)
     }
 }
 
@@ -82,7 +84,7 @@ impl Specified for TraitItemFn {
     }
 
     fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
-        FnSpec::from_spec_and_inputs_attrs(fields, &mut self.sig.inputs, &mut self.attrs)
+        FnSpec::from_spec_and_signature(fields, &mut self.sig)
     }
 }
 
@@ -161,68 +163,66 @@ impl Specified for ExprWhile {
 }
 
 impl FnSpec {
-    pub fn from_spec_and_inputs_attrs(
+    pub fn from_spec_and_signature(
         raw_spec: SpecFields,
-        inputs: &mut Punctuated<FnArg, Token![,]>,
-        attrs: &mut Vec<Attribute>,
+        signature: &mut syn::Signature,
     ) -> Result<Self> {
-        let (input_specs, output_spec_on_exit) = Self::extract_unspec_info(inputs, attrs)?;
-        Self::from_spec_and_unspec_info(raw_spec, input_specs, output_spec_on_exit)
+        let (input_specs, output_spec_on_exit) = Self::extract_type_spec_info(signature)?;
+        Self::from_spec_and_type_spec_info(raw_spec, input_specs, output_spec_on_exit)
     }
 
-    fn extract_unspec_info(
-        inputs: &mut Punctuated<FnArg, Token![,]>,
-        attrs: &mut Vec<Attribute>,
+    fn extract_type_spec_info(
+        signature: &mut syn::Signature,
     ) -> Result<(Vec<InputSpecFlags>, bool)> {
-        let mut input_specs = Vec::with_capacity(inputs.len());
+        let mut input_specs = Vec::with_capacity(signature.inputs.len());
 
-        for input in inputs {
-            let attrs = match input {
-                FnArg::Receiver(receiver) => &mut receiver.attrs,
-                FnArg::Typed(pat_type) => &mut pat_type.attrs,
+        for input in &mut signature.inputs {
+            let ty = match input {
+                FnArg::Receiver(receiver) => &mut receiver.ty,
+                FnArg::Typed(pat_type) => &mut pat_type.ty,
             };
 
-            let input_spec = if let Some(attr) = remove_unique_attr("unspec", attrs)? {
-                let unspec: UnspecAttr = attr.try_into()?;
-                match unspec.arg {
+            let input_spec = match extract_type_spec(ty)? {
+                None => InputSpecFlags {
+                    on_entry: false,
+                    on_exit: false,
+                },
+                Some(type_spec) => match type_spec.mode {
                     None => InputSpecFlags {
-                        on_entry: false,
-                        on_exit: false,
-                    },
-                    Some((_, UnspecArg::In(_))) => InputSpecFlags {
-                        on_entry: false,
-                        on_exit: true,
-                    },
-                    Some((_, UnspecArg::Out(_))) => InputSpecFlags {
                         on_entry: true,
                         on_exit: false,
                     },
-                }
-            } else {
-                InputSpecFlags::default()
+                    Some(TypeSpecMode::Out(_)) => InputSpecFlags {
+                        on_entry: false,
+                        on_exit: true,
+                    },
+                    Some(TypeSpecMode::InOut(_)) => InputSpecFlags {
+                        on_entry: true,
+                        on_exit: true,
+                    },
+                },
             };
             input_specs.push(input_spec);
         }
 
-        let output_spec_on_exit = if let Some(attr) = remove_unique_attr("unspec", attrs)? {
-            let unspec = UnspecAttr::try_from(attr)?;
-            match unspec.arg {
-                Some((_, UnspecArg::Out(_))) => false,
-                _ => {
-                    return Err(Error::new_spanned(
-                        Attribute::from(unspec),
-                        "only `#[unspec(out)]` is allowed on a `fn` output",
+        let output_spec_on_exit = match &mut signature.output {
+            syn::ReturnType::Default => false,
+            syn::ReturnType::Type(_, ty) => match extract_type_spec(ty)? {
+                None => false,
+                Some(type_spec) if type_spec.mode.is_none() => true,
+                Some(type_spec) => {
+                    return Err(Error::new(
+                        type_spec.span,
+                        "an output type marker cannot have an enforcement mode",
                     ));
                 }
-            }
-        } else {
-            true
+            },
         };
 
         Ok((input_specs, output_spec_on_exit))
     }
 
-    fn from_spec_and_unspec_info(
+    fn from_spec_and_type_spec_info(
         raw_spec: SpecFields,
         input_specs: Vec<InputSpecFlags>,
         output_spec_on_exit: bool,
@@ -366,32 +366,30 @@ impl DataSpec {
         variants: impl Iterator<Item = &'a mut Fields>,
     ) -> Result<Self> {
         let field_specs = variants
-            .map(Self::extract_unspec_info)
+            .map(Self::extract_type_spec_info)
             .collect::<Result<_>>()?;
-        Self::from_spec_and_unspec_info(raw_spec, field_specs)
+        Self::from_spec_and_type_spec_info(raw_spec, field_specs)
     }
 
-    fn extract_unspec_info(fields: &mut Fields) -> Result<Vec<bool>> {
+    fn extract_type_spec_info(fields: &mut Fields) -> Result<Vec<bool>> {
         fields
             .iter_mut()
             .map(|field| {
-                let Some(attr) = remove_unique_attr("unspec", &mut field.attrs)? else {
-                    return Ok(true);
+                let Some(type_spec) = extract_type_spec(&mut field.ty)? else {
+                    return Ok(false);
                 };
-
-                let unspec = UnspecAttr::try_from(attr)?;
-                if unspec.arg.is_some() {
-                    return Err(Error::new_spanned(
-                        Attribute::from(unspec),
-                        "only `#[unspec]` is allowed on a field",
+                if type_spec.mode.is_some() {
+                    return Err(Error::new(
+                        type_spec.span,
+                        "a field type marker cannot have an enforcement mode",
                     ));
                 }
-                Ok(false)
+                Ok(true)
             })
             .collect()
     }
 
-    fn from_spec_and_unspec_info(
+    fn from_spec_and_type_spec_info(
         raw_spec: SpecFields,
         field_specs: Vec<Vec<bool>>,
     ) -> Result<Self> {

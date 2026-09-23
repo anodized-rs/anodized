@@ -10,8 +10,8 @@ use anodized::{spec, types::Spec};
     }
 )]
 pub enum MonotonicVec<T: Ord> {
-    Ascending(#[unspec] Vec<T>),
-    Descending(#[unspec] Vec<T>),
+    Ascending(Vec<T>),
+    Descending(Vec<T>),
 }
 
 #[spec(
@@ -22,9 +22,8 @@ pub enum MonotonicVec<T: Ord> {
 )]
 pub enum SmallVec<T: Default + Spec, const UNBOXED_CAPACITY: usize = 128> {
     Small {
-        #[unspec]
         count: usize,
         buffer: [T; UNBOXED_CAPACITY],
     },
-    Large(#[unspec] Vec<T>),
+    Large(Vec<T>),
 }
