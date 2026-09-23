@@ -4,6 +4,4 @@
 use anodized::{spec, types::Spec};
 
 #[spec]
-fn f() -> Spec!(i32, out) {
-    0
-}
+fn f(x: Spec!(i32, out, inout)) {}
