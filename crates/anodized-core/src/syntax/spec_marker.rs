@@ -7,7 +7,7 @@ use syn::{
 
 use crate::syntax::path_matches_name;
 
-/// The `spec!(TYPE[, MODE])` marker for fine-grained control of type spec enforcement.
+/// The `Spec!(TYPE[, MODE])` marker for fine-grained control of type spec enforcement.
 #[derive(Debug)]
 pub struct SpecMarker {
     pub ty: Type,
@@ -55,12 +55,12 @@ impl Parse for SpecMarker {
     }
 }
 
-/// Removes a `spec!(...)` marker from a type, if it has one.
+/// Removes a `Spec!(...)` marker from a type, if it has one.
 pub fn extract_spec_marker(ty: &mut Type) -> Result<Option<SpecMarker>> {
     let Type::Macro(TypeMacro { mac }) = ty else {
         return Ok(None);
     };
-    if !path_matches_name(&mac.path, "spec") {
+    if !path_matches_name(&mac.path, "Spec") {
         return Ok(None);
     }
 

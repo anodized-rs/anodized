@@ -4,4 +4,4 @@
 use anodized::spec;
 
 #[spec]
-fn f(x: spec!(i32, in)) {}
+fn f(x: Spec!(i32, in)) {}

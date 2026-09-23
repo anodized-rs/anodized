@@ -5,5 +5,5 @@ use anodized::spec;
 
 #[spec]
 struct S {
-    field: spec!(i32, inout),
+    field: Spec!(i32, inout),
 }

@@ -4,6 +4,6 @@
 use anodized::spec;
 
 #[spec]
-fn f() -> spec!(i32, out) {
+fn f() -> Spec!(i32, out) {
     0
 }

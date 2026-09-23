@@ -58,7 +58,7 @@ Use `#[cfg]` attributes on individual conditions to control when checks run (see
 When runtime checks are enabled, use the standard `#[cfg]` attribute to select build configurations under which a condition is checked.
 
 ```rust, no_run
-use anodized::spec;
+use anodized::{spec, types::Spec};
 
 #[spec(
     // Runtime checks only during `cargo test`.
@@ -401,7 +401,7 @@ Important restrictions:
 ### Type Specs a.k.a. Type Refinements
 
 Type specs are not enforced at `#[spec]` boundaries unless a type is explicitly marked with the
-`spec!(...)` macro.
+`Spec!(...)` macro.
 
 ```rust, no_run
 use anodized::spec;
@@ -411,21 +411,21 @@ struct TypeWithSpec;
 
 #[spec]
 fn update(
-    input: spec!(TypeWithSpec),
-    output: spec!(&mut TypeWithSpec, out),
-) -> spec!(TypeWithSpec) {
+    input: Spec!(TypeWithSpec),
+    output: Spec!(&mut TypeWithSpec, out),
+) -> Spec!(TypeWithSpec) {
     todo!()
 }
 
 #[spec]
 struct Container {
-    enforced: spec!(TypeWithSpec),
+    enforced: Spec!(TypeWithSpec),
     unenforced: TypeWithSpec,
 }
 ```
 
-- `spec!(T)`: Enforce a function input's spec on entry, a function output's spec on
+- `Spec!(T)`: Enforce a function input's spec on entry, a function output's spec on
   exit, or a data field's spec as part of its containing type's spec.
-- `spec!(T, out)`: Enforce a function input's spec only on exit (not on entry).
-- `spec!(T, inout)`: Enforce a function input's spec on both entry and exit.
+- `Spec!(T, out)`: Enforce a function input's spec only on exit (not on entry).
+- `Spec!(T, inout)`: Enforce a function input's spec on both entry and exit.
 - Modes `out` and `inout` are only valid for function inputs.

@@ -20,11 +20,11 @@ fn spec_markers_on_function_inputs_and_output() {
     let spec_item_fn: SpecItemFn = parse_quote! {
         #[spec]
         fn f(
-            x: spec!(X),
-            y: spec!(Y, out),
-            z: spec!(Z, inout),
+            x: Spec!(X),
+            y: Spec!(Y, out),
+            z: Spec!(Z, inout),
             unspecified: U,
-        ) -> spec!(R) {}
+        ) -> Spec!(R) {}
     };
 
     let expected = FnSpec {
@@ -68,7 +68,7 @@ fn spec_markers_on_struct_fields() {
     let spec_item_struct: SpecItemStruct = parse_quote! {
         #[spec]
         struct S {
-            a: spec!(A),
+            a: Spec!(A),
             b: B,
         }
     };
@@ -92,9 +92,9 @@ fn spec_markers_on_enum_fields() {
     let spec_item_enum: SpecItemEnum = parse_quote! {
         #[spec]
         enum E {
-            First(A, spec!(B)),
+            First(A, Spec!(B)),
             Second {
-                c: spec!(C),
+                c: Spec!(C),
                 d: D,
             },
             Third,

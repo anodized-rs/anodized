@@ -1,12 +1,24 @@
-/// Marks a type refinement boundary within an item annotated with `#[spec]`.
+/// Control enforcement of the type's spec (a.k.a. refinement). May be applied to a type in a `fn`
+/// signature, or a `struct` or `enum` definition. The enclosing item **must** have a `#[spec]`
+/// attribute.
 ///
-/// The `#[spec]` macro consumes this marker before Rust expands it.
+/// - `Spec!(T)`: The type spec holds:
+///     - for an input on entry,
+///     - for an output on exit,
+///     - and for a data field in a structurally recursive fashion.
+/// - `Spec!(T, out)`: The input's type spec holds only on exit (not on entry).
+/// - `Spec!(T, inout)`: The input's type spec holds on both entry and exit.
+///
+/// This macro exists *only* to carry this documentation. It should not be invoked, because
+/// `anodized-core` removes it as part of processing `#[spec]` attributes.
 #[macro_export]
-macro_rules! spec {
+macro_rules! Spec {
     ($($tokens:tt)*) => {
-        compile_error!("`spec!` must appear in the type of an item annotated with `#[spec]`");
+        compile_error!("`Spec!` must appear inside an item annotated with `#[spec]`");
     };
 }
+
+pub use crate::Spec;
 
 #[diagnostic::on_unimplemented(
     label = "type at the boundary of a `#[spec]`",
@@ -19,7 +31,7 @@ if `{Self}` is a concrete foreign type, wrap it in a local type such as `struct 
     note = "\
 if `{Self}` is a type parameter, restrict it with the trait `{Self}: Spec`",
     note = "\
-remove the surrounding `spec!(...)` marker to disable type spec enforcement here"
+remove the surrounding `Spec!(...)` marker to disable type spec enforcement here"
 )]
 /// Defines a type refinement.
 pub trait Spec {

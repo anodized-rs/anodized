@@ -21,25 +21,25 @@ fn one(x: T, y: &mut T) -> T {
 
 /// The type spec of input `x` must hold on entry.
 #[spec]
-fn two(x: spec!(T), y: &mut T) -> T {
+fn two(x: Spec!(T), y: &mut T) -> T {
     todo!()
 }
 
 /// The type spec of input `y` must hold on exit.
 #[spec]
-fn three(x: T, y: spec!(&mut T, out)) -> T {
+fn three(x: T, y: Spec!(&mut T, out)) -> T {
     todo!()
 }
 
 /// The type spec of input `y` must hold on both entry and exit.
 #[spec]
-fn four(x: T, y: spec!(&mut T, inout)) -> T {
+fn four(x: T, y: Spec!(&mut T, inout)) -> T {
     todo!()
 }
 
 /// The type spec of the output must hold on exit.
 #[spec]
-fn five(x: T, y: &mut T) -> spec!(T) {
+fn five(x: T, y: &mut T) -> Spec!(T) {
     todo!()
 }
 
@@ -54,5 +54,5 @@ struct Six {
 #[spec]
 struct Seven {
     pub a: T,
-    pub b: spec!(T),
+    pub b: Spec!(T),
 }

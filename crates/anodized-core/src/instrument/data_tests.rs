@@ -17,9 +17,9 @@ fn embed_spec_item_struct() {
         where
             'LT_1: 'LT_2,
         {
-            FIELD_1: spec!(&'LT_1 TYPE_3),
-            FIELD_2: spec!(TYPE_1),
-            FIELD_3: spec!([TYPE_4; CONST_1]),
+            FIELD_1: Spec!(&'LT_1 TYPE_3),
+            FIELD_2: Spec!(TYPE_1),
+            FIELD_3: Spec!([TYPE_4; CONST_1]),
         }
     };
 
@@ -72,10 +72,10 @@ fn default_instrument_item_enum() {
         where
             'LT_1: 'LT_2,
         {
-            VARIANT_1(spec!(&'LT_1 TYPE_2)),
-            VARIANT_2 { FIELD_1: spec!(TYPE_1), FIELD_2: spec!(TYPE_2) },
+            VARIANT_1(Spec!(&'LT_1 TYPE_2)),
+            VARIANT_2 { FIELD_1: Spec!(TYPE_1), FIELD_2: Spec!(TYPE_2) },
             VARIANT_3,
-            VARIANT_4(spec!([TYPE_4; CONST_1])),
+            VARIANT_4(Spec!([TYPE_4; CONST_1])),
         }
     };
 
@@ -126,9 +126,9 @@ fn embed_spec_item_data_checks_specified_fields() {
     let spec_item_enum: SpecItemEnum = parse_quote! {
         #[spec]
         enum ENUM {
-            TUPLE(spec!(CHILD_1), CHILD_2, spec!(CHILD_3)),
+            TUPLE(Spec!(CHILD_1), CHILD_2, Spec!(CHILD_3)),
             STRUCT {
-                included: spec!(CHILD_4),
+                included: Spec!(CHILD_4),
                 omitted: CHILD_5,
             },
             UNIT,
