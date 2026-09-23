@@ -6,7 +6,12 @@ use syn::{
 
 use crate::syntax::path_matches_name;
 
-/// The `Spec!(TYPE[, MODE])` marker for fine-grained control of type spec enforcement.
+/// Represents a valid `Spec!`-marked type.
+///
+/// Has three valid forms:
+/// - `Spec!(T)`
+/// - `Spec!(T, out)`
+/// - `Spec!(T, inout)`
 #[derive(Debug)]
 pub struct SpecMarker {
     pub spec: Ident,
@@ -23,7 +28,7 @@ pub struct SpecMarkerArgs {
     pub mode: Option<(Token![,], FnArgMode)>,
 }
 
-/// The enforcement mode of a `fn` input.
+/// The enforcement mode used optionally inside a `Spec!` marker.
 #[derive(Debug)]
 pub enum FnArgMode {
     Out(kw::out),
