@@ -23,7 +23,7 @@ pub enum MonotonicVec<T: Ord> {
 pub enum SmallVec<T: Default + Spec, const UNBOXED_CAPACITY: usize = 128> {
     Small {
         count: usize,
-        buffer: [T; UNBOXED_CAPACITY],
+        buffer: Spec!([T; UNBOXED_CAPACITY]),
     },
     Large(Vec<T>),
 }
