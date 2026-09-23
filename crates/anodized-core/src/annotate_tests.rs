@@ -16,7 +16,7 @@ fn empty_spec_rejects_nonempty_fields() {
 }
 
 #[test]
-fn type_markers_on_function_inputs_and_output() {
+fn spec_markers_on_function_inputs_and_output() {
     let spec_item_fn: SpecItemFn = parse_quote! {
         #[spec]
         fn f(
@@ -64,7 +64,7 @@ fn type_markers_on_function_inputs_and_output() {
 }
 
 #[test]
-fn type_markers_on_struct_fields() {
+fn spec_markers_on_struct_fields() {
     let spec_item_struct: SpecItemStruct = parse_quote! {
         #[spec]
         struct S {
@@ -88,7 +88,7 @@ fn type_markers_on_struct_fields() {
 }
 
 #[test]
-fn type_markers_on_enum_fields() {
+fn spec_markers_on_enum_fields() {
     let spec_item_enum: SpecItemEnum = parse_quote! {
         #[spec]
         enum E {
