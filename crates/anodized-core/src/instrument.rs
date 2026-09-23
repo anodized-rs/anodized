@@ -1,8 +1,8 @@
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Block, FnArg, Ident, ItemConst, ItemFn, ItemImpl, ItemTrait, Result, ReturnType,
-    Signature, parse_quote,
+    Attribute, Block, Expr, FnArg, Ident, ItemConst, ItemFn, ItemImpl, ItemTrait, Result,
+    ReturnType, Signature, parse_quote, parse_quote_spanned, spanned::Spanned,
 };
 
 use crate::{EmptySpec, FnSpec};
@@ -354,6 +354,11 @@ impl CheckSettings {
         does_print: true,
         does_panic: Some(PanicSettings { has_try_fn: true }),
     };
+}
+
+fn build_cond_eval(expr: &Expr) -> Expr {
+    let span = expr.span();
+    parse_quote_spanned! { span => ::anodized::__::eval::<bool>(|| #expr) }
 }
 
 /// Make an error message to say that some item is unsupported.

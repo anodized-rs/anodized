@@ -1,26 +1,28 @@
 #![cfg_attr(anodized_charon, feature(register_tool))]
 #![cfg_attr(anodized_charon, register_tool(charon))]
-#![allow(unused)]
 
-use anodized::spec;
+use anodized::{spec, types::Spec};
 
 #[spec(maintains: self.a.pow(2) + self.b.pow(2) == self.c.pow(2))]
-struct PythagoreanTriple {
-    a: u32,
-    b: u32,
-    c: u32,
+pub struct PythagoreanTriple {
+    #[unspec]
+    pub a: u32,
+    #[unspec]
+    pub b: u32,
+    #[unspec]
+    pub c: u32,
 }
 
 #[spec(maintains: !self.0.is_empty())]
-struct NonEmptyVec<T>(Vec<T>);
+pub struct NonEmptyVec<T: Spec>(pub Vec<T>);
 
 #[spec(maintains: self.0.iter().rev().eq(&self.0))]
-struct PalindromeVec<T: Eq>(Vec<T>);
+pub struct PalindromeVec<T: Eq + Spec>(pub Vec<T>);
 
 #[spec(
     maintains: (&self.0).into_iter().rev().eq((&self.0).into_iter())
 )]
-struct PalindromeContainer<T: Eq, C>(C)
+pub struct PalindromeContainer<T: Eq + Spec, C: Spec>(C)
 where
     for<'a> &'a C: IntoIterator<Item = &'a T>,
     for<'a> <&'a C as IntoIterator>::IntoIter: DoubleEndedIterator;
@@ -31,12 +33,16 @@ where
         str::from_utf8(&self.buffer[0..self.size]).is_ok(),
     ]
 )]
-struct SliceBackedString<const BUFFER_SIZE: usize = 1024> {
-    size: usize,
-    buffer: [u8; BUFFER_SIZE],
+pub struct SliceBackedString<const BUFFER_SIZE: usize = 1024> {
+    #[unspec]
+    pub size: usize,
+    #[unspec]
+    pub buffer: [u8; BUFFER_SIZE],
 }
 
 #[spec(
     maintains: std::mem::size_of::<T>() * DIM * 8 == SIMD_BITS
 )]
-struct SimdVector<const DIM: usize, T = f32, const SIMD_BITS: usize = 128>([T; DIM]);
+pub struct SimdVector<const DIM: usize, T = f32, const SIMD_BITS: usize = 128>(
+    #[unspec] pub [T; DIM],
+);
