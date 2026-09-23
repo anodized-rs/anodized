@@ -71,26 +71,25 @@ impl<T: Spec> Spec for Vec<T> {
     }
 }
 
-impl Spec for () {
-    fn predicate(&self) -> bool {
-        true
-    }
+macro_rules! tuple_spec {
+    () => {
+        impl Spec for () {
+            fn predicate(&self) -> bool {
+                true
+            }
+        }
+    };
+    ($last:ident $($head:ident)*) => {
+        tuple_spec!($($head)*);
+
+        impl<$($head: Spec,)* $last: Spec + ?Sized> Spec for ($($head,)* $last,) {
+            #[allow(non_snake_case)]
+            fn predicate(&self) -> bool {
+                let ($($head,)* $last,) = self;
+                true $(&& $head.predicate())* && $last.predicate()
+            }
+        }
+    };
 }
 
-impl<T1: Spec + ?Sized> Spec for (T1,) {
-    fn predicate(&self) -> bool {
-        self.0.predicate()
-    }
-}
-
-impl<T1: Spec, T2: Spec + ?Sized> Spec for (T1, T2) {
-    fn predicate(&self) -> bool {
-        self.0.predicate() && self.1.predicate()
-    }
-}
-
-impl<T1: Spec, T2: Spec, T3: Spec + ?Sized> Spec for (T1, T2, T3) {
-    fn predicate(&self) -> bool {
-        self.0.predicate() && self.1.predicate() && self.2.predicate()
-    }
-}
+tuple_spec!(T12 T11 T10 T9 T8 T7 T6 T5 T4 T3 T2 T1);
