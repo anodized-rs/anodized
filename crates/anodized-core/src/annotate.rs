@@ -11,7 +11,8 @@ use crate::{
     instrument::patterns::{IdentGenerator, tame_pattern},
     qualifiers::FnQualifiers,
     syntax::{
-        Keyword, SpecFields, TypeSpecMode, extract_type_spec, get_attr_input, remove_unique_attr,
+        FnArgMode, Keyword, SpecFields, SpecTypeMarker, extract_type_spec, get_attr_input,
+        remove_unique_attr,
     },
 };
 
@@ -192,11 +193,11 @@ impl FnSpec {
                         on_entry: true,
                         on_exit: false,
                     },
-                    Some(TypeSpecMode::Out(_)) => InputSpecFlags {
+                    Some((_, FnArgMode::Out(_))) => InputSpecFlags {
                         on_entry: false,
                         on_exit: true,
                     },
-                    Some(TypeSpecMode::InOut(_)) => InputSpecFlags {
+                    Some((_, FnArgMode::InOut(_))) => InputSpecFlags {
                         on_entry: true,
                         on_exit: true,
                     },
@@ -209,11 +210,13 @@ impl FnSpec {
             syn::ReturnType::Default => false,
             syn::ReturnType::Type(_, ty) => match extract_type_spec(ty)? {
                 None => false,
-                Some(type_spec) if type_spec.mode.is_none() => true,
-                Some(type_spec) => {
-                    return Err(Error::new(
-                        type_spec.span,
-                        "an output type marker cannot have an enforcement mode",
+                Some(SpecTypeMarker { mode: None, .. }) => true,
+                Some(SpecTypeMarker {
+                    mode: Some(mode), ..
+                }) => {
+                    return Err(Error::new_spanned(
+                        &mode.1,
+                        "the type spec enforcement marker on a `fn` output cannot have a mode",
                     ));
                 }
             },
@@ -378,10 +381,10 @@ impl DataSpec {
                 let Some(type_spec) = extract_type_spec(&mut field.ty)? else {
                     return Ok(false);
                 };
-                if type_spec.mode.is_some() {
-                    return Err(Error::new(
-                        type_spec.span,
-                        "a field type marker cannot have an enforcement mode",
+                if let Some((_, mode)) = type_spec.mode {
+                    return Err(Error::new_spanned(
+                        mode,
+                        "the type spec enforcement marker on a field cannot have a mode",
                     ));
                 }
                 Ok(true)

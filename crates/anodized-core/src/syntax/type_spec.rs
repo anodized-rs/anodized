@@ -1,67 +1,70 @@
-use proc_macro2::Span;
+use quote::ToTokens;
 use syn::{
     Type, TypeMacro,
     parse::{Parse, ParseStream, Result},
-    spanned::Spanned,
+    token::Comma,
 };
 
 use crate::syntax::path_matches_name;
 
-/// A `spec!(TYPE[, MODE])` type marker.
+/// A `spec!(TYPE[, MODE])` enforcement type marker.
 #[derive(Debug)]
-pub struct TypeSpec {
+pub struct SpecTypeMarker {
     pub ty: Type,
-    pub mode: Option<TypeSpecMode>,
-    pub span: Span,
+    /// Must be `None` for the output of a `fn` or field of a `struct` or `enum`.
+    pub mode: Option<(Comma, FnArgMode)>,
 }
 
-/// The optional enforcement mode of a type marker.
+/// The enforcement mode of a `fn` input.
 #[derive(Debug)]
-pub enum TypeSpecMode {
+pub enum FnArgMode {
     Out(kw::out),
     InOut(kw::inout),
 }
 
-impl Parse for TypeSpec {
+impl ToTokens for FnArgMode {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        match self {
+            FnArgMode::Out(out) => out.to_tokens(tokens),
+            FnArgMode::InOut(inout) => inout.to_tokens(tokens),
+        }
+    }
+}
+
+impl Parse for SpecTypeMarker {
     fn parse(input: ParseStream) -> Result<Self> {
         let ty = input.parse()?;
         let mode = if input.is_empty() {
             None
         } else {
-            input.parse::<syn::Token![,]>()?;
+            let comma = input.parse::<Comma>()?;
             if input.peek(kw::out) {
-                Some(TypeSpecMode::Out(input.parse()?))
+                Some((comma, FnArgMode::Out(input.parse()?)))
             } else if input.peek(kw::inout) {
-                Some(TypeSpecMode::InOut(input.parse()?))
+                Some((comma, FnArgMode::InOut(input.parse()?)))
             } else {
-                return Err(input.error("expected `out` or `inout`"));
+                return Err(input.error("expected a mode, `out` or `inout`"));
             }
         };
 
         if !input.is_empty() {
-            return Err(input.error("expected exactly one enforcement mode"));
+            return Err(input.error("expected exactly one mode, `out` or `inout`"));
         }
 
-        Ok(Self {
-            ty,
-            mode,
-            span: input.span(),
-        })
+        Ok(Self { ty, mode })
     }
 }
 
 /// Removes a `spec!(...)` marker from a type, if it has one.
-pub fn extract_type_spec(ty: &mut Type) -> Result<Option<TypeSpec>> {
-    let Type::Macro(TypeMacro { mac, .. }) = ty else {
+pub fn extract_type_spec(ty: &mut Type) -> Result<Option<SpecTypeMarker>> {
+    let Type::Macro(TypeMacro { mac }) = ty else {
         return Ok(None);
     };
     if !path_matches_name(&mac.path, "spec") {
         return Ok(None);
     }
 
-    let span = mac.span();
-    let mut type_spec: TypeSpec = syn::parse2(mac.tokens.clone())?;
-    type_spec.span = span;
+    let type_spec: SpecTypeMarker = syn::parse2(mac.tokens.clone())?;
     *ty = type_spec.ty.clone();
     Ok(Some(type_spec))
 }
