@@ -11,7 +11,7 @@ use crate::{
     instrument::patterns::{IdentGenerator, tame_pattern},
     qualifiers::FnQualifiers,
     syntax::{
-        FnArgMode, Keyword, SpecFields, SpecTypeMarker, extract_type_spec, get_attr_input,
+        FnArgMode, Keyword, SpecFields, SpecMarker, extract_spec_marker, get_attr_input,
         remove_unique_attr,
     },
 };
@@ -168,11 +168,11 @@ impl FnSpec {
         raw_spec: SpecFields,
         signature: &mut syn::Signature,
     ) -> Result<Self> {
-        let (input_specs, output_spec_on_exit) = Self::extract_type_spec_info(signature)?;
-        Self::from_spec_and_type_spec_info(raw_spec, input_specs, output_spec_on_exit)
+        let (input_specs, output_spec_on_exit) = Self::extract_spec_marker_info(signature)?;
+        Self::from_spec_and_spec_marker_info(raw_spec, input_specs, output_spec_on_exit)
     }
 
-    fn extract_type_spec_info(
+    fn extract_spec_marker_info(
         signature: &mut syn::Signature,
     ) -> Result<(Vec<InputSpecFlags>, bool)> {
         let mut input_specs = Vec::with_capacity(signature.inputs.len());
@@ -183,12 +183,12 @@ impl FnSpec {
                 FnArg::Typed(pat_type) => &mut pat_type.ty,
             };
 
-            let input_spec = match extract_type_spec(ty)? {
+            let input_spec = match extract_spec_marker(ty)? {
                 None => InputSpecFlags {
                     on_entry: false,
                     on_exit: false,
                 },
-                Some(type_spec) => match type_spec.mode {
+                Some(spec_marker) => match spec_marker.mode {
                     None => InputSpecFlags {
                         on_entry: true,
                         on_exit: false,
@@ -208,10 +208,10 @@ impl FnSpec {
 
         let output_spec_on_exit = match &mut signature.output {
             syn::ReturnType::Default => false,
-            syn::ReturnType::Type(_, ty) => match extract_type_spec(ty)? {
+            syn::ReturnType::Type(_, ty) => match extract_spec_marker(ty)? {
                 None => false,
-                Some(SpecTypeMarker { mode: None, .. }) => true,
-                Some(SpecTypeMarker {
+                Some(SpecMarker { mode: None, .. }) => true,
+                Some(SpecMarker {
                     mode: Some(mode), ..
                 }) => {
                     return Err(Error::new_spanned(
@@ -225,7 +225,7 @@ impl FnSpec {
         Ok((input_specs, output_spec_on_exit))
     }
 
-    fn from_spec_and_type_spec_info(
+    fn from_spec_and_spec_marker_info(
         raw_spec: SpecFields,
         input_specs: Vec<InputSpecFlags>,
         output_spec_on_exit: bool,
@@ -369,19 +369,19 @@ impl DataSpec {
         variants: impl Iterator<Item = &'a mut Fields>,
     ) -> Result<Self> {
         let field_specs = variants
-            .map(Self::extract_type_spec_info)
+            .map(Self::extract_spec_marker_info)
             .collect::<Result<_>>()?;
-        Self::from_spec_and_type_spec_info(raw_spec, field_specs)
+        Self::from_spec_and_spec_marker_info(raw_spec, field_specs)
     }
 
-    fn extract_type_spec_info(fields: &mut Fields) -> Result<Vec<bool>> {
+    fn extract_spec_marker_info(fields: &mut Fields) -> Result<Vec<bool>> {
         fields
             .iter_mut()
             .map(|field| {
-                let Some(type_spec) = extract_type_spec(&mut field.ty)? else {
+                let Some(spec_marker) = extract_spec_marker(&mut field.ty)? else {
                     return Ok(false);
                 };
-                if let Some((_, mode)) = type_spec.mode {
+                if let Some((_, mode)) = spec_marker.mode {
                     return Err(Error::new_spanned(
                         mode,
                         "the type spec enforcement marker on a field cannot have a mode",
@@ -392,7 +392,7 @@ impl DataSpec {
             .collect()
     }
 
-    fn from_spec_and_type_spec_info(
+    fn from_spec_and_spec_marker_info(
         raw_spec: SpecFields,
         field_specs: Vec<Vec<bool>>,
     ) -> Result<Self> {

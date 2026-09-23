@@ -1,7 +1,7 @@
-pub mod attr;
-pub mod spec;
-pub mod type_spec;
+pub mod spec_attrib;
+pub mod spec_marker;
+pub mod util;
 
-pub use attr::*;
-pub use spec::*;
-pub use type_spec::*;
+pub use spec_attrib::*;
+pub use spec_marker::*;
+pub use util::*;

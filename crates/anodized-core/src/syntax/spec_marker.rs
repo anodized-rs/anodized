@@ -7,11 +7,11 @@ use syn::{
 
 use crate::syntax::path_matches_name;
 
-/// A `spec!(TYPE[, MODE])` enforcement type marker.
+/// The `spec!(TYPE[, MODE])` marker for fine-grained control of type spec enforcement.
 #[derive(Debug)]
-pub struct SpecTypeMarker {
+pub struct SpecMarker {
     pub ty: Type,
-    /// Must be `None` for the output of a `fn` or field of a `struct` or `enum`.
+    /// Must be `None` on the output of a `fn` or field of a data type (`struct` or `enum`).
     pub mode: Option<(Comma, FnArgMode)>,
 }
 
@@ -31,7 +31,7 @@ impl ToTokens for FnArgMode {
     }
 }
 
-impl Parse for SpecTypeMarker {
+impl Parse for SpecMarker {
     fn parse(input: ParseStream) -> Result<Self> {
         let ty = input.parse()?;
         let mode = if input.is_empty() {
@@ -56,7 +56,7 @@ impl Parse for SpecTypeMarker {
 }
 
 /// Removes a `spec!(...)` marker from a type, if it has one.
-pub fn extract_type_spec(ty: &mut Type) -> Result<Option<SpecTypeMarker>> {
+pub fn extract_spec_marker(ty: &mut Type) -> Result<Option<SpecMarker>> {
     let Type::Macro(TypeMacro { mac }) = ty else {
         return Ok(None);
     };
@@ -64,9 +64,9 @@ pub fn extract_type_spec(ty: &mut Type) -> Result<Option<SpecTypeMarker>> {
         return Ok(None);
     }
 
-    let type_spec: SpecTypeMarker = syn::parse2(mac.tokens.clone())?;
-    *ty = type_spec.ty.clone();
-    Ok(Some(type_spec))
+    let spec_marker: SpecMarker = syn::parse2(mac.tokens.clone())?;
+    *ty = spec_marker.ty.clone();
+    Ok(Some(spec_marker))
 }
 
 mod kw {

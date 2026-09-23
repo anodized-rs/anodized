@@ -1,5 +1,5 @@
 error: the type spec enforcement marker on a field cannot have a mode
- --> tests/compile_fail/type_spec_invalid_field_mode.rs:8:23
+ --> tests/compile_fail/spec_marker_invalid_field_mode.rs:8:23
   |
 8 |     field: spec!(i32, inout),
   |                       ^^^^^
