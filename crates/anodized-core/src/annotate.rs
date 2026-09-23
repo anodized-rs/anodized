@@ -11,8 +11,8 @@ use crate::{
     instrument::patterns::{IdentGenerator, tame_pattern},
     qualifiers::FnQualifiers,
     syntax::{
-        FnArgMode, Keyword, SpecFields, SpecMarker, extract_spec_marker, get_attr_input,
-        remove_unique_attr,
+        FnArgMode, Keyword, SpecFields, SpecMarker, SpecMarkerArgs, extract_spec_marker,
+        get_attr_input, remove_unique_attr,
     },
 };
 
@@ -188,7 +188,7 @@ impl FnSpec {
                     on_entry: false,
                     on_exit: false,
                 },
-                Some(spec_marker) => match spec_marker.mode {
+                Some(spec_marker) => match spec_marker.args.mode {
                     None => InputSpecFlags {
                         on_entry: true,
                         on_exit: false,
@@ -210,9 +210,16 @@ impl FnSpec {
             syn::ReturnType::Default => false,
             syn::ReturnType::Type(_, ty) => match extract_spec_marker(ty)? {
                 None => false,
-                Some(SpecMarker { mode: None, .. }) => true,
                 Some(SpecMarker {
-                    mode: Some(mode), ..
+                    args: SpecMarkerArgs { mode: None, .. },
+                    ..
+                }) => true,
+                Some(SpecMarker {
+                    args:
+                        SpecMarkerArgs {
+                            mode: Some(mode), ..
+                        },
+                    ..
                 }) => {
                     return Err(Error::new_spanned(
                         &mode.1,
@@ -381,7 +388,7 @@ impl DataSpec {
                 let Some(spec_marker) = extract_spec_marker(&mut field.ty)? else {
                     return Ok(false);
                 };
-                if let Some((_, mode)) = spec_marker.mode {
+                if let Some((_, mode)) = spec_marker.args.mode {
                     return Err(Error::new_spanned(
                         mode,
                         "the type spec enforcement marker on a field cannot have a mode",
