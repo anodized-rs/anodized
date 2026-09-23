@@ -398,10 +398,10 @@ Important restrictions:
 - Runtime checks are **not implemented** yet.
 - Only the `maintains` spec field is supported.
 
-### Type Refinement Enforcement
+### Type Specs a.k.a. Type Refinements
 
-Type refinements are not enforced at `#[spec]` boundaries unless a type is explicitly marked with
-`spec!(...)`. Importing `anodized::spec` makes both `#[spec]` and `spec!(...)` available.
+Type specs are not enforced at `#[spec]` boundaries unless a type is explicitly marked with the
+`spec!(...)` macro.
 
 ```rust, no_run
 use anodized::spec;
@@ -416,13 +416,13 @@ fn update(
 
 #[spec]
 struct Container {
-    checked: spec!(i32),
-    unchecked: i32,
+    enforced: spec!(i32),
+    unenforced: i32,
 }
 ```
 
-- `spec!(T)` checks a function input on entry, a function output on exit, or a data field as part
-  of its containing type's predicate.
-- `spec!(T, out)` checks a function input on exit.
-- `spec!(T, inout)` checks a function input on entry and exit.
-- Modes are only valid for function inputs.
+- `spec!(T)`: Enforce a function input's spec on entry, a function output's spec on
+  exit, or a data field's spec as part of its containing type's spec.
+- `spec!(T, out)`: Enforce a function input's spec only on exit (not on entry).
+- `spec!(T, inout)`: Enforce a function input's spec on both entry and exit.
+- Modes `out` and `inout` are only valid for function inputs.
