@@ -407,17 +407,20 @@ Type specs are not enforced at `#[spec]` boundaries unless a type is explicitly 
 use anodized::spec;
 
 #[spec]
+struct TypeWithSpec;
+
+#[spec]
 fn update(
-    input: spec!(i32),
-    output: spec!(&mut i32, out),
-) -> spec!(i32) {
+    input: spec!(TypeWithSpec),
+    output: spec!(&mut TypeWithSpec, out),
+) -> spec!(TypeWithSpec) {
     todo!()
 }
 
 #[spec]
 struct Container {
-    enforced: spec!(i32),
-    unenforced: i32,
+    enforced: spec!(TypeWithSpec),
+    unenforced: TypeWithSpec,
 }
 ```
 
