@@ -2,10 +2,10 @@
 /// signature, or a `struct` or `enum` definition. The enclosing item **must** have a `#[spec]`
 /// attribute.
 ///
-/// - `Spec!(T)`: The type spec holds:
-///     - for an input on entry,
-///     - for an output on exit,
-///     - and for a data field in a structurally recursive fashion.
+/// - `Spec!(T)`:
+///     - The input's type spec holds on entry.
+///     - The output's type spec holds on exit.
+///     - The field's type spec holds in a structurally recursive way.
 /// - `Spec!(T, out)`: The input's type spec holds only on exit (not on entry).
 /// - `Spec!(T, inout)`: The input's type spec holds on both entry and exit.
 ///
