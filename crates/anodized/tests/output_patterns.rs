@@ -32,11 +32,15 @@ pub fn sort_pair<T: Ord + Spec>(pair: (T, T)) -> (T, T) {
     pair
 }
 
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[spec(maintains: self.0 != 42)]
+pub struct NonFortyTwoI32(pub i32);
+
 #[cfg(all(anodized_print, anodized_panic))]
 #[test]
 #[should_panic(expected = "postcondition failed")]
 pub fn sort_pair_fail_postcondition() {
-    sort_pair((5, 2));
+    sort_pair((NonFortyTwoI32(5), NonFortyTwoI32(2)));
 }
 
 #[spec(ensures: |(mut a, b)| a <= b)]
