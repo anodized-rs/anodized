@@ -248,15 +248,15 @@ fn check_data_instrument_item_fn() {
 fn check_data_spec_marker_input_out() {
     let spec_item_fn: SpecItemFn = parse_quote! {
         #[spec]
-        fn FUNC(INPUT: Spec!(TYPE, out)) -> Spec!(RET_TYPE) {
+        fn FUNC(INPUT: Spec!(&mut TYPE, out)) -> Spec!(RET_TYPE) {
             BODY
         }
     };
 
     let expected: TokenStream = parse_quote! {
-        fn FUNC(__anodized_input_1: TYPE) -> RET_TYPE {
+        fn FUNC(__anodized_input_1: &mut TYPE) -> RET_TYPE {
             #[allow(unused)]
-            let _ = |INPUT: TYPE| ();
+            let _ = |INPUT: &mut TYPE| ();
             let __anodized_pre = true;
             let (INPUT) = (__anodized_input_1) else { unreachable!() };
             if !__anodized_pre {}
@@ -268,7 +268,7 @@ fn check_data_spec_marker_input_out() {
             let __anodized_post = __anodized_post &
                 (true || <RET_TYPE as ::anodized::types::Spec>::predicate(&__anodized_output));
             let __anodized_post = __anodized_post &
-                (true || <TYPE as ::anodized::types::Spec>::predicate(&__anodized_input_1));
+                (true || <&mut TYPE as ::anodized::types::Spec>::predicate(&__anodized_input_1));
             let (INPUT) = (__anodized_input_1) else { unreachable!() };
             if !__anodized_post {}
             __anodized_output
