@@ -1,3 +1,5 @@
+pub use anodized_macros::Spec;
+
 #[diagnostic::on_unimplemented(
     label = "type at the boundary of a `#[spec]`",
     message = "\
@@ -9,7 +11,7 @@ if `{Self}` is a concrete foreign type, wrap it in a local type such as `struct 
     note = "\
 if `{Self}` is a type parameter, restrict it with the trait `{Self}: Spec`",
     note = "\
-*UNSAFE*: alternatively, use `#[uncheck]` to locally disable type spec enforcement here"
+remove the surrounding `Spec!(...)` marker to disable type spec enforcement here"
 )]
 /// Defines a type refinement.
 pub trait Spec {

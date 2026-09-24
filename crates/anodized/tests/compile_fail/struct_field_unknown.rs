@@ -1,12 +1,10 @@
 #![no_main]
 
 #[allow(unused_imports)]
-use anodized::{spec, unspec};
+use anodized::spec;
 
 #[spec(maintains: self.z < 42.0)]
 struct Point {
-    #[unspec]
     x: f32,
-    #[unspec]
     y: f32,
 }

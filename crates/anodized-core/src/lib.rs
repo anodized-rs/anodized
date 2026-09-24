@@ -39,7 +39,7 @@ pub struct FnSpec {
 }
 
 /// Determines where the input in a `fn` signature satisfies its type spec.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct InputSpecFlags {
     /// Whether the input satisfies its type spec on entry.
     pub on_entry: bool,
@@ -65,15 +65,6 @@ impl FnSpec {
     /// Construct an error from the whole spec.
     pub fn spec_err(&self, message: &str) -> Error {
         Error::new::<&str>(self.span, message)
-    }
-}
-
-impl Default for InputSpecFlags {
-    fn default() -> Self {
-        Self {
-            on_entry: true,
-            on_exit: true,
-        }
     }
 }
 
