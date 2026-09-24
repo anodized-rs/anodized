@@ -100,3 +100,27 @@ pub fn try_call(args: TokenStream) -> TokenStream {
         Err(error) => error.to_compile_error().into(),
     }
 }
+
+/// Control enforcement of the type's spec (a.k.a. refinement). May be applied to a type in a `fn`
+/// signature, or a `struct` or `enum` definition. The enclosing item **must** have a `#[spec]`
+/// attribute.
+///
+/// - `Spec!(T)`:
+///     - The input's type spec holds on entry.
+///     - The output's type spec holds on exit.
+///     - The field's type spec holds in a structurally recursive way.
+/// - `Spec!(T, out)`: The input's type spec holds only on exit (not on entry).
+/// - `Spec!(T, inout)`: The input's type spec holds on both entry and exit.
+///
+/// This macro exists *only* to carry this documentation. It should not be invoked, because
+/// `anodized-core` removes it as part of processing `#[spec]` attributes.
+#[proc_macro]
+#[allow(non_snake_case)]
+pub fn Spec(_: TokenStream) -> TokenStream {
+    syn::Error::new(
+        Span::call_site(),
+        "`Spec!` must appear inside an item annotated with `#[spec]`",
+    )
+    .to_compile_error()
+    .into()
+}
