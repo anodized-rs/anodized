@@ -2,8 +2,7 @@
 #![cfg_attr(anodized_charon, register_tool(charon))]
 #![allow(clippy::unit_cmp, clippy::needless_return)]
 
-#[allow(unused_imports)]
-use anodized::{spec, types::Spec};
+use anodized::spec;
 use std::cell::RefCell;
 
 struct ExecLog(RefCell<Vec<&'static str>>);

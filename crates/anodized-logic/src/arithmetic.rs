@@ -5,12 +5,6 @@ use num_bigint::BigInt;
 #[repr(transparent)]
 pub struct int(BigInt);
 
-impl crate::types::Spec for int {
-    fn predicate(&self) -> bool {
-        true
-    }
-}
-
 mod interop;
 use interop::impl_primitive_interop;
 

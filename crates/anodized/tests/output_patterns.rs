@@ -1,7 +1,7 @@
 #![cfg_attr(anodized_charon, feature(register_tool))]
 #![cfg_attr(anodized_charon, register_tool(charon))]
 
-use anodized::{spec, types::Spec};
+use anodized::spec;
 
 #[spec(
     ensures: |(a, b)| [
@@ -27,20 +27,16 @@ pub fn sort_pair_i32_fail_postcondition() {
     ensures: |(a, b)| a <= b,
 )]
 #[allow(unused)]
-pub fn sort_pair<T: Ord + Spec>(pair: (T, T)) -> (T, T) {
+pub fn sort_pair<T: Ord>(pair: (T, T)) -> (T, T) {
     // Deliberately wrong implementation to break the spec.
     pair
 }
-
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-#[spec(maintains: self.0 != 42)]
-pub struct NonFortyTwoI32(pub i32);
 
 #[cfg(all(anodized_print, anodized_panic))]
 #[test]
 #[should_panic(expected = "postcondition failed")]
 pub fn sort_pair_fail_postcondition() {
-    sort_pair((NonFortyTwoI32(5), NonFortyTwoI32(2)));
+    sort_pair((5, 2));
 }
 
 #[spec(ensures: |(mut a, b)| a <= b)]
