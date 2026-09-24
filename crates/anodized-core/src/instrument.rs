@@ -26,16 +26,12 @@ pub enum Mode {
 
 #[derive(Debug, Clone)]
 pub struct SpecEmbedding {
-    /// Enforce data type refinements at function boundaries.
-    pub check_data: bool,
     /// Emit Charon's `contract` attributes on spec elements.
     pub uses_charon: bool,
 }
 
 #[derive(Debug, Clone)]
 pub struct CheckSettings {
-    /// Enforce data type refinements at function boundaries.
-    pub check_data: bool,
     /// Print errors about violated clauses.
     pub does_print: bool,
     /// Panic on a violated pre/postcondition or invariant.
@@ -53,7 +49,6 @@ pub struct RawCfg {
     pub anodized_discard_specs: bool,
     pub anodized_embed_specs: bool,
     pub anodized_charon: bool,
-    pub anodized_check_data: bool,
     pub anodized_panic: bool,
     pub anodized_print: bool,
     pub anodized_try: bool,
@@ -65,7 +60,6 @@ impl RawCfg {
             anodized_discard_specs: _,
             anodized_embed_specs,
             anodized_charon,
-            anodized_check_data: _,
             anodized_panic,
             anodized_print,
             anodized_try,
@@ -82,7 +76,7 @@ impl Mode {
         let (any_static, any_runtime) = raw_cfg.get_any_static_any_runtime();
 
         if raw_cfg.anodized_discard_specs {
-            if any_static || any_runtime || raw_cfg.anodized_check_data {
+            if any_static || any_runtime {
                 panic!(
                     "`anodized_discard_specs` is incompatible with all other `anodized_*` settings"
                 );
@@ -95,7 +89,6 @@ impl Mode {
                 );
             }
             Self::EmbedSpecs(SpecEmbedding {
-                check_data: raw_cfg.anodized_check_data,
                 uses_charon: raw_cfg.anodized_charon,
             })
         } else {
@@ -103,7 +96,6 @@ impl Mode {
                 panic!("`anodized_try` requires `anodized_panic`");
             }
             Self::InjectChecks(CheckSettings {
-                check_data: raw_cfg.anodized_check_data,
                 does_print: raw_cfg.anodized_print,
                 does_panic: if raw_cfg.anodized_panic {
                     Some(PanicSettings {
@@ -155,7 +147,7 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
             ));
         }
 
-        if let Self::EmbedSpecs(embedding) = self {
+        if let Self::EmbedSpecs(_) = self {
             // Embed `spec` elements as `__anodized_fn_*` items.
             let attrs: [Attribute; 2] = [
                 parse_quote!(#[doc(hidden)]),
@@ -174,13 +166,9 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
                 "__anodized_fn_requires",
                 &item_fn.sig,
             );
-            if embedding.check_data {
-                sanitize_input_patterns(&mut spec_requires_sig.inputs, &spec.input_spec_flags);
-            }
+            sanitize_input_patterns(&mut spec_requires_sig.inputs, &spec.input_spec_flags);
             let spec_requires_body = Self::build_precondition_fn_body(
-                embedding
-                    .check_data
-                    .then(|| spec_requires_sig.inputs.iter().zip(&spec.input_spec_flags)),
+                Some(spec_requires_sig.inputs.iter().zip(&spec.input_spec_flags)),
                 &spec.requires,
                 &spec.maintains,
             );
@@ -196,14 +184,10 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
                 "__anodized_fn_ensures",
                 &item_fn.sig,
             );
-            if embedding.check_data {
-                sanitize_input_patterns(&mut spec_ensures_sig.inputs, &spec.input_spec_flags);
-            }
+            sanitize_input_patterns(&mut spec_ensures_sig.inputs, &spec.input_spec_flags);
             let spec_ensures_body = Self::build_postcondition_fn_body(
-                embedding
-                    .check_data
-                    .then(|| spec_ensures_sig.inputs.iter().zip(&spec.input_spec_flags)),
-                (embedding.check_data && spec.output_spec_flag).then_some(&item_fn.sig.output),
+                Some(spec_ensures_sig.inputs.iter().zip(&spec.input_spec_flags)),
+                spec.output_spec_flag.then_some(&item_fn.sig.output),
                 &spec.maintains,
                 &spec.captures,
                 &spec.ensures,
@@ -332,7 +316,6 @@ impl Mode {
         anodized_discard_specs: false,
         anodized_embed_specs: false,
         anodized_charon: false,
-        anodized_check_data: false,
         anodized_panic: false,
         anodized_print: false,
         anodized_try: false,
@@ -342,7 +325,6 @@ impl Mode {
         anodized_discard_specs: false,
         anodized_embed_specs: true,
         anodized_charon: false,
-        anodized_check_data: false,
         anodized_panic: false,
         anodized_print: false,
         anodized_try: false,
@@ -352,7 +334,6 @@ impl Mode {
         anodized_discard_specs: false,
         anodized_embed_specs: false,
         anodized_charon: true,
-        anodized_check_data: false,
         anodized_panic: false,
         anodized_print: false,
         anodized_try: false,
@@ -364,31 +345,21 @@ impl CheckSettings {
     pub(crate) const DEFAULT: Self = Self {
         does_print: false,
         does_panic: None,
-        check_data: false,
-    };
-
-    pub(crate) const CHECK_DATA: Self = Self {
-        does_print: false,
-        does_panic: None,
-        check_data: true,
     };
 
     pub(crate) const PRINT: Self = Self {
         does_print: true,
         does_panic: None,
-        check_data: false,
     };
 
     pub(crate) const PRINT_AND_PANIC: Self = Self {
         does_print: true,
         does_panic: Some(PanicSettings { has_try_fn: false }),
-        check_data: false,
     };
 
     pub(crate) const PRINT_AND_TRY: Self = Self {
         does_print: true,
         does_panic: Some(PanicSettings { has_try_fn: true }),
-        check_data: false,
     };
 }
 

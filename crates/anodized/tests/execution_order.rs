@@ -2,7 +2,8 @@
 #![cfg_attr(anodized_charon, register_tool(charon))]
 #![allow(clippy::unit_cmp, clippy::needless_return)]
 
-use anodized::spec;
+#[allow(unused_imports)]
+use anodized::{spec, types::Spec};
 use std::cell::RefCell;
 
 struct ExecLog(RefCell<Vec<&'static str>>);
@@ -169,24 +170,24 @@ fn async_execution_order() {
 }
 
 #[spec(maintains: { self.log.push(self.label); true })]
-struct TypeWithSpec<'a> {
+pub struct TypeWithSpec<'a> {
     label: &'static str,
     log: &'a ExecLog,
 }
 
 #[spec]
 pub fn func_io<'a>(
-    i1: TypeWithSpec<'a>,
-    _: &mut TypeWithSpec,
-    _: &TypeWithSpec,
-) -> TypeWithSpec<'a> {
+    i1: Spec!(TypeWithSpec<'a>),
+    _: Spec!(&mut TypeWithSpec, inout),
+    _: Spec!(&TypeWithSpec),
+) -> Spec!(TypeWithSpec<'a>) {
     TypeWithSpec {
         label: "o1",
         log: i1.log,
     }
 }
 
-#[cfg(all(anodized_panic, anodized_check_data))]
+#[cfg(anodized_panic)]
 #[test]
 fn data_check_execution_order() {
     let log = ExecLog::new();
@@ -205,5 +206,5 @@ fn data_check_execution_order() {
     };
     let _ = func_io(i1, &mut i2, &i3);
 
-    assert_eq!(log.into_vec(), ["i1", "i2", "i3", "o1", "i1", "i2", "i3"]);
+    assert_eq!(log.into_vec(), ["i1", "i2", "i3", "o1", "i2"]);
 }

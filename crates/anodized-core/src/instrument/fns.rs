@@ -31,9 +31,7 @@ impl Mode {
             return Ok(());
         };
 
-        if check_config.check_data {
-            sanitize_input_patterns(&mut sig.inputs, &spec.input_spec_flags);
-        }
+        sanitize_input_patterns(&mut sig.inputs, &spec.input_spec_flags);
 
         // Instrument the function.
         check_config.instrument_fn_sig_and_body(spec, sig, body)?;
@@ -218,11 +216,7 @@ impl CheckSettings {
         sig: &Signature,
         body: &mut Block,
     ) -> Result<()> {
-        let inputs = if self.check_data {
-            Some(sig.inputs.iter().zip(&spec.input_spec_flags))
-        } else {
-            None
-        };
+        let inputs = Some(sig.inputs.iter().zip(&spec.input_spec_flags));
 
         let (output_expr, precond_fail_action, postcond_fail_action) =
             if let Some(ref panic_settings) = self.does_panic
@@ -291,7 +285,7 @@ impl CheckSettings {
         // Generate postcondition checks.
         emit_postcondition_checks(
             inputs,
-            (self.check_data && spec.output_spec_flag).then_some(return_type),
+            spec.output_spec_flag.then_some(return_type),
             &spec.maintains,
             &spec.ensures,
             &mut stmts,

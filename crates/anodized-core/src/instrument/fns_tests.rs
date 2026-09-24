@@ -177,7 +177,7 @@ fn default_instrument_item_fn() {
 }
 
 #[test]
-fn check_data_instrument_item_fn() {
+fn type_spec_enforcement_instrument_item_fn() {
     let spec_item_fn: SpecItemFn = parse_quote! {
         #[spec(
             requires: COND_1,
@@ -238,14 +238,14 @@ fn check_data_instrument_item_fn() {
         }
     };
 
-    let observed = Mode::InjectChecks(CheckSettings::CHECK_DATA)
+    let observed = Mode::InjectChecks(CheckSettings::DEFAULT)
         .instrument_item_fn(spec_item_fn.spec, spec_item_fn.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
-fn check_data_spec_marker_input_out() {
+fn type_spec_enforcement_spec_marker_input_out() {
     let spec_item_fn: SpecItemFn = parse_quote! {
         #[spec]
         fn FUNC(INPUT: Spec!(&mut TYPE, out)) -> Spec!(RET_TYPE) {
@@ -275,14 +275,14 @@ fn check_data_spec_marker_input_out() {
         }
     };
 
-    let observed = Mode::InjectChecks(CheckSettings::CHECK_DATA)
+    let observed = Mode::InjectChecks(CheckSettings::DEFAULT)
         .instrument_item_fn(spec_item_fn.spec, spec_item_fn.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
-fn check_data_spec_marker_input() {
+fn type_spec_enforcement_spec_marker_input() {
     let spec_item_fn: SpecItemFn = parse_quote! {
         #[spec]
         fn FUNC(INPUT: Spec!(TYPE)) -> Spec!(RET_TYPE) {
@@ -308,14 +308,14 @@ fn check_data_spec_marker_input() {
         }
     };
 
-    let observed = Mode::InjectChecks(CheckSettings::CHECK_DATA)
+    let observed = Mode::InjectChecks(CheckSettings::DEFAULT)
         .instrument_item_fn(spec_item_fn.spec, spec_item_fn.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
-fn check_data_unmarked_input() {
+fn type_spec_enforcement_unmarked_input() {
     let spec_item_fn: SpecItemFn = parse_quote! {
         #[spec]
         fn FUNC(INPUT: TYPE) -> Spec!(RET_TYPE) {
@@ -336,14 +336,14 @@ fn check_data_unmarked_input() {
         }
     };
 
-    let observed = Mode::InjectChecks(CheckSettings::CHECK_DATA)
+    let observed = Mode::InjectChecks(CheckSettings::DEFAULT)
         .instrument_item_fn(spec_item_fn.spec, spec_item_fn.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
 }
 
 #[test]
-fn check_data_unmarked_output() {
+fn type_spec_enforcement_unmarked_output() {
     let spec_item_fn: SpecItemFn = parse_quote! {
         #[spec]
         fn FUNC() -> RET_TYPE {
@@ -362,7 +362,7 @@ fn check_data_unmarked_output() {
         }
     };
 
-    let observed = Mode::InjectChecks(CheckSettings::CHECK_DATA)
+    let observed = Mode::InjectChecks(CheckSettings::DEFAULT)
         .instrument_item_fn(spec_item_fn.spec, spec_item_fn.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);

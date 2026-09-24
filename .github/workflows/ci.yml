@@ -62,8 +62,6 @@ jobs:
           - toolchain: stable
             flags: '--config ''build.rustflags=["--cfg","anodized_print","--cfg","anodized_panic"]'''
           - toolchain: stable
-            flags: '--config ''build.rustflags=["--cfg","anodized_check_data","--cfg","anodized_print","--cfg","anodized_panic"]'''
-          - toolchain: stable
             flags: '--config ''build.rustflags=["--cfg","anodized_print","--cfg","anodized_panic","--cfg","anodized_try"]'''
           - toolchain: nightly
             flags: '+nightly --config ''build.rustflags=["--cfg","anodized_embed_specs","--cfg","anodized_charon"]'''

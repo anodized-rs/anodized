@@ -45,7 +45,7 @@ impl Mode {
                         parse_quote!(#[allow(warnings)]),
                     ];
 
-                    if let Self::EmbedSpecs(embedding) = self {
+                    if let Self::EmbedSpecs(_) = self {
                         // Embed `spec` elements as `__anodized_fn_*` items.
                         let mut spec_requires_attrs = attrs.to_vec();
                         let mut spec_requires_sig = self.build_precondition_fn_sig(
@@ -53,14 +53,14 @@ impl Mode {
                             "__anodized_fn_requires",
                             &func.sig,
                         );
-                        if embedding.check_data {
+                        {
                             sanitize_input_patterns(
                                 &mut spec_requires_sig.inputs,
                                 &fn_spec.input_spec_flags,
                             );
                         }
                         let spec_requires_body = Self::build_precondition_fn_body(
-                            embedding.check_data.then(|| {
+                            Some({
                                 spec_requires_sig
                                     .inputs
                                     .iter()
@@ -81,21 +81,20 @@ impl Mode {
                             "__anodized_fn_ensures",
                             &func.sig,
                         );
-                        if embedding.check_data {
+                        {
                             sanitize_input_patterns(
                                 &mut spec_ensures_sig.inputs,
                                 &fn_spec.input_spec_flags,
                             );
                         }
                         let spec_ensures_body = Self::build_postcondition_fn_body(
-                            embedding.check_data.then(|| {
+                            Some({
                                 spec_ensures_sig
                                     .inputs
                                     .iter()
                                     .zip(&fn_spec.input_spec_flags)
                             }),
-                            (embedding.check_data && fn_spec.output_spec_flag)
-                                .then_some(&func.sig.output),
+                            fn_spec.output_spec_flag.then_some(&func.sig.output),
                             &fn_spec.maintains,
                             &fn_spec.captures,
                             &fn_spec.ensures,
@@ -249,7 +248,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         parse_quote!(#[allow(warnings)]),
                     ];
 
-                    if let Self::EmbedSpecs(embedding) = self {
+                    if let Self::EmbedSpecs(_) = self {
                         // Embed `spec` elements as `__anodized_fn_*` items.
                         let mut spec_requires_attrs = attrs.to_vec();
                         let mut spec_requires_sig = self.build_precondition_fn_sig(
@@ -257,14 +256,14 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                             "__anodized_fn_requires",
                             &func.sig,
                         );
-                        if embedding.check_data {
+                        {
                             sanitize_input_patterns(
                                 &mut spec_requires_sig.inputs,
                                 &fn_spec.input_spec_flags,
                             );
                         }
                         let spec_requires_body = Self::build_precondition_fn_body(
-                            embedding.check_data.then(|| {
+                            Some({
                                 spec_requires_sig
                                     .inputs
                                     .iter()
@@ -286,21 +285,20 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                             "__anodized_fn_ensures",
                             &func.sig,
                         );
-                        if embedding.check_data {
+                        {
                             sanitize_input_patterns(
                                 &mut spec_ensures_sig.inputs,
                                 &fn_spec.input_spec_flags,
                             );
                         }
                         let spec_ensures_body = Self::build_postcondition_fn_body(
-                            embedding.check_data.then(|| {
+                            Some({
                                 spec_ensures_sig
                                     .inputs
                                     .iter()
                                     .zip(&fn_spec.input_spec_flags)
                             }),
-                            (embedding.check_data && fn_spec.output_spec_flag)
-                                .then_some(&func.sig.output),
+                            fn_spec.output_spec_flag.then_some(&func.sig.output),
                             &fn_spec.maintains,
                             &fn_spec.captures,
                             &fn_spec.ensures,

@@ -18,7 +18,6 @@ proc-macro = true
 level = "warn"
 check-cfg = [
     "cfg(anodized_charon)",
-    "cfg(anodized_check_data)",
     "cfg(anodized_discard_specs)",
     "cfg(anodized_embed_specs)",
     "cfg(anodized_panic)",

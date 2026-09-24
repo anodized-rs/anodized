@@ -15,7 +15,6 @@ const CONFIG: Mode = Mode::from_raw_cfg(RawCfg {
     anodized_discard_specs: cfg!(anodized_discard_specs),
     anodized_embed_specs: cfg!(anodized_embed_specs),
     anodized_charon: cfg!(anodized_charon),
-    anodized_check_data: cfg!(anodized_check_data),
     anodized_panic: cfg!(anodized_panic),
     anodized_print: cfg!(anodized_print),
     anodized_try: cfg!(anodized_try),

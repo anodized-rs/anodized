@@ -152,7 +152,7 @@ fn default_instrument_item_impl() {
 }
 
 #[test]
-fn check_data_instrument_item_impl() {
+fn type_spec_enforcement_instrument_item_impl() {
     let spec_item_impl: SpecItemImpl = parse_quote! {
         #[spec]
         impl IMPL_TYPE {
@@ -220,7 +220,7 @@ fn check_data_instrument_item_impl() {
         }
     };
 
-    let observed = Mode::InjectChecks(CheckSettings::CHECK_DATA)
+    let observed = Mode::InjectChecks(CheckSettings::DEFAULT)
         .instrument_item_impl(spec_item_impl.spec, spec_item_impl.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
