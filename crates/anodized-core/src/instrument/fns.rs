@@ -385,11 +385,11 @@ fn emit_precondition_checks<'a, 'b>(
                     let self_token = &receiver.self_token;
                     let expr = if receiver.reference.is_some() {
                         parse_quote! {
-                            <Self as ::anodized::types::Spec>::predicate(#self_token)
+                            ::anodized::__::eval_type_spec(#self_token)
                         }
                     } else {
                         parse_quote! {
-                            <Self as ::anodized::types::Spec>::predicate(&#self_token)
+                            ::anodized::__::eval_type_spec(&#self_token)
                         }
                     };
 
@@ -399,9 +399,8 @@ fn emit_precondition_checks<'a, 'b>(
                     let message = format!("precondition failed: type spec of input {}", i + 1);
                     let ident =
                         Ident::new(&format!("__anodized_input_{}", i + 1), pat_type.pat.span());
-                    let ty = &pat_type.ty;
                     let expr = parse_quote! {
-                        <#ty as ::anodized::types::Spec>::predicate(&#ident)
+                        ::anodized::__::eval_type_spec(&#ident)
                     };
 
                     input_idents.push(ident);
@@ -503,13 +502,9 @@ fn emit_postcondition_checks<'a, 'b>(
         let __anodized_post = true;
     });
 
-    if let Some(return_type) = output_spec {
-        let output_type: Type = match return_type {
-            ReturnType::Default => parse_quote!(()),
-            ReturnType::Type(_, output_type) => *output_type.clone(),
-        };
+    if output_spec.is_some() {
         let expr = parse_quote! {
-            <#output_type as ::anodized::types::Spec>::predicate(&__anodized_output)
+            ::anodized::__::eval_type_spec(&__anodized_output)
         };
         let instrumented_eval = instrument_eval(
             &expr,
@@ -535,11 +530,11 @@ fn emit_postcondition_checks<'a, 'b>(
                     let self_token = &receiver.self_token;
                     let expr = if receiver.reference.is_some() {
                         parse_quote! {
-                            <Self as ::anodized::types::Spec>::predicate(#self_token)
+                            ::anodized::__::eval_type_spec(#self_token)
                         }
                     } else {
                         parse_quote! {
-                            <Self as ::anodized::types::Spec>::predicate(&#self_token)
+                            ::anodized::__::eval_type_spec(&#self_token)
                         }
                     };
 
@@ -549,9 +544,8 @@ fn emit_postcondition_checks<'a, 'b>(
                     let message = format!("postcondition failed: type spec of input {}", i + 1);
                     let ident =
                         Ident::new(&format!("__anodized_input_{}", i + 1), pat_type.pat.span());
-                    let ty = &pat_type.ty;
                     let expr = parse_quote! {
-                        <#ty as ::anodized::types::Spec>::predicate(&#ident)
+                        ::anodized::__::eval_type_spec(&#ident)
                     };
 
                     if let TamePat::Invertible(pat, _) = tame_pat {
