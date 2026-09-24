@@ -6,7 +6,7 @@ use syn::{
 
 use crate::syntax::path_matches_name;
 
-/// Represents a valid `Spec!`-marked type.
+/// A `Spec!`-marked type.
 ///
 /// Has three valid forms:
 /// - `Spec!(T)`
