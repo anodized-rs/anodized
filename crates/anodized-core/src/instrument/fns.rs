@@ -375,7 +375,7 @@ fn emit_precondition_checks<'a, 'b>(
             };
             let instrumented_eval = match input {
                 FnArg::Receiver(receiver) => {
-                    let message = "precondition failed: type spec of `self`";
+                    let message = "precondition failed: type spec of `self`, `{}`";
                     let self_token = &receiver.self_token;
                     let expr = if receiver.reference.is_some() {
                         parse_quote! {
@@ -390,7 +390,8 @@ fn emit_precondition_checks<'a, 'b>(
                     instrument_eval(&expr, &None, message, &expr)
                 }
                 FnArg::Typed(pat_type) => {
-                    let message = format!("precondition failed: type spec of input {}", i + 1);
+                    let message =
+                        format!("precondition failed: type spec of input {}, `{{}}`", i + 1);
                     let ident =
                         Ident::new(&format!("__anodized_input_{}", i + 1), pat_type.pat.span());
                     let expr = parse_quote! {
@@ -503,7 +504,7 @@ fn emit_postcondition_checks<'a, 'b>(
         let instrumented_eval = instrument_eval(
             &expr,
             &None,
-            "postcondition failed: type spec of output",
+            "postcondition failed: type spec of output, `{}`",
             &expr,
         );
         statements.push(build_postcond_check(&None, &instrumented_eval));
@@ -520,7 +521,7 @@ fn emit_postcondition_checks<'a, 'b>(
             };
             let instrumented_eval = match input {
                 FnArg::Receiver(receiver) => {
-                    let message = "postcondition failed: type spec of `self`";
+                    let message = "postcondition failed: type spec of `self`, `{}`";
                     let self_token = &receiver.self_token;
                     let expr = if receiver.reference.is_some() {
                         parse_quote! {
@@ -535,7 +536,8 @@ fn emit_postcondition_checks<'a, 'b>(
                     instrument_eval(&expr, &None, message, &expr)
                 }
                 FnArg::Typed(pat_type) => {
-                    let message = format!("postcondition failed: type spec of input {}", i + 1);
+                    let message =
+                        format!("postcondition failed: type spec of input {}, `{{}}`", i + 1);
                     let ident =
                         Ident::new(&format!("__anodized_input_{}", i + 1), pat_type.pat.span());
                     let expr = parse_quote! {
