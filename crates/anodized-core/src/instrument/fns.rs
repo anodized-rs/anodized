@@ -362,12 +362,9 @@ fn emit_precondition_checks<'a, 'b>(
     // Enforce type specs of inputs.
 
     for (i, (input, flags)) in inputs.clone().enumerate() {
-        let Some(_) = flags
-            .on_entry()
-            .or_else(|| flags.on_exit().map(TamePat::get_pat))
-        else {
+        if flags.on_entry().is_none() {
             continue;
-        };
+        }
         let instrumented_eval = match input {
             FnArg::Receiver(receiver) => {
                 let message = "precondition failed: type spec of `self`, `{}`";
@@ -381,7 +378,6 @@ fn emit_precondition_checks<'a, 'b>(
                         ::anodized::__::eval_type_spec(&#self_token)
                     }
                 };
-
                 instrument_eval(&expr, &None, message, &expr)
             }
             FnArg::Typed(pat_type) => {
@@ -390,11 +386,6 @@ fn emit_precondition_checks<'a, 'b>(
                 let expr = parse_quote! {
                     ::anodized::__::eval_type_spec(&#ident)
                 };
-
-                if flags.on_entry().is_none() {
-                    continue;
-                }
-
                 instrument_eval(&expr, &None, &message, &expr)
             }
         };
