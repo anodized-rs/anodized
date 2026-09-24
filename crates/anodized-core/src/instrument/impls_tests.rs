@@ -161,7 +161,11 @@ fn check_data_instrument_item_impl() {
                 maintains: COND_2,
                 ensures: |OUT_PAT| COND_3,
             )]
-            fn FUNC(&self, INPUT_1: TYPE_1, ref INPUT_2: TYPE_2) -> RET_TYPE {
+            fn FUNC(
+                self: Spec!(&Self, inout),
+                INPUT_1: Spec!(TYPE_1, inout),
+                ref INPUT_2: Spec!(TYPE_2, inout),
+            ) -> Spec!(RET_TYPE) {
                 BODY
             }
         }
@@ -169,7 +173,7 @@ fn check_data_instrument_item_impl() {
 
     let expected: TokenStream = parse_quote! {
         impl IMPL_TYPE {
-            fn FUNC(&self, __anodized_input_2: TYPE_1, __anodized_input_3: TYPE_2) -> RET_TYPE {
+            fn FUNC(self: &Self, __anodized_input_2: TYPE_1, __anodized_input_3: TYPE_2) -> RET_TYPE {
                 // Coerce inputs to prevent weird errors about refutable patterns.
                 #[allow(unused)]
                 let _ = |INPUT_1: TYPE_1| ();
@@ -178,7 +182,7 @@ fn check_data_instrument_item_impl() {
                 // Check input type specs.
                 let __anodized_pre = true;
                 let __anodized_pre = __anodized_pre &
-                    (true || <Self as ::anodized::types::Spec>::predicate(self));
+                    (true || <Self as ::anodized::types::Spec>::predicate(&self));
                 let __anodized_pre = __anodized_pre &
                     (true || <TYPE_1 as ::anodized::types::Spec>::predicate(&__anodized_input_2));
                 let __anodized_pre = __anodized_pre &
@@ -204,7 +208,7 @@ fn check_data_instrument_item_impl() {
                     <RET_TYPE as ::anodized::types::Spec>::predicate(&__anodized_output));
                 // Check input type specs again. Needed to correctly handle e.g. `&mut T` inputs.
                 let __anodized_post = __anodized_post &
-                    (true || <Self as ::anodized::types::Spec>::predicate(self));
+                    (true || <Self as ::anodized::types::Spec>::predicate(&self));
                 let __anodized_post = __anodized_post &
                     (true || <TYPE_1 as ::anodized::types::Spec>::predicate(&__anodized_input_2));
                 let __anodized_post = __anodized_post &

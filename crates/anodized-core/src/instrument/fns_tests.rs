@@ -184,7 +184,10 @@ fn check_data_instrument_item_fn() {
             maintains: COND_2,
             ensures: |OUT_PAT| COND_3,
         )]
-        fn FUNC(INPUT_1: TYPE_1, ref INPUT_2: TYPE_2) -> RET_TYPE {
+        fn FUNC(
+            INPUT_1: Spec!(TYPE_1, inout),
+            ref INPUT_2: Spec!(TYPE_2, inout),
+        ) -> Spec!(RET_TYPE) {
             BODY
         }
     };
@@ -249,9 +252,10 @@ fn check_data_instrument_item_fn() {
 }
 
 #[test]
-fn check_data_unspec_input_in() {
+fn check_data_spec_marker_input_out() {
     let spec_item_fn: SpecItemFn = parse_quote! {
-        fn FUNC(#[unspec(in)] INPUT: TYPE) -> RET_TYPE {
+        #[spec]
+        fn FUNC(INPUT: Spec!(TYPE, out)) -> Spec!(RET_TYPE) {
             BODY
         }
     };
@@ -285,9 +289,10 @@ fn check_data_unspec_input_in() {
 }
 
 #[test]
-fn check_data_unspec_input_out() {
+fn check_data_spec_marker_input() {
     let spec_item_fn: SpecItemFn = parse_quote! {
-        fn FUNC(#[unspec(out)] INPUT: TYPE) -> RET_TYPE {
+        #[spec]
+        fn FUNC(INPUT: Spec!(TYPE)) -> Spec!(RET_TYPE) {
             BODY
         }
     };
@@ -317,9 +322,10 @@ fn check_data_unspec_input_out() {
 }
 
 #[test]
-fn check_data_unspec_input() {
+fn check_data_unmarked_input() {
     let spec_item_fn: SpecItemFn = parse_quote! {
-        fn FUNC(#[unspec] INPUT: TYPE) -> RET_TYPE {
+        #[spec]
+        fn FUNC(INPUT: TYPE) -> Spec!(RET_TYPE) {
             BODY
         }
     };
@@ -344,9 +350,9 @@ fn check_data_unspec_input() {
 }
 
 #[test]
-fn check_data_unspec_output_out() {
+fn check_data_unmarked_output() {
     let spec_item_fn: SpecItemFn = parse_quote! {
-        #[unspec(out)]
+        #[spec]
         fn FUNC() -> RET_TYPE {
             BODY
         }
