@@ -473,7 +473,7 @@ fn simple_requires() {
     CheckSettings::PRINT_AND_PANIC
         .instrument_fn_sig_and_body(
             &spec_item_fn.spec,
-            &mut spec_item_fn.node.sig,
+            &spec_item_fn.node.sig,
             &mut spec_item_fn.node.block,
         )
         .unwrap();
@@ -503,7 +503,7 @@ fn requires_disable_runtime_checks() {
     CheckSettings::DEFAULT
         .instrument_fn_sig_and_body(
             &spec_item_fn.spec,
-            &mut spec_item_fn.node.sig,
+            &spec_item_fn.node.sig,
             &mut spec_item_fn.node.block,
         )
         .unwrap();
@@ -533,7 +533,7 @@ fn requires_no_panic_runtime() {
     CheckSettings::PRINT
         .instrument_fn_sig_and_body(
             &spec_item_fn.spec,
-            &mut spec_item_fn.node.sig,
+            &spec_item_fn.node.sig,
             &mut spec_item_fn.node.block,
         )
         .unwrap();
@@ -569,7 +569,7 @@ fn simple_maintains() {
     CheckSettings::PRINT_AND_PANIC
         .instrument_fn_sig_and_body(
             &spec_item_fn.spec,
-            &mut spec_item_fn.node.sig,
+            &spec_item_fn.node.sig,
             &mut spec_item_fn.node.block,
         )
         .unwrap();
@@ -603,7 +603,7 @@ fn simple_ensures() {
     CheckSettings::PRINT_AND_PANIC
         .instrument_fn_sig_and_body(
             &spec_item_fn.spec,
-            &mut spec_item_fn.node.sig,
+            &spec_item_fn.node.sig,
             &mut spec_item_fn.node.block,
         )
         .unwrap();
@@ -644,7 +644,7 @@ fn simple_requires_and_maintains() {
     CheckSettings::PRINT_AND_PANIC
         .instrument_fn_sig_and_body(
             &spec_item_fn.spec,
-            &mut spec_item_fn.node.sig,
+            &spec_item_fn.node.sig,
             &mut spec_item_fn.node.block,
         )
         .unwrap();
@@ -683,7 +683,7 @@ fn simple_requires_and_ensures() {
     CheckSettings::PRINT_AND_PANIC
         .instrument_fn_sig_and_body(
             &spec_item_fn.spec,
-            &mut spec_item_fn.node.sig,
+            &spec_item_fn.node.sig,
             &mut spec_item_fn.node.block,
         )
         .unwrap();
@@ -724,7 +724,7 @@ fn simple_maintains_and_ensures() {
     CheckSettings::PRINT_AND_PANIC
         .instrument_fn_sig_and_body(
             &spec_item_fn.spec,
-            &mut spec_item_fn.node.sig,
+            &spec_item_fn.node.sig,
             &mut spec_item_fn.node.block,
         )
         .unwrap();
@@ -768,7 +768,7 @@ fn simple_requires_maintains_and_ensures() {
     CheckSettings::PRINT_AND_PANIC
         .instrument_fn_sig_and_body(
             &spec_item_fn.spec,
-            &mut spec_item_fn.node.sig,
+            &spec_item_fn.node.sig,
             &mut spec_item_fn.node.block,
         )
         .unwrap();
@@ -812,7 +812,7 @@ fn simple_async_requires_maintains_and_ensures() {
     CheckSettings::PRINT_AND_PANIC
         .instrument_fn_sig_and_body(
             &spec_item_fn.spec,
-            &mut spec_item_fn.node.sig,
+            &spec_item_fn.node.sig,
             &mut spec_item_fn.node.block,
         )
         .unwrap();
@@ -864,7 +864,7 @@ fn multiple_conditions_in_clauses() {
     CheckSettings::PRINT_AND_PANIC
         .instrument_fn_sig_and_body(
             &spec_item_fn.spec,
-            &mut spec_item_fn.node.sig,
+            &spec_item_fn.node.sig,
             &mut spec_item_fn.node.block,
         )
         .unwrap();
@@ -906,7 +906,7 @@ fn postcond_closure_form() {
     CheckSettings::PRINT_AND_PANIC
         .instrument_fn_sig_and_body(
             &spec_item_fn.spec,
-            &mut spec_item_fn.node.sig,
+            &spec_item_fn.node.sig,
             &mut spec_item_fn.node.block,
         )
         .unwrap();
@@ -951,7 +951,7 @@ fn postcond_borrowing_closure_form() {
     CheckSettings::PRINT_AND_PANIC
         .instrument_fn_sig_and_body(
             &spec_item_fn.spec,
-            &mut spec_item_fn.node.sig,
+            &spec_item_fn.node.sig,
             &mut spec_item_fn.node.block,
         )
         .unwrap();
@@ -996,7 +996,7 @@ fn ensures_with_mixed_conditions() {
     CheckSettings::PRINT_AND_PANIC
         .instrument_fn_sig_and_body(
             &spec_item_fn.spec,
-            &mut spec_item_fn.node.sig,
+            &spec_item_fn.node.sig,
             &mut spec_item_fn.node.block,
         )
         .unwrap();
@@ -1051,7 +1051,7 @@ fn cfg_attributes() {
     CheckSettings::PRINT_AND_PANIC
         .instrument_fn_sig_and_body(
             &spec_item_fn.spec,
-            &mut spec_item_fn.node.sig,
+            &spec_item_fn.node.sig,
             &mut spec_item_fn.node.block,
         )
         .unwrap();
@@ -1109,7 +1109,7 @@ fn cfg_on_single_and_list_conditions() {
     CheckSettings::PRINT_AND_PANIC
         .instrument_fn_sig_and_body(
             &spec_item_fn.spec,
-            &mut spec_item_fn.node.sig,
+            &spec_item_fn.node.sig,
             &mut spec_item_fn.node.block,
         )
         .unwrap();
@@ -1187,7 +1187,7 @@ fn complex_mixed_conditions() {
     CheckSettings::PRINT_AND_PANIC
         .instrument_fn_sig_and_body(
             &spec_item_fn.spec,
-            &mut spec_item_fn.node.sig,
+            &spec_item_fn.node.sig,
             &mut spec_item_fn.node.block,
         )
         .unwrap();
@@ -1239,7 +1239,7 @@ fn captures() {
     CheckSettings::PRINT_AND_PANIC
         .instrument_fn_sig_and_body(
             &spec_item_fn.spec,
-            &mut spec_item_fn.node.sig,
+            &spec_item_fn.node.sig,
             &mut spec_item_fn.node.block,
         )
         .unwrap();
