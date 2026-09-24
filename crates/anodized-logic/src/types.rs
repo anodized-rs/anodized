@@ -14,7 +14,7 @@
 #[macro_export]
 macro_rules! Spec {
     ($($tokens:tt)*) => {
-        compile_error!("`Spec!` must appear inside an item annotated with `#[spec]`");
+        compile_error!("`Spec!` must appear inside an item annotated with `#[spec]`")
     };
 }
 
