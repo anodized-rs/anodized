@@ -150,7 +150,7 @@ impl Mode {
     }
 
     pub fn build_precondition_fn_body<'a, 'b>(
-        inputs: Option<impl Iterator<Item = (&'a FnArg, &'b InputSpecFlags)> + Clone>,
+        inputs: impl Iterator<Item = (&'a FnArg, &'b InputSpecFlags)> + Clone,
         requires: &[Condition],
         maintains: &[Condition],
     ) -> Block {
@@ -167,7 +167,7 @@ impl Mode {
     }
 
     pub fn build_postcondition_fn_body<'a, 'b>(
-        inputs: Option<impl Iterator<Item = (&'a FnArg, &'b InputSpecFlags)> + Clone>,
+        inputs: impl Iterator<Item = (&'a FnArg, &'b InputSpecFlags)> + Clone,
         output_spec: Option<&ReturnType>,
         maintains: &[Condition],
         captures: &[Capture],
@@ -217,7 +217,7 @@ impl CheckSettings {
         sig: &Signature,
         body: &mut Block,
     ) -> Result<()> {
-        let inputs = Some(sig.inputs.iter().zip(&spec.input_spec_flags));
+        let inputs = sig.inputs.iter().zip(&spec.input_spec_flags);
 
         let (output_expr, precond_fail_action, postcond_fail_action) =
             if let Some(ref panic_settings) = self.does_panic
@@ -238,22 +238,20 @@ impl CheckSettings {
 
         let mut stmts: Vec<Stmt> = vec![];
 
-        if let Some(inputs) = inputs.clone() {
-            for (input, flags) in inputs {
-                let (FnArg::Typed(pat_type), Some(pat)) = (
-                    input,
-                    flags
-                        .on_entry()
-                        .or_else(|| flags.on_exit().map(TamePat::get_pat)),
-                ) else {
-                    continue;
-                };
-                let ty = &pat_type.ty;
-                stmts.push(parse_quote! {
-                    #[allow(unused)]
-                    let _ = |#pat: #ty| ();
-                });
-            }
+        for (input, flags) in inputs.clone() {
+            let (FnArg::Typed(pat_type), Some(pat)) = (
+                input,
+                flags
+                    .on_entry()
+                    .or_else(|| flags.on_exit().map(TamePat::get_pat)),
+            ) else {
+                continue;
+            };
+            let ty = &pat_type.ty;
+            stmts.push(parse_quote! {
+                #[allow(unused)]
+                let _ = |#pat: #ty| ();
+            });
         }
 
         // Generate precondition checks.
@@ -351,7 +349,7 @@ trait FnInstrumentEval: Fn(&Expr, &Option<Meta>, &str, &Expr) -> Expr {}
 impl<F: Fn(&Expr, &Option<Meta>, &str, &Expr) -> Expr> FnInstrumentEval for F {}
 
 fn emit_precondition_checks<'a, 'b>(
-    inputs: Option<impl Iterator<Item = (&'a FnArg, &'b InputSpecFlags)> + Clone>,
+    inputs: impl Iterator<Item = (&'a FnArg, &'b InputSpecFlags)> + Clone,
     requires: &[Condition],
     maintains: &[Condition],
     statements: &mut Vec<Stmt>,
@@ -361,54 +359,50 @@ fn emit_precondition_checks<'a, 'b>(
         let __anodized_pre = true;
     });
 
-    if let Some(inputs) = inputs {
-        // Check data specs of inputs.
+    // Enforce type specs of inputs.
 
-        for (i, (input, flags)) in inputs.clone().enumerate() {
-            let Some(_) = flags
-                .on_entry()
-                .or_else(|| flags.on_exit().map(TamePat::get_pat))
-            else {
-                continue;
-            };
-            let instrumented_eval = match input {
-                FnArg::Receiver(receiver) => {
-                    let message = "precondition failed: type spec of `self`, `{}`";
-                    let self_token = &receiver.self_token;
-                    let expr = if receiver.reference.is_some() {
-                        parse_quote! {
-                            ::anodized::__::eval_type_spec(#self_token)
-                        }
-                    } else {
-                        parse_quote! {
-                            ::anodized::__::eval_type_spec(&#self_token)
-                        }
-                    };
-
-                    instrument_eval(&expr, &None, message, &expr)
-                }
-                FnArg::Typed(pat_type) => {
-                    let message =
-                        format!("precondition failed: type spec of input {}, `{{}}`", i + 1);
-                    let ident =
-                        Ident::new(&format!("__anodized_input_{}", i + 1), pat_type.pat.span());
-                    let expr = parse_quote! {
-                        ::anodized::__::eval_type_spec(&#ident)
-                    };
-
-                    if flags.on_entry().is_none() {
-                        continue;
+    for (i, (input, flags)) in inputs.clone().enumerate() {
+        let Some(_) = flags
+            .on_entry()
+            .or_else(|| flags.on_exit().map(TamePat::get_pat))
+        else {
+            continue;
+        };
+        let instrumented_eval = match input {
+            FnArg::Receiver(receiver) => {
+                let message = "precondition failed: type spec of `self`, `{}`";
+                let self_token = &receiver.self_token;
+                let expr = if receiver.reference.is_some() {
+                    parse_quote! {
+                        ::anodized::__::eval_type_spec(#self_token)
                     }
+                } else {
+                    parse_quote! {
+                        ::anodized::__::eval_type_spec(&#self_token)
+                    }
+                };
 
-                    instrument_eval(&expr, &None, &message, &expr)
+                instrument_eval(&expr, &None, message, &expr)
+            }
+            FnArg::Typed(pat_type) => {
+                let message = format!("precondition failed: type spec of input {}, `{{}}`", i + 1);
+                let ident = Ident::new(&format!("__anodized_input_{}", i + 1), pat_type.pat.span());
+                let expr = parse_quote! {
+                    ::anodized::__::eval_type_spec(&#ident)
+                };
+
+                if flags.on_entry().is_none() {
+                    continue;
                 }
-            };
-            let check = build_precond_check(&instrumented_eval);
-            statements.push(check);
-        }
 
-        emit_input_bindings(Some(inputs), statements);
+                instrument_eval(&expr, &None, &message, &expr)
+            }
+        };
+        let check = build_precond_check(&instrumented_eval);
+        statements.push(check);
     }
+
+    emit_input_bindings(inputs, statements);
 
     for precondition in requires {
         let eval = build_cond_eval(&precondition.expr);
@@ -436,27 +430,25 @@ fn emit_precondition_checks<'a, 'b>(
 }
 
 fn emit_input_bindings<'a, 'b>(
-    inputs: Option<impl Iterator<Item = (&'a FnArg, &'b InputSpecFlags)>>,
+    inputs: impl Iterator<Item = (&'a FnArg, &'b InputSpecFlags)>,
     statements: &mut Vec<Stmt>,
 ) {
     let mut input_idents = vec![];
     let mut input_pats = vec![];
 
-    if let Some(inputs) = inputs {
-        for (i, (input, flags)) in inputs.enumerate() {
-            let FnArg::Typed(pat_type) = input else {
-                continue;
-            };
-            let Some(pat) = flags
-                .on_entry()
-                .or_else(|| flags.on_exit().map(TamePat::get_pat))
-            else {
-                continue;
-            };
-            let ident = Ident::new(&format!("__anodized_input_{}", i + 1), pat_type.pat.span());
-            input_idents.push(ident);
-            input_pats.push(pat);
-        }
+    for (i, (input, flags)) in inputs.enumerate() {
+        let FnArg::Typed(pat_type) = input else {
+            continue;
+        };
+        let Some(pat) = flags
+            .on_entry()
+            .or_else(|| flags.on_exit().map(TamePat::get_pat))
+        else {
+            continue;
+        };
+        let ident = Ident::new(&format!("__anodized_input_{}", i + 1), pat_type.pat.span());
+        input_idents.push(ident);
+        input_pats.push(pat);
     }
 
     if !input_pats.is_empty() {
@@ -467,7 +459,7 @@ fn emit_input_bindings<'a, 'b>(
 }
 
 fn emit_captures_and_output_binding<'a, 'b>(
-    inputs: Option<impl Iterator<Item = (&'a FnArg, &'b InputSpecFlags)>>,
+    inputs: impl Iterator<Item = (&'a FnArg, &'b InputSpecFlags)>,
     captures: &[Capture],
     output_eval: Expr,
     statements: &mut Vec<Stmt>,
@@ -485,17 +477,15 @@ fn emit_captures_and_output_binding<'a, 'b>(
     patterns.push(output_ident);
     values.push(output_eval);
 
-    if let Some(inputs) = inputs {
-        for (i, (input, flags)) in inputs.enumerate() {
-            let (FnArg::Typed(pat_type), Some(TamePat::Invertible(_, inv_expr))) =
-                (input, flags.on_exit())
-            else {
-                continue;
-            };
-            let ident = Ident::new(&format!("__anodized_input_{}", i + 1), pat_type.pat.span());
-            patterns.push(parse_quote! { #ident });
-            values.push(*inv_expr.clone());
-        }
+    for (i, (input, flags)) in inputs.enumerate() {
+        let (FnArg::Typed(pat_type), Some(TamePat::Invertible(_, inv_expr))) =
+            (input, flags.on_exit())
+        else {
+            continue;
+        };
+        let ident = Ident::new(&format!("__anodized_input_{}", i + 1), pat_type.pat.span());
+        patterns.push(parse_quote! { #ident });
+        values.push(*inv_expr.clone());
     }
 
     let binding = if patterns.len() > 1 {
@@ -508,7 +498,7 @@ fn emit_captures_and_output_binding<'a, 'b>(
 }
 
 fn emit_postcondition_checks<'a, 'b>(
-    inputs: Option<impl Iterator<Item = (&'a FnArg, &'b InputSpecFlags)>>,
+    inputs: impl Iterator<Item = (&'a FnArg, &'b InputSpecFlags)>,
     output_spec: Option<&ReturnType>,
     maintains: &[Condition],
     ensures: &[PostCondition],
@@ -532,57 +522,53 @@ fn emit_postcondition_checks<'a, 'b>(
         statements.push(build_postcond_check(&None, &instrumented_eval));
     }
 
-    if let Some(inputs) = inputs {
-        // Check data specs of inputs on exit.
+    // Enforce type specs of inputs on exit.
 
-        let mut input_idents = vec![];
-        let mut input_pats = vec![];
-        for (i, (input, flags)) in inputs.enumerate() {
-            let Some(tame_pat) = flags.on_exit() else {
-                continue;
-            };
-            let instrumented_eval = match input {
-                FnArg::Receiver(receiver) => {
-                    let message = "postcondition failed: type spec of `self`, `{}`";
-                    let self_token = &receiver.self_token;
-                    let expr = if receiver.reference.is_some() {
-                        parse_quote! {
-                            ::anodized::__::eval_type_spec(#self_token)
-                        }
-                    } else {
-                        parse_quote! {
-                            ::anodized::__::eval_type_spec(&#self_token)
-                        }
-                    };
-
-                    instrument_eval(&expr, &None, message, &expr)
-                }
-                FnArg::Typed(pat_type) => {
-                    let message =
-                        format!("postcondition failed: type spec of input {}, `{{}}`", i + 1);
-                    let ident =
-                        Ident::new(&format!("__anodized_input_{}", i + 1), pat_type.pat.span());
-                    let expr = parse_quote! {
-                        ::anodized::__::eval_type_spec(&#ident)
-                    };
-
-                    if let TamePat::Invertible(pat, _) = tame_pat {
-                        input_idents.push(ident);
-                        input_pats.push(pat);
+    let mut input_idents = vec![];
+    let mut input_pats = vec![];
+    for (i, (input, flags)) in inputs.enumerate() {
+        let Some(tame_pat) = flags.on_exit() else {
+            continue;
+        };
+        let instrumented_eval = match input {
+            FnArg::Receiver(receiver) => {
+                let message = "postcondition failed: type spec of `self`, `{}`";
+                let self_token = &receiver.self_token;
+                let expr = if receiver.reference.is_some() {
+                    parse_quote! {
+                        ::anodized::__::eval_type_spec(#self_token)
                     }
+                } else {
+                    parse_quote! {
+                        ::anodized::__::eval_type_spec(&#self_token)
+                    }
+                };
 
-                    instrument_eval(&expr, &None, &message, &expr)
+                instrument_eval(&expr, &None, message, &expr)
+            }
+            FnArg::Typed(pat_type) => {
+                let message = format!("postcondition failed: type spec of input {}, `{{}}`", i + 1);
+                let ident = Ident::new(&format!("__anodized_input_{}", i + 1), pat_type.pat.span());
+                let expr = parse_quote! {
+                    ::anodized::__::eval_type_spec(&#ident)
+                };
+
+                if let TamePat::Invertible(pat, _) = tame_pat {
+                    input_idents.push(ident);
+                    input_pats.push(pat);
                 }
-            };
-            let check = build_postcond_check(&None, &instrumented_eval);
-            statements.push(check);
-        }
 
-        if !input_pats.is_empty() {
-            statements.push(parse_quote! {
-                let (#(#input_pats),*) = (#(#input_idents),*) else { unreachable!() };
-            });
-        }
+                instrument_eval(&expr, &None, &message, &expr)
+            }
+        };
+        let check = build_postcond_check(&None, &instrumented_eval);
+        statements.push(check);
+    }
+
+    if !input_pats.is_empty() {
+        statements.push(parse_quote! {
+            let (#(#input_pats),*) = (#(#input_idents),*) else { unreachable!() };
+        });
     }
 
     for postinvariant in maintains {

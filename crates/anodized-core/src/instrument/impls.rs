@@ -64,12 +64,12 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                             );
                         }
                         let spec_requires_body = Self::build_precondition_fn_body(
-                            Some({
+                            {
                                 spec_requires_sig
                                     .inputs
                                     .iter()
                                     .zip(&fn_spec.input_spec_flags)
-                            }),
+                            },
                             &fn_spec.requires,
                             &fn_spec.maintains,
                         );
@@ -93,12 +93,12 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                             );
                         }
                         let spec_ensures_body = Self::build_postcondition_fn_body(
-                            Some({
+                            {
                                 spec_ensures_sig
                                     .inputs
                                     .iter()
                                     .zip(&fn_spec.input_spec_flags)
-                            }),
+                            },
                             fn_spec.output_spec_flag.then_some(&item_fn.sig.output),
                             &fn_spec.maintains,
                             &fn_spec.captures,

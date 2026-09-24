@@ -168,7 +168,7 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
             );
             sanitize_input_patterns(&mut spec_requires_sig.inputs, &spec.input_spec_flags);
             let spec_requires_body = Self::build_precondition_fn_body(
-                Some(spec_requires_sig.inputs.iter().zip(&spec.input_spec_flags)),
+                spec_requires_sig.inputs.iter().zip(&spec.input_spec_flags),
                 &spec.requires,
                 &spec.maintains,
             );
@@ -186,7 +186,7 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
             );
             sanitize_input_patterns(&mut spec_ensures_sig.inputs, &spec.input_spec_flags);
             let spec_ensures_body = Self::build_postcondition_fn_body(
-                Some(spec_ensures_sig.inputs.iter().zip(&spec.input_spec_flags)),
+                spec_ensures_sig.inputs.iter().zip(&spec.input_spec_flags),
                 spec.output_spec_flag.then_some(&item_fn.sig.output),
                 &spec.maintains,
                 &spec.captures,
