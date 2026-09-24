@@ -150,7 +150,7 @@ impl Mode {
     }
 
     pub fn build_precondition_fn_body<'a, 'b>(
-        inputs: Option<impl Iterator<Item = (&'a FnArg, &'b InputSpecFlags)>>,
+        inputs: Option<impl Iterator<Item = (&'a FnArg, &'b InputSpecFlags)> + Clone>,
         requires: &[Condition],
         maintains: &[Condition],
     ) -> Block {
@@ -177,6 +177,7 @@ impl Mode {
         let output_eval: Expr = parse_quote! {
             ::anodized::__::eval_once(|| { __anodized_output })
         };
+        emit_input_bindings(inputs.clone(), &mut stmts);
         emit_captures_and_output_binding(inputs.clone(), captures, output_eval, &mut stmts);
         emit_postcondition_checks(
             inputs,
@@ -350,7 +351,7 @@ trait FnInstrumentEval: Fn(&Expr, &Option<Meta>, &str, &Expr) -> Expr {}
 impl<F: Fn(&Expr, &Option<Meta>, &str, &Expr) -> Expr> FnInstrumentEval for F {}
 
 fn emit_precondition_checks<'a, 'b>(
-    inputs: Option<impl Iterator<Item = (&'a FnArg, &'b InputSpecFlags)>>,
+    inputs: Option<impl Iterator<Item = (&'a FnArg, &'b InputSpecFlags)> + Clone>,
     requires: &[Condition],
     maintains: &[Condition],
     statements: &mut Vec<Stmt>,
@@ -363,11 +364,8 @@ fn emit_precondition_checks<'a, 'b>(
     if let Some(inputs) = inputs {
         // Check data specs of inputs.
 
-        let mut input_idents = vec![];
-        let mut input_pats = vec![];
-
-        for (i, (input, flags)) in inputs.enumerate() {
-            let Some(pat) = flags
+        for (i, (input, flags)) in inputs.clone().enumerate() {
+            let Some(_) = flags
                 .on_entry()
                 .or_else(|| flags.on_exit().map(TamePat::get_pat))
             else {
@@ -398,9 +396,6 @@ fn emit_precondition_checks<'a, 'b>(
                         ::anodized::__::eval_type_spec(&#ident)
                     };
 
-                    input_idents.push(ident);
-                    input_pats.push(pat);
-
                     if flags.on_entry().is_none() {
                         continue;
                     }
@@ -412,11 +407,7 @@ fn emit_precondition_checks<'a, 'b>(
             statements.push(check);
         }
 
-        if !input_pats.is_empty() {
-            statements.push(parse_quote! {
-                let (#(#input_pats),*) = (#(#input_idents),*) else { unreachable!() };
-            });
-        }
+        emit_input_bindings(Some(inputs), statements);
     }
 
     for precondition in requires {
@@ -441,6 +432,37 @@ fn emit_precondition_checks<'a, 'b>(
         );
         let check = build_precond_check(&instrumented_eval);
         statements.push(check);
+    }
+}
+
+fn emit_input_bindings<'a, 'b>(
+    inputs: Option<impl Iterator<Item = (&'a FnArg, &'b InputSpecFlags)>>,
+    statements: &mut Vec<Stmt>,
+) {
+    let mut input_idents = vec![];
+    let mut input_pats = vec![];
+
+    if let Some(inputs) = inputs {
+        for (i, (input, flags)) in inputs.enumerate() {
+            let FnArg::Typed(pat_type) = input else {
+                continue;
+            };
+            let Some(pat) = flags
+                .on_entry()
+                .or_else(|| flags.on_exit().map(TamePat::get_pat))
+            else {
+                continue;
+            };
+            let ident = Ident::new(&format!("__anodized_input_{}", i + 1), pat_type.pat.span());
+            input_idents.push(ident);
+            input_pats.push(pat);
+        }
+    }
+
+    if !input_pats.is_empty() {
+        statements.push(parse_quote! {
+            let (#(#input_pats),*) = (#(#input_idents),*) else { unreachable!() };
+        });
     }
 }
 
