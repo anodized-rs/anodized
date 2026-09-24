@@ -185,26 +185,26 @@ fn check_data_instrument_item_fn() {
             ensures: |OUT_PAT| COND_3,
         )]
         fn FUNC(
-            INPUT_1: Spec!(TYPE_1, inout),
-            ref INPUT_2: Spec!(TYPE_2, inout),
+            INPUT_1: Spec!(TYPE_1),
+            ref INPUT_2: Spec!(&mut TYPE_2, inout),
         ) -> Spec!(RET_TYPE) {
             BODY
         }
     };
 
     let expected: TokenStream = parse_quote! {
-        fn FUNC(__anodized_input_1: TYPE_1, __anodized_input_2: TYPE_2) -> RET_TYPE {
+        fn FUNC(__anodized_input_1: TYPE_1, __anodized_input_2: &mut TYPE_2) -> RET_TYPE {
             // Coerce inputs to prevent weird errors about refutable patterns.
             #[allow(unused)]
             let _ = |INPUT_1: TYPE_1| ();
             #[allow(unused)]
-            let _ = |ref INPUT_2: TYPE_2| ();
+            let _ = |ref INPUT_2: &mut TYPE_2| ();
             // Check input type specs.
             let __anodized_pre = true;
             let __anodized_pre = __anodized_pre &
                 (true || <TYPE_1 as ::anodized::types::Spec>::predicate(&__anodized_input_1));
             let __anodized_pre = __anodized_pre &
-                (true || <TYPE_2 as ::anodized::types::Spec>::predicate(&__anodized_input_2));
+                (true || <&mut TYPE_2 as ::anodized::types::Spec>::predicate(&__anodized_input_2));
             // Bind input patterns.
             let (INPUT_1, ref INPUT_2) = (__anodized_input_1, __anodized_input_2) else {
                 unreachable!()
@@ -213,22 +213,15 @@ fn check_data_instrument_item_fn() {
             let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_1));
             let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_2));
             if !__anodized_pre {}
-            // Evaluate captures and the output, and unbind invertible input patterns.
-            let (__anodized_output, __anodized_input_1) = (
-                ::anodized::__::eval_once(|| -> RET_TYPE { BODY }),
-                INPUT_1,
-            );
+            // Evaluate captures and the output.
+            let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
             // Check output type spec.
             let __anodized_post = true;
             let __anodized_post = __anodized_post &
                 (true || <RET_TYPE as ::anodized::types::Spec>::predicate(&__anodized_output));
-            // Check input type specs again. Needed to correctly handle e.g. `&mut T` inputs.
+            // Enforce the mutable input's type spec after the body.
             let __anodized_post = __anodized_post &
-                (true || <TYPE_1 as ::anodized::types::Spec>::predicate(&__anodized_input_1));
-            let __anodized_post = __anodized_post &
-                (true || <TYPE_2 as ::anodized::types::Spec>::predicate(&__anodized_input_2));
-            // Re-bind invertible patterns.
-            let (INPUT_1) = (__anodized_input_1) else { unreachable!() };
+                (true || <&mut TYPE_2 as ::anodized::types::Spec>::predicate(&__anodized_input_2));
             // Check postconditions.
             let __anodized_post = __anodized_post &
                 (true || ::anodized::__::eval::<bool>(|| COND_2));

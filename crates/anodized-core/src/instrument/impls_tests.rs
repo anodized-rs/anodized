@@ -162,9 +162,9 @@ fn check_data_instrument_item_impl() {
                 ensures: |OUT_PAT| COND_3,
             )]
             fn FUNC(
-                self: Spec!(&Self, inout),
-                INPUT_1: Spec!(TYPE_1, inout),
-                ref INPUT_2: Spec!(TYPE_2, inout),
+                self: Spec!(&Self),
+                INPUT_1: Spec!(TYPE_1),
+                ref INPUT_2: Spec!(TYPE_2),
             ) -> Spec!(RET_TYPE) {
                 BODY
             }
@@ -197,24 +197,12 @@ fn check_data_instrument_item_impl() {
                 let __anodized_pre = __anodized_pre &
                     (true || ::anodized::__::eval::<bool>(|| COND_2));
                 if !__anodized_pre {}
-                // Bind captures and return value, and unbind invertible input patterns.
-                let (__anodized_output, __anodized_input_2) = (
-                    ::anodized::__::eval_once(|| -> RET_TYPE { BODY }),
-                    INPUT_1,
-                );
+                // Bind captures and return value.
+                let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
                 // Check output type spec.
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & (true ||
                     <RET_TYPE as ::anodized::types::Spec>::predicate(&__anodized_output));
-                // Check input type specs again. Needed to correctly handle e.g. `&mut T` inputs.
-                let __anodized_post = __anodized_post &
-                    (true || <Self as ::anodized::types::Spec>::predicate(&self));
-                let __anodized_post = __anodized_post &
-                    (true || <TYPE_1 as ::anodized::types::Spec>::predicate(&__anodized_input_2));
-                let __anodized_post = __anodized_post &
-                    (true || <TYPE_2 as ::anodized::types::Spec>::predicate(&__anodized_input_3));
-                // Re-bind invertible patterns.
-                let (INPUT_1) = (__anodized_input_2) else { unreachable!() };
                 // Check postconditions.
                 let __anodized_post = __anodized_post &
                     (true || ::anodized::__::eval::<bool>(|| COND_2));
