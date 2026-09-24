@@ -202,9 +202,9 @@ fn check_data_instrument_item_fn() {
             // Check input type specs.
             let __anodized_pre = true;
             let __anodized_pre = __anodized_pre &
-                (true || <TYPE_1 as ::anodized::types::Spec>::predicate(&__anodized_input_1));
+                (true || ::anodized::__::eval_type_spec(&__anodized_input_1));
             let __anodized_pre = __anodized_pre &
-                (true || <&mut TYPE_2 as ::anodized::types::Spec>::predicate(&__anodized_input_2));
+                (true || ::anodized::__::eval_type_spec(&__anodized_input_2));
             // Bind input patterns.
             let (INPUT_1, ref INPUT_2) = (__anodized_input_1, __anodized_input_2) else {
                 unreachable!()
@@ -218,10 +218,10 @@ fn check_data_instrument_item_fn() {
             // Check output type spec.
             let __anodized_post = true;
             let __anodized_post = __anodized_post &
-                (true || <RET_TYPE as ::anodized::types::Spec>::predicate(&__anodized_output));
+                (true || ::anodized::__::eval_type_spec(&__anodized_output));
             // Enforce the mutable input's type spec after the body.
             let __anodized_post = __anodized_post &
-                (true || <&mut TYPE_2 as ::anodized::types::Spec>::predicate(&__anodized_input_2));
+                (true || ::anodized::__::eval_type_spec(&__anodized_input_2));
             // Check postconditions.
             let __anodized_post = __anodized_post &
                 (true || ::anodized::__::eval::<bool>(|| COND_2));
@@ -266,9 +266,9 @@ fn check_data_spec_marker_input_out() {
             );
             let __anodized_post = true;
             let __anodized_post = __anodized_post &
-                (true || <RET_TYPE as ::anodized::types::Spec>::predicate(&__anodized_output));
+                (true || ::anodized::__::eval_type_spec(&__anodized_output));
             let __anodized_post = __anodized_post &
-                (true || <&mut TYPE as ::anodized::types::Spec>::predicate(&__anodized_input_1));
+                (true || ::anodized::__::eval_type_spec(&__anodized_input_1));
             let (INPUT) = (__anodized_input_1) else { unreachable!() };
             if !__anodized_post {}
             __anodized_output
@@ -296,13 +296,13 @@ fn check_data_spec_marker_input() {
             let _ = |INPUT: TYPE| ();
             let __anodized_pre = true;
             let __anodized_pre = __anodized_pre &
-                (true || <TYPE as ::anodized::types::Spec>::predicate(&__anodized_input_1));
+                (true || ::anodized::__::eval_type_spec(&__anodized_input_1));
             let (INPUT) = (__anodized_input_1) else { unreachable!() };
             if !__anodized_pre {}
             let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
             let __anodized_post = true;
             let __anodized_post = __anodized_post &
-                (true || <RET_TYPE as ::anodized::types::Spec>::predicate(&__anodized_output));
+                (true || ::anodized::__::eval_type_spec(&__anodized_output));
             if !__anodized_post {}
             __anodized_output
         }
@@ -330,7 +330,7 @@ fn check_data_unmarked_input() {
             let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
             let __anodized_post = true;
             let __anodized_post = __anodized_post &
-                (true || <RET_TYPE as ::anodized::types::Spec>::predicate(&__anodized_output));
+                (true || ::anodized::__::eval_type_spec(&__anodized_output));
             if !__anodized_post {}
             __anodized_output
         }

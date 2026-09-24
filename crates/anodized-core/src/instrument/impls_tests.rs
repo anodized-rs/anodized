@@ -182,11 +182,11 @@ fn check_data_instrument_item_impl() {
                 // Check input type specs.
                 let __anodized_pre = true;
                 let __anodized_pre = __anodized_pre &
-                    (true || <Self as ::anodized::types::Spec>::predicate(&self));
+                    (true || ::anodized::__::eval_type_spec(&self));
                 let __anodized_pre = __anodized_pre &
-                    (true || <TYPE_1 as ::anodized::types::Spec>::predicate(&__anodized_input_2));
+                    (true || ::anodized::__::eval_type_spec(&__anodized_input_2));
                 let __anodized_pre = __anodized_pre &
-                    (true || <TYPE_2 as ::anodized::types::Spec>::predicate(&__anodized_input_3));
+                    (true || ::anodized::__::eval_type_spec(&__anodized_input_3));
                 // Bind input patterns.
                 let (INPUT_1, ref INPUT_2) = (__anodized_input_2, __anodized_input_3) else {
                     unreachable!()
@@ -202,7 +202,7 @@ fn check_data_instrument_item_impl() {
                 // Check output type spec.
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & (true ||
-                    <RET_TYPE as ::anodized::types::Spec>::predicate(&__anodized_output));
+                    ::anodized::__::eval_type_spec(&__anodized_output));
                 // Check postconditions.
                 let __anodized_post = __anodized_post &
                     (true || ::anodized::__::eval::<bool>(|| COND_2));
