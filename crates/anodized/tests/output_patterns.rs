@@ -1,7 +1,7 @@
 #![cfg_attr(anodized_charon, feature(register_tool))]
 #![cfg_attr(anodized_charon, register_tool(charon))]
 
-use anodized::{spec, types::Refine};
+use anodized::{spec, types::Spec};
 
 #[spec(
     ensures: |(a, b)| [
@@ -27,7 +27,7 @@ pub fn sort_pair_i32_fail_postcondition() {
     ensures: |(a, b)| a <= b,
 )]
 #[allow(unused)]
-pub fn sort_pair<T: Ord + Refine>(pair: (T, T)) -> (T, T) {
+pub fn sort_pair<T: Ord + Spec>(pair: (T, T)) -> (T, T) {
     // Deliberately wrong implementation to break the spec.
     pair
 }

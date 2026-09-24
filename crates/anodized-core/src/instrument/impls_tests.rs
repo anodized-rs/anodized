@@ -178,11 +178,11 @@ fn check_data_instrument_item_impl() {
                 // Check input type specs.
                 let __anodized_pre = true;
                 let __anodized_pre = __anodized_pre &
-                    (true || <Self as ::anodized::types::Refine>::predicate(self));
+                    (true || <Self as ::anodized::types::Spec>::predicate(self));
                 let __anodized_pre = __anodized_pre &
-                    (true || <TYPE_1 as ::anodized::types::Refine>::predicate(&__anodized_input_2));
+                    (true || <TYPE_1 as ::anodized::types::Spec>::predicate(&__anodized_input_2));
                 let __anodized_pre = __anodized_pre &
-                    (true || <TYPE_2 as ::anodized::types::Refine>::predicate(&__anodized_input_3));
+                    (true || <TYPE_2 as ::anodized::types::Spec>::predicate(&__anodized_input_3));
                 // Bind input patterns.
                 let (INPUT_1, ref INPUT_2) = (__anodized_input_2, __anodized_input_3) else {
                     unreachable!()
@@ -201,14 +201,14 @@ fn check_data_instrument_item_impl() {
                 // Check output type spec.
                 let __anodized_post = true;
                 let __anodized_post = __anodized_post & (true ||
-                    <RET_TYPE as ::anodized::types::Refine>::predicate(&__anodized_output));
+                    <RET_TYPE as ::anodized::types::Spec>::predicate(&__anodized_output));
                 // Check input type specs again. Needed to correctly handle e.g. `&mut T` inputs.
                 let __anodized_post = __anodized_post &
-                    (true || <Self as ::anodized::types::Refine>::predicate(self));
+                    (true || <Self as ::anodized::types::Spec>::predicate(self));
                 let __anodized_post = __anodized_post &
-                    (true || <TYPE_1 as ::anodized::types::Refine>::predicate(&__anodized_input_2));
+                    (true || <TYPE_1 as ::anodized::types::Spec>::predicate(&__anodized_input_2));
                 let __anodized_post = __anodized_post &
-                    (true || <TYPE_2 as ::anodized::types::Refine>::predicate(&__anodized_input_3));
+                    (true || <TYPE_2 as ::anodized::types::Spec>::predicate(&__anodized_input_3));
                 // Re-bind invertible patterns.
                 let (INPUT_1) = (__anodized_input_2) else { unreachable!() };
                 // Check postconditions.

@@ -1,39 +1,49 @@
+pub use anodized_macros::Spec;
+
 #[diagnostic::on_unimplemented(
     label = "type at the boundary of a `#[spec]`",
     message = "\
-type spec enforcement needs `{Self}` to implement trait `anodized::types::Refine`",
+type spec enforcement needs `{Self}` to implement trait `anodized::types::Spec`",
     note = "\
 if `{Self}` is a concrete local type, place a `#[spec]` attribute on its definition",
     note = "\
 if `{Self}` is a concrete foreign type, wrap it in a local type such as `struct NewType({Self})`",
     note = "\
-if `{Self}` is a type parameter, restrict it with the trait `{Self}: Refine`",
+if `{Self}` is a type parameter, restrict it with the trait `{Self}: Spec`",
     note = "\
-*UNSAFE*: alternatively, use `#[uncheck]` to locally disable type spec enforcement here"
+remove the surrounding `Spec!(...)` marker to disable type spec enforcement here"
 )]
-pub trait Refine {
+/// Defines a type refinement.
+pub trait Spec {
+    /// Returns `true` for a valid value and `false` otherwise.
     fn predicate(&self) -> bool;
 }
 
-impl<T: Refine + ?Sized> Refine for &T {
+impl<T: Spec + ?Sized> Spec for &T {
     fn predicate(&self) -> bool {
-        <T as Refine>::predicate(self)
+        <T as Spec>::predicate(self)
     }
 }
 
-impl<T: Refine + ?Sized> Refine for &mut T {
+impl<T: Spec + ?Sized> Spec for &mut T {
     fn predicate(&self) -> bool {
-        <T as Refine>::predicate(self)
+        <T as Spec>::predicate(self)
     }
 }
 
-impl<T: Refine> Refine for [T] {
+impl<T: Spec> Spec for [T] {
     fn predicate(&self) -> bool {
-        self.iter().all(<T as Refine>::predicate)
+        self.iter().all(<T as Spec>::predicate)
     }
 }
 
-impl<T: Refine> Refine for Option<T> {
+impl<T: Spec, const N: usize> Spec for [T; N] {
+    fn predicate(&self) -> bool {
+        self.iter().all(<T as Spec>::predicate)
+    }
+}
+
+impl<T: Spec> Spec for Option<T> {
     fn predicate(&self) -> bool {
         match self {
             Some(inner) => inner.predicate(),
@@ -42,7 +52,7 @@ impl<T: Refine> Refine for Option<T> {
     }
 }
 
-impl<T: Refine, E: Refine> Refine for Result<T, E> {
+impl<T: Spec, E: Spec> Spec for Result<T, E> {
     fn predicate(&self) -> bool {
         match self {
             Ok(okay) => okay.predicate(),
@@ -51,59 +61,37 @@ impl<T: Refine, E: Refine> Refine for Result<T, E> {
     }
 }
 
-impl<T: Refine + ?Sized> Refine for Box<T> {
+impl<T: Spec + ?Sized> Spec for Box<T> {
     fn predicate(&self) -> bool {
         self.as_ref().predicate()
     }
 }
 
-impl<T: Refine> Refine for Vec<T> {
+impl<T: Spec> Spec for Vec<T> {
     fn predicate(&self) -> bool {
-        <[T] as Refine>::predicate(self.as_slice())
+        <[T] as Spec>::predicate(self.as_slice())
     }
 }
 
-impl Refine for () {
-    fn predicate(&self) -> bool {
-        true
-    }
-}
-
-impl<T1: Refine + ?Sized> Refine for (T1,) {
-    fn predicate(&self) -> bool {
-        self.0.predicate()
-    }
-}
-
-impl<T1: Refine, T2: Refine + ?Sized> Refine for (T1, T2) {
-    fn predicate(&self) -> bool {
-        self.0.predicate() && self.1.predicate()
-    }
-}
-
-impl<T1: Refine, T2: Refine, T3: Refine + ?Sized> Refine for (T1, T2, T3) {
-    fn predicate(&self) -> bool {
-        self.0.predicate() && self.1.predicate() && self.2.predicate()
-    }
-}
-
-/// Implement `Refine` for concrete types, with `predicate` always `true`.
-#[macro_export]
-macro_rules! trivial_refinement {
-    ($($ty:ty),+ $(,)?) => {
-        $(
-            impl $crate::types::Refine for $ty {
-                fn predicate(&self) -> bool { true }
+macro_rules! tuple_spec {
+    () => {
+        impl Spec for () {
+            fn predicate(&self) -> bool {
+                true
             }
-        )+
+        }
+    };
+    ($last:ident $($head:ident)*) => {
+        tuple_spec!($($head)*);
+
+        impl<$($head: Spec,)* $last: Spec + ?Sized> Spec for ($($head,)* $last,) {
+            #[allow(non_snake_case)]
+            fn predicate(&self) -> bool {
+                let ($($head,)* $last,) = self;
+                true $(&& $head.predicate())* && $last.predicate()
+            }
+        }
     };
 }
 
-#[rustfmt::skip]
-trivial_refinement!(
-    bool,
-    u8, u16, u32, u64, u128, usize,
-    i8, i16, i32, i64, i128, isize,
-    f32, f64,
-    char, str, String,
-);
+tuple_spec!(T12 T11 T10 T9 T8 T7 T6 T5 T4 T3 T2 T1);

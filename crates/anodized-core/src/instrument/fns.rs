@@ -385,11 +385,11 @@ fn emit_precondition_checks<'a, 'b>(
                     let self_token = &receiver.self_token;
                     let expr = if receiver.reference.is_some() {
                         parse_quote! {
-                            <Self as ::anodized::types::Refine>::predicate(#self_token)
+                            <Self as ::anodized::types::Spec>::predicate(#self_token)
                         }
                     } else {
                         parse_quote! {
-                            <Self as ::anodized::types::Refine>::predicate(&#self_token)
+                            <Self as ::anodized::types::Spec>::predicate(&#self_token)
                         }
                     };
 
@@ -401,7 +401,7 @@ fn emit_precondition_checks<'a, 'b>(
                         Ident::new(&format!("__anodized_input_{}", i + 1), pat_type.pat.span());
                     let ty = &pat_type.ty;
                     let expr = parse_quote! {
-                        <#ty as ::anodized::types::Refine>::predicate(&#ident)
+                        <#ty as ::anodized::types::Spec>::predicate(&#ident)
                     };
 
                     input_idents.push(ident);
@@ -509,7 +509,7 @@ fn emit_postcondition_checks<'a, 'b>(
             ReturnType::Type(_, output_type) => *output_type.clone(),
         };
         let expr = parse_quote! {
-            <#output_type as ::anodized::types::Refine>::predicate(&__anodized_output)
+            <#output_type as ::anodized::types::Spec>::predicate(&__anodized_output)
         };
         let instrumented_eval = instrument_eval(
             &expr,
@@ -535,11 +535,11 @@ fn emit_postcondition_checks<'a, 'b>(
                     let self_token = &receiver.self_token;
                     let expr = if receiver.reference.is_some() {
                         parse_quote! {
-                            <Self as ::anodized::types::Refine>::predicate(#self_token)
+                            <Self as ::anodized::types::Spec>::predicate(#self_token)
                         }
                     } else {
                         parse_quote! {
-                            <Self as ::anodized::types::Refine>::predicate(&#self_token)
+                            <Self as ::anodized::types::Spec>::predicate(&#self_token)
                         }
                     };
 
@@ -551,7 +551,7 @@ fn emit_postcondition_checks<'a, 'b>(
                         Ident::new(&format!("__anodized_input_{}", i + 1), pat_type.pat.span());
                     let ty = &pat_type.ty;
                     let expr = parse_quote! {
-                        <#ty as ::anodized::types::Refine>::predicate(&#ident)
+                        <#ty as ::anodized::types::Spec>::predicate(&#ident)
                     };
 
                     if let TamePat::Invertible(pat, _) = tame_pat {

@@ -199,9 +199,9 @@ fn check_data_instrument_item_fn() {
             // Check input type specs.
             let __anodized_pre = true;
             let __anodized_pre = __anodized_pre &
-                (true || <TYPE_1 as ::anodized::types::Refine>::predicate(&__anodized_input_1));
+                (true || <TYPE_1 as ::anodized::types::Spec>::predicate(&__anodized_input_1));
             let __anodized_pre = __anodized_pre &
-                (true || <TYPE_2 as ::anodized::types::Refine>::predicate(&__anodized_input_2));
+                (true || <TYPE_2 as ::anodized::types::Spec>::predicate(&__anodized_input_2));
             // Bind input patterns.
             let (INPUT_1, ref INPUT_2) = (__anodized_input_1, __anodized_input_2) else {
                 unreachable!()
@@ -218,12 +218,12 @@ fn check_data_instrument_item_fn() {
             // Check output type spec.
             let __anodized_post = true;
             let __anodized_post = __anodized_post &
-                (true || <RET_TYPE as ::anodized::types::Refine>::predicate(&__anodized_output));
+                (true || <RET_TYPE as ::anodized::types::Spec>::predicate(&__anodized_output));
             // Check input type specs again. Needed to correctly handle e.g. `&mut T` inputs.
             let __anodized_post = __anodized_post &
-                (true || <TYPE_1 as ::anodized::types::Refine>::predicate(&__anodized_input_1));
+                (true || <TYPE_1 as ::anodized::types::Spec>::predicate(&__anodized_input_1));
             let __anodized_post = __anodized_post &
-                (true || <TYPE_2 as ::anodized::types::Refine>::predicate(&__anodized_input_2));
+                (true || <TYPE_2 as ::anodized::types::Spec>::predicate(&__anodized_input_2));
             // Re-bind invertible patterns.
             let (INPUT_1) = (__anodized_input_1) else { unreachable!() };
             // Check postconditions.
@@ -269,9 +269,9 @@ fn check_data_unspec_input_in() {
             );
             let __anodized_post = true;
             let __anodized_post = __anodized_post &
-                (true || <RET_TYPE as ::anodized::types::Refine>::predicate(&__anodized_output));
+                (true || <RET_TYPE as ::anodized::types::Spec>::predicate(&__anodized_output));
             let __anodized_post = __anodized_post &
-                (true || <TYPE as ::anodized::types::Refine>::predicate(&__anodized_input_1));
+                (true || <TYPE as ::anodized::types::Spec>::predicate(&__anodized_input_1));
             let (INPUT) = (__anodized_input_1) else { unreachable!() };
             if !__anodized_post {}
             __anodized_output
@@ -298,13 +298,13 @@ fn check_data_unspec_input_out() {
             let _ = |INPUT: TYPE| ();
             let __anodized_pre = true;
             let __anodized_pre = __anodized_pre &
-                (true || <TYPE as ::anodized::types::Refine>::predicate(&__anodized_input_1));
+                (true || <TYPE as ::anodized::types::Spec>::predicate(&__anodized_input_1));
             let (INPUT) = (__anodized_input_1) else { unreachable!() };
             if !__anodized_pre {}
             let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
             let __anodized_post = true;
             let __anodized_post = __anodized_post &
-                (true || <RET_TYPE as ::anodized::types::Refine>::predicate(&__anodized_output));
+                (true || <RET_TYPE as ::anodized::types::Spec>::predicate(&__anodized_output));
             if !__anodized_post {}
             __anodized_output
         }
@@ -331,7 +331,7 @@ fn check_data_unspec_input() {
             let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
             let __anodized_post = true;
             let __anodized_post = __anodized_post &
-                (true || <RET_TYPE as ::anodized::types::Refine>::predicate(&__anodized_output));
+                (true || <RET_TYPE as ::anodized::types::Spec>::predicate(&__anodized_output));
             if !__anodized_post {}
             __anodized_output
         }
