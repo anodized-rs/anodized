@@ -175,7 +175,11 @@ struct TypeWithSpec<'a> {
 }
 
 #[spec]
-fn func_io<'a>(i1: TypeWithSpec<'a>, _: &mut TypeWithSpec, _: &TypeWithSpec) -> TypeWithSpec<'a> {
+pub fn func_io<'a>(
+    i1: TypeWithSpec<'a>,
+    _: &mut TypeWithSpec,
+    _: &TypeWithSpec,
+) -> TypeWithSpec<'a> {
     TypeWithSpec {
         label: "o1",
         log: i1.log,
