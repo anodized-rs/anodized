@@ -185,8 +185,8 @@ fn type_spec_enforcement_instrument_item_fn() {
             ensures: |OUT_PAT| COND_3,
         )]
         fn FUNC(
-            INPUT_1: Spec!(TYPE_1),
-            ref INPUT_2: Spec!(&mut TYPE_2, inout),
+            ref INPUT_1: Spec!(TYPE_1),
+            INPUT_2: Spec!(&mut TYPE_2, inout),
         ) -> Spec!(RET_TYPE) {
             BODY
         }
@@ -196,9 +196,9 @@ fn type_spec_enforcement_instrument_item_fn() {
         fn FUNC(__anodized_input_1: TYPE_1, __anodized_input_2: &mut TYPE_2) -> RET_TYPE {
             // Coerce inputs to prevent weird errors about refutable patterns.
             #[allow(unused)]
-            let _ = |INPUT_1: TYPE_1| ();
+            let _ = |ref INPUT_1: TYPE_1| ();
             #[allow(unused)]
-            let _ = |ref INPUT_2: &mut TYPE_2| ();
+            let _ = |INPUT_2: &mut TYPE_2| ();
             // Check input type specs.
             let __anodized_pre = true;
             let __anodized_pre = __anodized_pre &
@@ -206,15 +206,18 @@ fn type_spec_enforcement_instrument_item_fn() {
             let __anodized_pre = __anodized_pre &
                 (true || ::anodized::__::eval_type_spec(&__anodized_input_2));
             // Bind input patterns.
-            let (INPUT_1, ref INPUT_2) = (__anodized_input_1, __anodized_input_2) else {
+            let (ref INPUT_1, INPUT_2) = (__anodized_input_1, __anodized_input_2) else {
                 unreachable!()
             };
             // Check preconditions.
             let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_1));
             let __anodized_pre = __anodized_pre & (true || ::anodized::__::eval::<bool>(|| COND_2));
             if !__anodized_pre {}
-            // Evaluate captures and the output.
-            let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
+            // Evaluate captures, the output, and `inout` inputs.
+            let (__anodized_output, __anodized_input_2) = (
+                ::anodized::__::eval_once(|| -> RET_TYPE { BODY }),
+                INPUT_2,
+            );
             // Check output type spec.
             let __anodized_post = true;
             let __anodized_post = __anodized_post &
@@ -222,6 +225,7 @@ fn type_spec_enforcement_instrument_item_fn() {
             // Enforce the mutable input's type spec after the body.
             let __anodized_post = __anodized_post &
                 (true || ::anodized::__::eval_type_spec(&__anodized_input_2));
+            let (INPUT_2) = (__anodized_input_2) else { unreachable!() };
             // Check postconditions.
             let __anodized_post = __anodized_post &
                 (true || ::anodized::__::eval::<bool>(|| COND_2));
