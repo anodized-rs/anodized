@@ -14,7 +14,7 @@ use syn::{
 
 use crate::{
     Capture, Condition, FnSpec, InputSpecFlags, PostCondition,
-    instrument::{CheckSettings, Mode, patterns::TamePat},
+    instrument::{CheckSettings, Mode, SpecEmbedding, patterns::TamePat},
     qualifiers::FnQualifiers,
 };
 
@@ -45,9 +45,7 @@ impl Mode {
         prefix: &str,
         sig: &Signature,
     ) -> Signature {
-        if let Self::EmbedSpecs(embedding) = self
-            && embedding.uses_charon
-        {
+        if let Self::EmbedSpecs(SpecEmbedding { uses_charon: true }) = self {
             let sibling = syn::LitStr::new(&sig.ident.to_string(), sig.ident.span());
             attrs.push(parse_quote!(
                 #[charon::contract(kind = "precondition", for = #sibling)]
@@ -74,9 +72,7 @@ impl Mode {
         prefix: &str,
         sig: &Signature,
     ) -> Signature {
-        if let Self::EmbedSpecs(embedding) = self
-            && embedding.uses_charon
-        {
+        if let Self::EmbedSpecs(SpecEmbedding { uses_charon: true }) = self {
             let sibling = syn::LitStr::new(&sig.ident.to_string(), sig.ident.span());
             attrs.push(parse_quote!(
                 #[charon::contract(kind = "postcondition", for = #sibling)]
