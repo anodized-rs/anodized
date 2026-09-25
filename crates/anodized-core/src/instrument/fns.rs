@@ -4,7 +4,8 @@ mod fns_tests;
 
 use quote::ToTokens;
 use syn::{
-    Attribute, Block, Expr, FnArg, Ident, Meta, Pat, Path, ReturnType, Signature, Stmt, Type,
+    Attribute, Block, Expr, FnArg, Ident, Meta, Pat, Path, ReturnType, Signature, Stmt, Token,
+    Type,
     parse::{Parse, Result},
     parse_quote, parse_quote_spanned,
     punctuated::Punctuated,
@@ -365,14 +366,12 @@ fn emit_precondition_checks<'a, 'b>(
             FnArg::Receiver(receiver) => {
                 let message = "precondition failed: type spec of `self`, `{}`";
                 let self_token = &receiver.self_token;
-                let expr = if receiver.reference.is_some() {
-                    parse_quote! {
-                        ::anodized::__::eval_type_spec(#self_token)
-                    }
-                } else {
-                    parse_quote! {
-                        ::anodized::__::eval_type_spec(&#self_token)
-                    }
+                let and_token: Option<Token![&]> = match receiver.reference {
+                    Some(_) => None,
+                    None => Some(Default::default()),
+                };
+                let expr = parse_quote! {
+                    ::anodized::__::eval_type_spec(#and_token #self_token)
                 };
                 instrument_eval(&expr, &None, message, &expr)
             }
@@ -521,16 +520,13 @@ fn emit_postcondition_checks<'a, 'b>(
             FnArg::Receiver(receiver) => {
                 let message = "postcondition failed: type spec of `self`, `{}`";
                 let self_token = &receiver.self_token;
-                let expr = if receiver.reference.is_some() {
-                    parse_quote! {
-                        ::anodized::__::eval_type_spec(#self_token)
-                    }
-                } else {
-                    parse_quote! {
-                        ::anodized::__::eval_type_spec(&#self_token)
-                    }
+                let and_token: Option<Token![&]> = match receiver.reference {
+                    Some(_) => None,
+                    None => Some(Default::default()),
                 };
-
+                let expr = parse_quote! {
+                    ::anodized::__::eval_type_spec(#and_token #self_token)
+                };
                 instrument_eval(&expr, &None, message, &expr)
             }
             FnArg::Typed(pat_type) => {
@@ -539,12 +535,10 @@ fn emit_postcondition_checks<'a, 'b>(
                 let expr = parse_quote! {
                     ::anodized::__::eval_type_spec(&#ident)
                 };
-
                 if let TamePat::Invertible(pat, _) = tame_pat {
                     input_idents.push(ident);
                     input_pats.push(pat);
                 }
-
                 instrument_eval(&expr, &None, &message, &expr)
             }
         };
