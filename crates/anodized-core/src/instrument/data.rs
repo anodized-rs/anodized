@@ -134,7 +134,7 @@ impl Mode {
                         };
                         if *spec_flag {
                             field_predicate_calls.push(parse_quote! {
-                                ::anodized::types::Spec::predicate(#field_name)
+                                ::anodized::__::eval_type_spec(#field_name)
                             });
                             Some(field_name)
                         } else {
@@ -160,7 +160,7 @@ impl Mode {
                             let field_name =
                                 Ident::new(&format!("field_{index}"), Span::call_site());
                             field_predicate_calls.push(parse_quote! {
-                                ::anodized::types::Spec::predicate(#field_name)
+                                ::anodized::__::eval_type_spec(#field_name)
                             });
                             parse_quote! { #field_name }
                         } else {

@@ -43,9 +43,9 @@ fn embed_spec_item_struct() {
             fn predicate(&self) -> bool {
                 let __anodized_inv = match self {
                     STRUCT { FIELD_1, FIELD_2, FIELD_3 } => {
-                        ::anodized::types::Spec::predicate(FIELD_1)
-                            & ::anodized::types::Spec::predicate(FIELD_2)
-                            & ::anodized::types::Spec::predicate(FIELD_3)
+                        ::anodized::__::eval_type_spec(FIELD_1)
+                            & ::anodized::__::eval_type_spec(FIELD_2)
+                            & ::anodized::__::eval_type_spec(FIELD_3)
                     }
                 };
                 let __anodized_inv = __anodized_inv & ::anodized::__::eval::<bool>(|| COND_1);
@@ -100,13 +100,13 @@ fn default_instrument_item_enum() {
             fn predicate(&self) -> bool {
                 use ENUM::*;
                 let __anodized_inv = match self {
-                    VARIANT_1(field_0) => ::anodized::types::Spec::predicate(field_0),
+                    VARIANT_1(field_0) => ::anodized::__::eval_type_spec(field_0),
                     VARIANT_2 { FIELD_1, FIELD_2 } => {
-                        ::anodized::types::Spec::predicate(FIELD_1)
-                            & ::anodized::types::Spec::predicate(FIELD_2)
+                        ::anodized::__::eval_type_spec(FIELD_1)
+                            & ::anodized::__::eval_type_spec(FIELD_2)
                     }
                     VARIANT_3 => true,
-                    VARIANT_4(field_0) => ::anodized::types::Spec::predicate(field_0),
+                    VARIANT_4(field_0) => ::anodized::__::eval_type_spec(field_0),
                 };
                 let __anodized_inv = __anodized_inv & ::anodized::__::eval::<bool>(|| COND_1);
                 let __anodized_inv = __anodized_inv & ::anodized::__::eval::<bool>(|| COND_2);
@@ -152,10 +152,10 @@ fn embed_spec_item_data_checks_specified_fields() {
                 use ENUM::*;
                 let __anodized_inv = match self {
                     TUPLE(field_0, _, field_2) => {
-                        ::anodized::types::Spec::predicate(field_0)
-                            & ::anodized::types::Spec::predicate(field_2)
+                        ::anodized::__::eval_type_spec(field_0)
+                            & ::anodized::__::eval_type_spec(field_2)
                     }
-                    STRUCT { included, .. } => ::anodized::types::Spec::predicate(included),
+                    STRUCT { included, .. } => ::anodized::__::eval_type_spec(included),
                     UNIT => true,
                 };
                 __anodized_inv

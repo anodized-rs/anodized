@@ -11,7 +11,7 @@ use syn::{
 use crate::{
     EmptySpec,
     annotate::Specified as _,
-    instrument::{Mode, make_item_error},
+    instrument::{Mode, fns::sanitize_input_patterns, make_item_error},
     syntax::remove_unique_attr,
 };
 
@@ -48,34 +48,61 @@ impl Mode {
                     if let Self::EmbedSpecs(_) = self {
                         // Embed `spec` elements as `__anodized_fn_*` items.
                         let mut spec_requires_attrs = attrs.to_vec();
-                        let spec_requires_sig = self.build_precondition_fn_sig(
+                        let mut spec_requires_sig = self.build_precondition_fn_sig(
                             &mut spec_requires_attrs,
                             "__anodized_fn_requires",
                             &func.sig,
                         );
+                        {
+                            sanitize_input_patterns(
+                                &mut spec_requires_sig.inputs,
+                                &fn_spec.input_spec_flags,
+                            );
+                        }
+                        let spec_requires_body = Self::build_precondition_fn_body(
+                            {
+                                spec_requires_sig
+                                    .inputs
+                                    .iter()
+                                    .zip(&fn_spec.input_spec_flags)
+                            },
+                            &fn_spec.requires,
+                            &fn_spec.maintains,
+                        );
                         let spec_requires_fn = TraitItemFn {
                             attrs: spec_requires_attrs,
                             sig: spec_requires_sig,
-                            default: Some(Self::build_precondition_fn_body(
-                                &fn_spec.requires,
-                                &fn_spec.maintains,
-                            )),
+                            default: Some(spec_requires_body),
                             semi_token: None,
                         };
                         let mut spec_ensures_attrs = attrs.to_vec();
-                        let spec_ensures_sig = self.build_postcondition_fn_sig(
+                        let mut spec_ensures_sig = self.build_postcondition_fn_sig(
                             &mut spec_ensures_attrs,
                             "__anodized_fn_ensures",
                             &func.sig,
                         );
+                        {
+                            sanitize_input_patterns(
+                                &mut spec_ensures_sig.inputs,
+                                &fn_spec.input_spec_flags,
+                            );
+                        }
+                        let spec_ensures_body = Self::build_postcondition_fn_body(
+                            {
+                                spec_ensures_sig
+                                    .inputs
+                                    .iter()
+                                    .zip(&fn_spec.input_spec_flags)
+                            },
+                            fn_spec.output_spec_flag.then_some(&func.sig.output),
+                            &fn_spec.maintains,
+                            &fn_spec.captures,
+                            &fn_spec.ensures,
+                        );
                         let spec_ensures_fn = TraitItemFn {
                             attrs: spec_ensures_attrs,
                             sig: spec_ensures_sig,
-                            default: Some(Self::build_postcondition_fn_body(
-                                &fn_spec.maintains,
-                                &fn_spec.captures,
-                                &fn_spec.ensures,
-                            )),
+                            default: Some(spec_ensures_body),
                             semi_token: None,
                         };
 
@@ -119,7 +146,7 @@ impl Mode {
                             Self::#mangled_ident(#(#call_args),*)
                         });
 
-                        self.instrument_fn(&fn_spec, &func.sig, &mut forwarding_body)?;
+                        self.instrument_fn(&fn_spec, &mut func.sig, &mut forwarding_body)?;
 
                         func.default = Some(forwarding_body);
                         func.semi_token = None;
@@ -224,35 +251,62 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                     if let Self::EmbedSpecs(_) = self {
                         // Embed `spec` elements as `__anodized_fn_*` items.
                         let mut spec_requires_attrs = attrs.to_vec();
-                        let spec_requires_sig = self.build_precondition_fn_sig(
+                        let mut spec_requires_sig = self.build_precondition_fn_sig(
                             &mut spec_requires_attrs,
                             "__anodized_fn_requires",
                             &func.sig,
                         );
+                        {
+                            sanitize_input_patterns(
+                                &mut spec_requires_sig.inputs,
+                                &fn_spec.input_spec_flags,
+                            );
+                        }
+                        let spec_requires_body = Self::build_precondition_fn_body(
+                            {
+                                spec_requires_sig
+                                    .inputs
+                                    .iter()
+                                    .zip(&fn_spec.input_spec_flags)
+                            },
+                            &fn_spec.requires,
+                            &fn_spec.maintains,
+                        );
                         let spec_requires_fn = ImplItemFn {
                             attrs: spec_requires_attrs,
                             sig: spec_requires_sig,
-                            block: Self::build_precondition_fn_body(
-                                &fn_spec.requires,
-                                &fn_spec.maintains,
-                            ),
+                            block: spec_requires_body,
                             vis: Visibility::Inherited,
                             defaultness: None,
                         };
                         let mut spec_ensures_attrs = attrs.to_vec();
-                        let spec_ensures_sig = self.build_postcondition_fn_sig(
+                        let mut spec_ensures_sig = self.build_postcondition_fn_sig(
                             &mut spec_ensures_attrs,
                             "__anodized_fn_ensures",
                             &func.sig,
                         );
+                        {
+                            sanitize_input_patterns(
+                                &mut spec_ensures_sig.inputs,
+                                &fn_spec.input_spec_flags,
+                            );
+                        }
+                        let spec_ensures_body = Self::build_postcondition_fn_body(
+                            {
+                                spec_ensures_sig
+                                    .inputs
+                                    .iter()
+                                    .zip(&fn_spec.input_spec_flags)
+                            },
+                            fn_spec.output_spec_flag.then_some(&func.sig.output),
+                            &fn_spec.maintains,
+                            &fn_spec.captures,
+                            &fn_spec.ensures,
+                        );
                         let spec_ensures_fn = ImplItemFn {
                             attrs: spec_ensures_attrs,
                             sig: spec_ensures_sig,
-                            block: Self::build_postcondition_fn_body(
-                                &fn_spec.maintains,
-                                &fn_spec.captures,
-                                &fn_spec.ensures,
-                            ),
+                            block: spec_ensures_body,
                             vis: Visibility::Inherited,
                             defaultness: None,
                         };
@@ -274,7 +328,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                     if let Mode::InjectChecks(_) = self {
                         self.with_try_fn(false).instrument_fn(
                             &fn_spec,
-                            &func.sig,
+                            &mut func.sig,
                             &mut func.block,
                         )?;
 

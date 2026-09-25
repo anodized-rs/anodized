@@ -14,6 +14,14 @@ pub enum TamePat {
     Invertible(Pat, Box<Expr>),
 }
 
+impl TamePat {
+    pub fn get_pat(&self) -> &Pat {
+        match self {
+            Self::Borrowing(pat) | Self::Invertible(pat, _) => pat,
+        }
+    }
+}
+
 /// Tame an irrefutable pattern, so that it may be used inside a `#[spec]`.
 ///
 /// 1. If the pattern binds *no* names by `ref` and does not contain rest (`..`) patterns,

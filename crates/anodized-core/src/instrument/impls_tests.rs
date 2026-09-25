@@ -152,6 +152,81 @@ fn default_instrument_item_impl() {
 }
 
 #[test]
+fn type_spec_enforcement_instrument_item_impl() {
+    let spec_item_impl: SpecItemImpl = parse_quote! {
+        #[spec]
+        impl IMPL_TYPE {
+            #[spec(
+                requires: COND_1,
+                maintains: COND_2,
+                ensures: |OUT_PAT| COND_3,
+            )]
+            fn FUNC(
+                self: Spec!(&Self),
+                INPUT_1: Spec!(TYPE_1),
+                ref INPUT_2: Spec!(TYPE_2),
+            ) -> Spec!(RET_TYPE) {
+                BODY
+            }
+        }
+    };
+
+    let expected: TokenStream = parse_quote! {
+        impl IMPL_TYPE {
+            fn FUNC(self: &Self, __anodized_input_2: TYPE_1, __anodized_input_3: TYPE_2) -> RET_TYPE {
+                // Coerce inputs to prevent weird errors about refutable patterns.
+                #[allow(unused)]
+                let _ = |INPUT_1: TYPE_1| ();
+                #[allow(unused)]
+                let _ = |ref INPUT_2: TYPE_2| ();
+                // Check input type specs.
+                let __anodized_pre = true;
+                let __anodized_pre = __anodized_pre &
+                    (true || ::anodized::__::eval_type_spec(&self));
+                let __anodized_pre = __anodized_pre &
+                    (true || ::anodized::__::eval_type_spec(&__anodized_input_2));
+                let __anodized_pre = __anodized_pre &
+                    (true || ::anodized::__::eval_type_spec(&__anodized_input_3));
+                // Bind input patterns.
+                let (INPUT_1, ref INPUT_2) = (__anodized_input_2, __anodized_input_3) else {
+                    unreachable!()
+                };
+                // Check preconditions.
+                let __anodized_pre = __anodized_pre &
+                    (true || ::anodized::__::eval::<bool>(|| COND_1));
+                let __anodized_pre = __anodized_pre &
+                    (true || ::anodized::__::eval::<bool>(|| COND_2));
+                if !__anodized_pre {}
+                // Bind captures and return value.
+                let __anodized_output = ::anodized::__::eval_once(|| -> RET_TYPE { BODY });
+                // Check output type spec.
+                let __anodized_post = true;
+                let __anodized_post = __anodized_post & (true ||
+                    ::anodized::__::eval_type_spec(&__anodized_output));
+                // Check postconditions.
+                let __anodized_post = __anodized_post &
+                    (true || ::anodized::__::eval::<bool>(|| COND_2));
+                let (__anodized_post, __anodized_output) = ::anodized::__::apply_keep(
+                    |OUT_PAT| (
+                        __anodized_post & (true || ::anodized::__::eval::<bool>(|| COND_3)),
+                        OUT_PAT
+                    ),
+                    __anodized_output,
+                );
+                if !__anodized_post {}
+                // Return the output.
+                __anodized_output
+            }
+        }
+    };
+
+    let observed = Mode::InjectChecks(CheckSettings::DEFAULT)
+        .instrument_item_impl(spec_item_impl.spec, spec_item_impl.node)
+        .unwrap();
+    assert_tokens_eq(&observed, &expected);
+}
+
+#[test]
 fn emit_try_fn_instrument_item_impl() {
     let spec_item_impl: SpecItemImpl = parse_quote! {
         #[spec]

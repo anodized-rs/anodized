@@ -21,8 +21,8 @@ fn spec_markers_on_function_inputs_and_output() {
         #[spec]
         fn f(
             x: Spec!(X),
-            y: Spec!(Y, out),
-            z: Spec!(Z, inout),
+            y: Spec!(&mut Y, out),
+            z: Spec!(&mut Z, inout),
             unspecified: U,
         ) -> Spec!(R) {}
     };
@@ -30,22 +30,16 @@ fn spec_markers_on_function_inputs_and_output() {
     let expected = FnSpec {
         qualifiers: FnQualifiers::empty(),
         input_spec_flags: vec![
-            InputSpecFlags {
-                on_entry: true,
-                on_exit: false,
-            },
-            InputSpecFlags {
-                on_entry: false,
-                on_exit: true,
-            },
-            InputSpecFlags {
-                on_entry: true,
-                on_exit: true,
-            },
-            InputSpecFlags {
-                on_entry: false,
-                on_exit: false,
-            },
+            InputSpecFlags::In(parse_quote!(x)),
+            InputSpecFlags::Out(TamePat::Invertible(
+                parse_quote!(y),
+                Box::new(parse_quote!(y)),
+            )),
+            InputSpecFlags::Both(TamePat::Invertible(
+                parse_quote!(z),
+                Box::new(parse_quote!(z)),
+            )),
+            InputSpecFlags::Neither,
         ],
         output_spec_flag: true,
         requires: vec![],
@@ -58,7 +52,7 @@ fn spec_markers_on_function_inputs_and_output() {
     assert_spec_eq(&spec_item_fn.spec, &expected);
 
     let expected_item: ItemFn = parse_quote! {
-        fn f(x: X, y: Y, z: Z, unspecified: U) -> R {}
+        fn f(x: X, y: &mut Y, z: &mut Z, unspecified: U) -> R {}
     };
     assert_tokens_eq(&spec_item_fn.node, &expected_item);
 }

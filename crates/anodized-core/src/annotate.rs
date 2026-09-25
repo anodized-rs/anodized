@@ -177,30 +177,23 @@ impl FnSpec {
     ) -> Result<(Vec<InputSpecFlags>, bool)> {
         let mut input_specs = Vec::with_capacity(signature.inputs.len());
 
+        let mut id_gen = IdentGenerator::new();
         for input in &mut signature.inputs {
-            let ty = match input {
-                FnArg::Receiver(receiver) => &mut receiver.ty,
-                FnArg::Typed(pat_type) => &mut pat_type.ty,
+            let (ty, pat) = match input {
+                FnArg::Receiver(receiver) => (&mut receiver.ty, parse_quote!(self)),
+                FnArg::Typed(pat_type) => (&mut pat_type.ty, (*pat_type.pat).clone()),
             };
 
             let input_spec = match extract_spec_marker(ty)? {
-                None => InputSpecFlags {
-                    on_entry: false,
-                    on_exit: false,
-                },
+                None => InputSpecFlags::Neither,
                 Some(spec_marker) => match spec_marker.args.mode {
-                    None => InputSpecFlags {
-                        on_entry: true,
-                        on_exit: false,
-                    },
-                    Some((_, FnArgMode::Out(_))) => InputSpecFlags {
-                        on_entry: false,
-                        on_exit: true,
-                    },
-                    Some((_, FnArgMode::InOut(_))) => InputSpecFlags {
-                        on_entry: true,
-                        on_exit: true,
-                    },
+                    None => InputSpecFlags::In(pat),
+                    Some((_, FnArgMode::Out(_))) => {
+                        InputSpecFlags::Out(tame_pattern(&mut id_gen, pat)?)
+                    }
+                    Some((_, FnArgMode::InOut(_))) => {
+                        InputSpecFlags::Both(tame_pattern(&mut id_gen, pat)?)
+                    }
                 },
             };
             input_specs.push(input_spec);
