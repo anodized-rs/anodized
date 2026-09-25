@@ -174,36 +174,42 @@ pub struct TypeWithSpec<'a> {
     log: &'a ExecLog,
 }
 
-#[spec]
+#[spec(
+    requires: { i2.log.push("pre"); true },
+    ensures: { i2.log.push("post"); true },
+)]
 pub fn func_io<'a>(
     i1: Spec!(TypeWithSpec<'a>),
-    _: Spec!(&mut TypeWithSpec, inout),
+    i2: Spec!(&mut TypeWithSpec, inout),
     _: Spec!(&TypeWithSpec),
 ) -> Spec!(TypeWithSpec<'a>) {
     TypeWithSpec {
-        label: "o1",
+        label: "out",
         log: i1.log,
     }
 }
 
 #[cfg(anodized_panic)]
 #[test]
-fn data_check_execution_order() {
+fn type_spec_check_execution_order() {
     let log = ExecLog::new();
 
     let i1 = TypeWithSpec {
-        label: "i1",
+        label: "in1",
         log: &log,
     };
     let mut i2 = TypeWithSpec {
-        label: "i2",
+        label: "in2",
         log: &log,
     };
     let i3 = TypeWithSpec {
-        label: "i3",
+        label: "in3",
         log: &log,
     };
     let _ = func_io(i1, &mut i2, &i3);
 
-    assert_eq!(log.into_vec(), ["i1", "i2", "i3", "o1", "i2"]);
+    assert_eq!(
+        log.into_vec(),
+        ["in1", "in2", "in3", "pre", "out", "in2", "post"]
+    );
 }
