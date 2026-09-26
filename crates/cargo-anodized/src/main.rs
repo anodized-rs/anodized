@@ -1,26 +1,13 @@
-use clap::{Parser, Subcommand};
+use clap::Parser;
 use std::{
     collections::BTreeSet as Set,
     path::PathBuf,
     process::{Command, ExitStatus},
 };
 
-#[derive(Parser)]
-#[command(
-    name = "cargo-anodized",
-    version,
-    about = "Cargo tool integration for Anodized"
-)]
-struct Cli {
-    #[command(subcommand)]
-    command: Commands,
-}
+use crate::cli::{Cli, Commands};
 
-#[derive(Subcommand)]
-enum Commands {
-    /// Format a Cargo project.
-    Fmt,
-}
+mod cli;
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
