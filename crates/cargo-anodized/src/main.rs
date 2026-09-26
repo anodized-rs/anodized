@@ -61,13 +61,13 @@ fn formatted_paths(output: &[u8]) -> Result<Set<PathBuf>> {
 
 #[derive(Debug, thiserror::Error)]
 enum Error {
-    #[error("failed to run cargo fmt: {0}")]
+    #[error("failed to run `cargo fmt`: {0}")]
     Io(#[from] std::io::Error),
 
-    #[error("cargo fmt output was not valid UTF-8: {0}")]
+    #[error("`cargo fmt` output was not valid UTF-8: {0}")]
     Utf8(#[from] std::str::Utf8Error),
 
-    #[error("cargo fmt failed with status {0}")]
+    #[error("`cargo fmt` failed with status {0}")]
     CargoFmtFailed(ExitStatus),
 }
 
