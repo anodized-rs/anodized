@@ -20,26 +20,6 @@ const CONFIG: Mode = Mode::from_raw_cfg(RawCfg {
     anodized_try: cfg!(anodized_try),
 });
 
-/// **Must** be inside a `#[spec]` attribute's item. May be applied to a `fn`, its inputs, and
-/// fields of a `struct` or `enum`.
-///
-/// - `#[unspec]`: The input or field may *not* satisfy its type spec.
-/// - `#[unspec(in)]`: The input may *not* satisfy its type spec at entry.
-/// - `#[unspec(out)]`: The input or output may *not* satisfy its type spec at exit.
-///
-/// This macro exists *only* to carry this documentation. It will never be invoked, because
-/// `anodized-core` removes it as part of processing `#[spec]` attributes. Note that Rust does
-/// *not* support macro attributes on inputs of a `fn` or fields of a `struct` or `enum`.
-#[proc_macro_attribute]
-pub fn unspec(_: TokenStream, _: TokenStream) -> TokenStream {
-    syn::Error::new(
-        Span::call_site(),
-        "must be on or inside the item of a `#[spec]` attribute",
-    )
-    .to_compile_error()
-    .into()
-}
-
 /// Attaches a specification to supported program elements.
 ///
 /// This macro parses the spec and transforms the item's code to provide the following features:
@@ -119,4 +99,28 @@ pub fn try_call(args: TokenStream) -> TokenStream {
         Ok(call) => call.into_token_stream().into(),
         Err(error) => error.to_compile_error().into(),
     }
+}
+
+/// Control enforcement of the type's spec (a.k.a. refinement). May be applied to a type in a `fn`
+/// signature, or a `struct` or `enum` definition. The enclosing item **must** have a `#[spec]`
+/// attribute.
+///
+/// - `Spec!(T)`:
+///     - The input's type spec holds on entry.
+///     - The output's type spec holds on exit.
+///     - The field's type spec holds in a structurally recursive way.
+/// - `Spec!(T, out)`: The input's type spec holds only on exit (not on entry).
+/// - `Spec!(T, inout)`: The input's type spec holds on both entry and exit.
+///
+/// This macro exists *only* to carry this documentation. It should not be invoked, because
+/// `anodized-core` removes it as part of processing `#[spec]` attributes.
+#[proc_macro]
+#[allow(non_snake_case)]
+pub fn Spec(_: TokenStream) -> TokenStream {
+    syn::Error::new(
+        Span::call_site(),
+        "`Spec!` must appear inside an item annotated with `#[spec]`",
+    )
+    .to_compile_error()
+    .into()
 }

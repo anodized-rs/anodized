@@ -1,11 +1,11 @@
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Block, FnArg, Ident, ItemConst, ItemFn, ItemImpl, ItemTrait, Result, ReturnType,
-    Signature, parse_quote,
+    Attribute, Block, Expr, FnArg, Ident, ItemConst, ItemFn, ItemImpl, ItemTrait, Result,
+    ReturnType, Signature, parse_quote, parse_quote_spanned, spanned::Spanned,
 };
 
-use crate::{EmptySpec, FnSpec};
+use crate::{EmptySpec, FnSpec, instrument::fns::sanitize_input_patterns};
 
 pub mod data;
 pub mod fns;
@@ -161,35 +161,42 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
                 &item_fn.sig.ident,
             );
             let mut spec_requires_attrs = attrs.to_vec();
-            let spec_requires_sig = self.build_precondition_fn_sig(
+            let mut spec_requires_sig = self.build_precondition_fn_sig(
                 &mut spec_requires_attrs,
                 "__anodized_fn_requires",
                 &item_fn.sig,
+            );
+            sanitize_input_patterns(&mut spec_requires_sig.inputs, &spec.input_spec_flags);
+            let spec_requires_body = Self::build_precondition_fn_body(
+                spec_requires_sig.inputs.iter().zip(&spec.input_spec_flags),
+                &spec.requires,
+                &spec.maintains,
             );
             let spec_requires_fn = ItemFn {
                 attrs: spec_requires_attrs,
                 vis: syn::Visibility::Inherited,
                 sig: spec_requires_sig,
-                block: Box::new(Self::build_precondition_fn_body(
-                    &spec.requires,
-                    &spec.maintains,
-                )),
+                block: Box::new(spec_requires_body),
             };
             let mut spec_ensures_attrs = attrs.to_vec();
-            let spec_ensures_sig = self.build_postcondition_fn_sig(
+            let mut spec_ensures_sig = self.build_postcondition_fn_sig(
                 &mut spec_ensures_attrs,
                 "__anodized_fn_ensures",
                 &item_fn.sig,
+            );
+            sanitize_input_patterns(&mut spec_ensures_sig.inputs, &spec.input_spec_flags);
+            let spec_ensures_body = Self::build_postcondition_fn_body(
+                spec_ensures_sig.inputs.iter().zip(&spec.input_spec_flags),
+                spec.output_spec_flag.then_some(&item_fn.sig.output),
+                &spec.maintains,
+                &spec.captures,
+                &spec.ensures,
             );
             let spec_ensures_fn = ItemFn {
                 attrs: spec_ensures_attrs,
                 vis: syn::Visibility::Inherited,
                 sig: spec_ensures_sig,
-                block: Box::new(Self::build_postcondition_fn_body(
-                    &spec.maintains,
-                    &spec.captures,
-                    &spec.ensures,
-                )),
+                block: Box::new(spec_ensures_body),
             };
 
             spec_qualifiers_const.to_tokens(&mut tokens);
@@ -198,7 +205,7 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
         }
 
         // Instrument function body.
-        self.instrument_fn(&spec, &item_fn.sig, &mut item_fn.block)?;
+        self.instrument_fn(&spec, &mut item_fn.sig, &mut item_fn.block)?;
 
         if let Self::InjectChecks(check_settings) = self
             && let Some(ref panic_settings) = check_settings.does_panic
@@ -354,6 +361,11 @@ impl CheckSettings {
         does_print: true,
         does_panic: Some(PanicSettings { has_try_fn: true }),
     };
+}
+
+fn build_cond_eval(expr: &Expr) -> Expr {
+    let span = expr.span();
+    parse_quote_spanned! { span => ::anodized::__::eval::<bool>(|| #expr) }
 }
 
 /// Make an error message to say that some item is unsupported.
