@@ -1,6 +1,6 @@
 #[cfg(test)]
-#[path = "data_tests.rs"]
-mod data_tests;
+#[path = "types_tests.rs"]
+mod types_tests;
 
 use proc_macro2::{Span, TokenStream};
 use quote::ToTokens;
@@ -9,14 +9,14 @@ use syn::{
 };
 
 use crate::{
-    Condition, DataSpec,
+    Condition, TypeSpec,
     instrument::{Mode, build_cond_eval},
 };
 
 impl Mode {
     pub fn instrument_item_struct(
         &self,
-        spec: DataSpec,
+        spec: TypeSpec,
         item_struct: ItemStruct,
     ) -> Result<TokenStream> {
         let mut tokens = TokenStream::new();
@@ -49,7 +49,7 @@ impl Mode {
         Ok(tokens)
     }
 
-    pub fn instrument_item_enum(&self, spec: DataSpec, item_enum: ItemEnum) -> Result<TokenStream> {
+    pub fn instrument_item_enum(&self, spec: TypeSpec, item_enum: ItemEnum) -> Result<TokenStream> {
         let mut tokens = TokenStream::new();
 
         item_enum.to_tokens(&mut tokens);

@@ -7,12 +7,12 @@ use syn::{
 
 use crate::{EmptySpec, FnSpec, instrument::fns::sanitize_input_patterns};
 
-pub mod data;
 pub mod fns;
 pub mod impls;
 pub mod loops;
 pub mod patterns;
 pub mod traits;
+pub mod types;
 
 #[derive(Debug, Clone)]
 pub enum Mode {

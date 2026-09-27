@@ -94,18 +94,18 @@ impl FnSpec {
     }
 }
 
-/// Specifies the intended behavior of a data type: `struct` or `enum`.
+/// Specifies the intended behavior of a type: `struct` or `enum`.
 #[derive(Debug)]
-pub struct DataSpec {
+pub struct TypeSpec {
     /// Whether each field satisfies its type spec. Variant index first, field index second.
     pub field_spec_flags: Vec<Vec<bool>>,
-    /// Invariants: conditions that must hold for all instances of the data type.
+    /// Invariants: conditions that must hold for all instances of the type.
     pub maintains: Vec<Condition>,
     /// The span in the source code, from which this spec was parsed.
     span: Span,
 }
 
-impl DataSpec {
+impl TypeSpec {
     /// Returns `true` if the spec is empty (specifies nothing), otherwise returns `false`.
     pub fn is_empty(&self) -> bool {
         self.maintains.is_empty()
