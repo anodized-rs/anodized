@@ -2,25 +2,29 @@ use anodized_fmt::{Config, check_file, format_file};
 use std::{
     collections::BTreeSet as Set,
     fs,
-    path::{Path, PathBuf},
+    path::PathBuf,
     process::{Command, ExitStatus},
 };
 
+use crate::cli::FmtOptions;
+
 type Result<T> = std::result::Result<T, Error>;
 
-pub fn fmt(
-    check: bool,
-    packages: &[String],
-    manifest_path: Option<&Path>,
-    all: bool,
-) -> Result<()> {
+pub fn fmt(options: FmtOptions) -> Result<()> {
+    let FmtOptions {
+        packages,
+        manifest_path,
+        all,
+        check,
+    } = options;
+
     let mut command = Command::new("cargo");
     command.arg("fmt");
 
-    for package in packages {
+    for package in &packages {
         command.args(["--package", package]);
     }
-    if let Some(manifest_path) = manifest_path {
+    if let Some(manifest_path) = &manifest_path {
         command.args(["--manifest-path"]);
         command.arg(manifest_path);
     }

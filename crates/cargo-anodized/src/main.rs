@@ -1,6 +1,6 @@
 use clap::Parser;
 
-use crate::cli::{Cli, Commands};
+use crate::cli::{Cli, Command};
 
 mod cli;
 mod commands;
@@ -9,12 +9,7 @@ fn main() -> Result<(), Error> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Fmt {
-            packages,
-            manifest_path,
-            all,
-            check,
-        } => commands::fmt::fmt(check, &packages, manifest_path.as_deref(), all)?,
+        Command::Fmt(options) => commands::fmt::fmt(options)?,
     }
 
     Ok(())

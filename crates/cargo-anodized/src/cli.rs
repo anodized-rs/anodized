@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(
@@ -10,27 +10,30 @@ use clap::{Parser, Subcommand};
 )]
 pub struct Cli {
     #[command(subcommand)]
-    pub command: Commands,
+    pub command: Command,
 }
 
 #[derive(Subcommand)]
-pub enum Commands {
+pub enum Command {
     /// Format a Cargo project.
-    Fmt {
-        /// Specify packages to format.
-        #[arg(short, long = "package", value_name = "PACKAGE")]
-        packages: Vec<String>,
+    Fmt(FmtOptions),
+}
 
-        /// Specify the path to Cargo.toml.
-        #[arg(long, value_name = "PATH")]
-        manifest_path: Option<PathBuf>,
+#[derive(Args)]
+pub struct FmtOptions {
+    /// Specify packages to format.
+    #[arg(short, long = "package", value_name = "PACKAGE")]
+    pub packages: Vec<String>,
 
-        /// Format all packages in the workspace.
-        #[arg(long)]
-        all: bool,
+    /// Specify the path to Cargo.toml.
+    #[arg(long, value_name = "PATH")]
+    pub manifest_path: Option<PathBuf>,
 
-        /// Check formatting without modifying files.
-        #[arg(long)]
-        check: bool,
-    },
+    /// Format all packages in the workspace.
+    #[arg(long)]
+    pub all: bool,
+
+    /// Check formatting without modifying files.
+    #[arg(long)]
+    pub check: bool,
 }
