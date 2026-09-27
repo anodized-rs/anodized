@@ -1,4 +1,4 @@
-use anodized_fmt::{Config, format_file};
+use anodized_fmt::{Config, check_file, format_file};
 use std::{
     collections::BTreeSet as Set,
     fs,
@@ -8,10 +8,14 @@ use std::{
 
 type Result<T> = std::result::Result<T, Error>;
 
-pub fn fmt() -> Result<()> {
-    let output = Command::new("cargo")
-        .args(["fmt", "--", "--verbose"])
-        .output()?;
+pub fn fmt(check: bool) -> Result<()> {
+    let mut args = vec!["fmt"];
+    if check {
+        args.push("--check");
+    }
+    args.extend(["--", "--verbose"]);
+
+    let output = Command::new("cargo").args(args).output()?;
 
     let paths = formatted_paths(&output.stdout)?;
     for path in &paths {
@@ -23,12 +27,24 @@ pub fn fmt() -> Result<()> {
     }
 
     let config = Config::load()?;
-    for path in paths {
-        let source = fs::read_to_string(&path)?;
-        let formatted = format_file(&source, &config)?;
+    if check {
+        let mut all_formatted = true;
+        for path in paths {
+            let source = fs::read_to_string(path)?;
+            all_formatted &= check_file(&source, &config)?;
+        }
 
-        if formatted != source {
-            fs::write(path, formatted)?;
+        if !all_formatted {
+            return Err(Error::CheckFailed);
+        }
+    } else {
+        for path in paths {
+            let source = fs::read_to_string(&path)?;
+            let formatted = format_file(&source, &config)?;
+
+            if formatted != source {
+                fs::write(path, formatted)?;
+            }
         }
     }
 
@@ -45,6 +61,9 @@ pub enum Error {
 
     #[error("`cargo fmt` failed with status {0}")]
     CargoFmtFailed(ExitStatus),
+
+    #[error("some files need formatting with `anodized-fmt`")]
+    CheckFailed,
 
     #[error(transparent)]
     Config(#[from] anodized_fmt::ConfigError),

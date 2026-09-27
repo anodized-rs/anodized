@@ -9,7 +9,7 @@ fn main() -> Result<(), Error> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Fmt => commands::fmt::fmt()?,
+        Commands::Fmt { check } => commands::fmt::fmt(check)?,
     }
 
     Ok(())

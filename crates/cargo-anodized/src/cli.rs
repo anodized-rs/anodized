@@ -14,5 +14,9 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Commands {
     /// Format a Cargo project.
-    Fmt,
+    Fmt {
+        /// Check formatting without modifying files.
+        #[arg(long)]
+        check: bool,
+    },
 }
