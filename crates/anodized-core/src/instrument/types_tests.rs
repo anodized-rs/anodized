@@ -122,7 +122,7 @@ fn default_instrument_item_enum() {
 }
 
 #[test]
-fn embed_spec_item_data_checks_specified_fields() {
+fn embed_spec_item_type_checks_specified_fields() {
     let spec_item_enum: SpecItemEnum = parse_quote! {
         #[spec]
         enum ENUM {

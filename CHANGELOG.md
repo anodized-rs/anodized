@@ -11,9 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 
-- **[anodized-core] Revised the public specification AST** - `Spec` is now `FnSpec`, and
-  postcondition patterns are represented by `TamePat`. Parsing is now contextual through
-  `Specified`, replacing direct parsing of a standalone function spec (#207, #209, #219).
+- **[anodized-core] Revised the public specification AST** - `Spec` is now `FnSpec`, `DataSpec`
+  is now `TypeSpec`, and postcondition patterns are represented by `TamePat`. Parsing is now
+  contextual through `Specified`, replacing direct parsing of a standalone function spec (#207,
+  #209, #219).
 - **[anodized] Simplified `try_call!` failure values** - `anodized::result::Error::{Pre, Post}`
   no longer carry a formatted diagnostic-message payload; `Post` retains the function output
   (#186).
@@ -21,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **[anodized] Opt-in, enforceable type refinements with `Spec!(...)`** - Mark function inputs,
-  outputs, and data fields to enforce their type specifications at their relevant boundaries.
+  outputs, and fields to enforce their type specifications at their relevant boundaries.
   Input markers support the `out` and `inout` modes, and refinements compose recursively through
   references, slices, arrays, `Option`, `Result`, `Box`, `Vec`, and tuples (#191, #217, #219).
 - **[anodized] More expressive postcondition output patterns** - `ensures:` bindings can now use

@@ -39,7 +39,7 @@ anodized = "0.6.0"
 
 **2. Extend your code with specs.**
 
-Use the `#[spec]` attribute to attach preconditions and postconditions to functions, invariants to loops, and refinements to data types. Each _condition_ is a standard Rust expression that evaluates to `bool`.
+Use the `#[spec]` attribute to attach preconditions and postconditions to functions, invariants to loops, and refinements to types. Each _condition_ is a standard Rust expression that evaluates to `bool`.
 
 ```rust,no_run
 use anodized::spec;

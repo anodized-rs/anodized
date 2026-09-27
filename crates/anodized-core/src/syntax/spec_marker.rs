@@ -24,7 +24,7 @@ pub struct SpecMarker {
 #[derive(Debug)]
 pub struct SpecMarkerArgs {
     pub ty: Type,
-    /// Must be `None` on the output of a `fn` or field of a data type (`struct` or `enum`).
+    /// Must be `None` on the output of a `fn` or a field of a `struct` or `enum`.
     pub mode: Option<(Token![,], FnArgMode)>,
 }
 

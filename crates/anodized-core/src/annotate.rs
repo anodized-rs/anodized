@@ -6,8 +6,8 @@ use syn::{
 };
 
 use crate::{
-    Capture, Condition, DataSpec, EmptySpec, FnSpec, InputSpecFlags, LoopSpec, LoopVariant,
-    PostCondition,
+    Capture, Condition, EmptySpec, FnSpec, InputSpecFlags, LoopSpec, LoopVariant, PostCondition,
+    TypeSpec,
     instrument::patterns::{IdentGenerator, tame_pattern},
     qualifiers::FnQualifiers,
     syntax::{
@@ -114,7 +114,7 @@ impl Specified for ItemTrait {
 }
 
 impl Specified for ItemStruct {
-    type Spec = DataSpec;
+    type Spec = TypeSpec;
 
     fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
         &mut self.attrs
@@ -122,12 +122,12 @@ impl Specified for ItemStruct {
 
     fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
         let variants = std::iter::once(&mut self.fields);
-        DataSpec::from_spec_and_variants(fields, variants)
+        TypeSpec::from_spec_and_variants(fields, variants)
     }
 }
 
 impl Specified for ItemEnum {
-    type Spec = DataSpec;
+    type Spec = TypeSpec;
 
     fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
         &mut self.attrs
@@ -135,7 +135,7 @@ impl Specified for ItemEnum {
 
     fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
         let variants = self.variants.iter_mut().map(|variant| &mut variant.fields);
-        DataSpec::from_spec_and_variants(fields, variants)
+        TypeSpec::from_spec_and_variants(fields, variants)
     }
 }
 
@@ -319,12 +319,6 @@ impl FnSpec {
                         errors.add(error);
                     }
                 }
-                Keyword::Binds | Keyword::Inspects => {
-                    errors.add(Error::new_spanned(
-                        &field.member,
-                        "no longer supported, use the following form instead: `ensures: |PAT| [EXPR, EXPR, ...]`",
-                    ));
-                }
                 Keyword::Ensures => {
                     if let Err(error) = parse_postconds(&mut id_gen, field, &mut ensures) {
                         errors.add(error);
@@ -339,7 +333,7 @@ impl FnSpec {
         if !is_sorted {
             errors.add(Error::new(
                 span,
-                "fields are out of order: the expected order is: `<QUALIFIERS>`, `requires`, `maintains`, `captures`, `inspects`, `ensures`, where `<QUALIFIERS>` are:\n
+                "fields are out of order: the expected order is: `<QUALIFIERS>`, `requires`, `maintains`, `captures`, `ensures`, where `<QUALIFIERS>` are:\n
 `functional` (`pure` and `total`),\n
 `pure` (`deterministic` and `effectfree`),\n
 `total` (`infallible` and `terminating`)",
@@ -363,7 +357,7 @@ impl FnSpec {
     }
 }
 
-impl DataSpec {
+impl TypeSpec {
     pub fn from_spec_and_variants<'a>(
         raw_spec: SpecFields,
         variants: impl Iterator<Item = &'a mut Fields>,
