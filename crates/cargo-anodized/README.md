@@ -12,4 +12,4 @@ cargo install cargo-anodized
 
 ## Subcommands
 
-- `fmt`: Run [`anodized-fmt`] on a Cargo project.
+- `fmt`: Run `rustfmt` and `anodized-fmt` on a Cargo project.
