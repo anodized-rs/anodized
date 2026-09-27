@@ -319,12 +319,6 @@ impl FnSpec {
                         errors.add(error);
                     }
                 }
-                Keyword::Binds | Keyword::Inspects => {
-                    errors.add(Error::new_spanned(
-                        &field.member,
-                        "no longer supported, use the following form instead: `ensures: |PAT| [EXPR, EXPR, ...]`",
-                    ));
-                }
                 Keyword::Ensures => {
                     if let Err(error) = parse_postconds(&mut id_gen, field, &mut ensures) {
                         errors.add(error);
