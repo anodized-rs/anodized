@@ -61,10 +61,9 @@ fn complex_capture_multiple(values: [i32; 3], state: &State) -> bool {
 
 // Test: Capture with all spec clauses
 #[spec(
-    inspects: result,
     requires: *balance > 0,
     captures: initial = *balance,
-    ensures: result == initial - amount,
+    ensures: |result| result == initial - amount,
 )]
 fn withdraw_with_capture(balance: &mut u64, amount: u64) -> u64 {
     todo!()

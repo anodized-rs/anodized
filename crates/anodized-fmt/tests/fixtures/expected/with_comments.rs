@@ -47,8 +47,6 @@ fn validate_point(point: (i32, i32, i32)) -> bool {
 
 // Test: Capture with all spec clauses
 #[spec(
-    // Bind the result for inspection
-    inspects: result,
     // Balance must be positive before withdrawal
     requires: *balance > 0,
     // Capture initial balance
@@ -56,7 +54,7 @@ fn validate_point(point: (i32, i32, i32)) -> bool {
     captures: initial = *balance,
     // Ensure correct calculation
     // Result should be initial balance minus amount
-    ensures: result == initial - amount,
+    ensures: |result| result == initial - amount,
 )]
 fn withdraw_with_capture(balance: &mut u64, amount: u64) -> u64 {
     todo!()
