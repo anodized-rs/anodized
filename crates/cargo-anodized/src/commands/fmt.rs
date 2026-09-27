@@ -1,5 +1,7 @@
+use anodized_fmt::{Config, format_file};
 use std::{
     collections::BTreeSet as Set,
+    fs,
     path::PathBuf,
     process::{Command, ExitStatus},
 };
@@ -12,7 +14,7 @@ pub fn fmt() -> Result<()> {
         .output()?;
 
     let paths = formatted_paths(&output.stdout)?;
-    for path in paths {
+    for path in &paths {
         println!("{}", path.display());
     }
 
@@ -20,12 +22,22 @@ pub fn fmt() -> Result<()> {
         return Err(Error::CargoFmtFailed(output.status));
     }
 
+    let config = Config::load()?;
+    for path in paths {
+        let source = fs::read_to_string(&path)?;
+        let formatted = format_file(&source, &config)?;
+
+        if formatted != source {
+            fs::write(path, formatted)?;
+        }
+    }
+
     Ok(())
 }
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("failed to run `cargo fmt`: {0}")]
+    #[error(transparent)]
     Io(#[from] std::io::Error),
 
     #[error("`cargo fmt` output was not valid UTF-8: {0}")]
@@ -33,6 +45,12 @@ pub enum Error {
 
     #[error("`cargo fmt` failed with status {0}")]
     CargoFmtFailed(ExitStatus),
+
+    #[error(transparent)]
+    Config(#[from] anodized_fmt::ConfigError),
+
+    #[error(transparent)]
+    Format(#[from] anodized_fmt::FormatError),
 }
 
 fn formatted_paths(output: &[u8]) -> Result<Set<PathBuf>> {
