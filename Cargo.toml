@@ -38,8 +38,9 @@ anodized-core = { version = "0.6.0", path = "crates/anodized-core" }
 anodized-fmt = { version = "0.6.0", path = "crates/anodized-fmt" }
 anodized-logic = { version = "0.6.0", path = "crates/anodized-logic" }
 anodized-macros = { version = "0.6.0", path = "crates/anodized-macros" }
-clap = { version = "4", features = ["derive"] }
 test-util = { path = "crates/test-util" }
+
+clap = { version = "4", features = ["derive"] }
 num-bigint = "0.4.6"
 pretty_assertions = "1"
 prettyplease = "0.2"
