@@ -29,6 +29,10 @@ pub struct FmtOptions {
     #[arg(long)]
     pub all: bool,
 
+    /// Use verbose output.
+    #[arg(short, long)]
+    pub verbose: bool,
+
     /// Check formatting without modifying files.
     #[arg(long)]
     pub check: bool,
