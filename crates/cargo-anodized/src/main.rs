@@ -9,7 +9,12 @@ fn main() -> Result<(), Error> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Fmt { check } => commands::fmt::fmt(check)?,
+        Commands::Fmt {
+            packages,
+            manifest_path,
+            all,
+            check,
+        } => commands::fmt::fmt(check, &packages, manifest_path.as_deref(), all)?,
     }
 
     Ok(())

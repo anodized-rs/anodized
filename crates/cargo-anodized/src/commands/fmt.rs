@@ -2,20 +2,36 @@ use anodized_fmt::{Config, check_file, format_file};
 use std::{
     collections::BTreeSet as Set,
     fs,
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::{Command, ExitStatus},
 };
 
 type Result<T> = std::result::Result<T, Error>;
 
-pub fn fmt(check: bool) -> Result<()> {
-    let mut args = vec!["fmt"];
-    if check {
-        args.push("--check");
-    }
-    args.extend(["--", "--verbose"]);
+pub fn fmt(
+    check: bool,
+    packages: &[String],
+    manifest_path: Option<&Path>,
+    all: bool,
+) -> Result<()> {
+    let mut command = Command::new("cargo");
+    command.arg("fmt");
 
-    let output = Command::new("cargo").args(args).output()?;
+    for package in packages {
+        command.args(["--package", package]);
+    }
+    if let Some(manifest_path) = manifest_path {
+        command.args(["--manifest-path"]);
+        command.arg(manifest_path);
+    }
+    if all {
+        command.arg("--all");
+    }
+    if check {
+        command.arg("--check");
+    }
+
+    let output = command.args(["--", "--verbose"]).output()?;
 
     let paths = formatted_paths(&output.stdout)?;
     for path in &paths {
