@@ -6,8 +6,8 @@ use syn::{
 };
 
 use crate::{
-    Capture, Condition, DataSpec, EmptySpec, FnSpec, InputSpecFlags, LoopSpec, LoopVariant,
-    PostCondition,
+    Capture, Condition, EmptySpec, FnSpec, InputSpecFlags, LoopSpec, LoopVariant, PostCondition,
+    TypeSpec,
     instrument::patterns::{IdentGenerator, tame_pattern},
     qualifiers::FnQualifiers,
     syntax::{
@@ -114,7 +114,7 @@ impl Specified for ItemTrait {
 }
 
 impl Specified for ItemStruct {
-    type Spec = DataSpec;
+    type Spec = TypeSpec;
 
     fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
         &mut self.attrs
@@ -122,12 +122,12 @@ impl Specified for ItemStruct {
 
     fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
         let variants = std::iter::once(&mut self.fields);
-        DataSpec::from_spec_and_variants(fields, variants)
+        TypeSpec::from_spec_and_variants(fields, variants)
     }
 }
 
 impl Specified for ItemEnum {
-    type Spec = DataSpec;
+    type Spec = TypeSpec;
 
     fn get_attrs_mut(&mut self) -> &mut Vec<Attribute> {
         &mut self.attrs
@@ -135,7 +135,7 @@ impl Specified for ItemEnum {
 
     fn parse_spec_from_fields(&mut self, fields: SpecFields) -> Result<Self::Spec> {
         let variants = self.variants.iter_mut().map(|variant| &mut variant.fields);
-        DataSpec::from_spec_and_variants(fields, variants)
+        TypeSpec::from_spec_and_variants(fields, variants)
     }
 }
 
@@ -357,7 +357,7 @@ impl FnSpec {
     }
 }
 
-impl DataSpec {
+impl TypeSpec {
     pub fn from_spec_and_variants<'a>(
         raw_spec: SpecFields,
         variants: impl Iterator<Item = &'a mut Fields>,

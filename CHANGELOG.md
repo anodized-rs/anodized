@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- **[anodized-core] Renamed `DataSpec` to `TypeSpec`** - The public AST and its instrumentation
+  terminology now consistently refer to type specs.
+
 ### Fixed
 
 - **[anodized-core] `#[cfg]` on a condition is honored in every check mode** - The guard was

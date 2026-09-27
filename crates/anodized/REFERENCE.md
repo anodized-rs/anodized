@@ -7,7 +7,7 @@
 | [`fn`, free or inherent `impl`](#function-specs) | Pre- and postconditions, invariants. |
 | [`trait`](#trait-specs)                          | Enforces each `impl` to conform.     |
 | [`for` and `while`](#loop-specs)                 | Loop invariants and variant (bound). |
-| [`struct` and `enum`](#data-specs)               | Refinements to constrain instances.  |
+| [`struct` and `enum`](#type-specs)               | Type refinements to constrain data.  |
 
 ## Build Configurations
 
@@ -372,9 +372,10 @@ Important restrictions:
   - Static analyzers **must validate** narrowing as part of verification.
 - Names prefixed with `__anodized_` are internal and must not be implemented directly.
 
-### Data Specs
+### Type Specs (a.k.a. Type Refinements)
 
-Anodized supports specs on data types, meant to constrain all instances. This capability is equivalent to refinement types.
+Anodized supports type specs on `struct`s and `enum`s to constrain all their instances. This
+capability is equivalent to refinement types.
 
 **On a Struct**
 
@@ -418,7 +419,7 @@ Important restrictions:
 - Runtime checks are **not implemented** yet.
 - Only the `maintains` spec field is supported.
 
-### Type Specs a.k.a. Type Refinements
+### Type Spec Enforcement
 
 Type specs are not enforced at `#[spec]` boundaries unless a type is explicitly marked with the
 `Spec!(...)` macro.
@@ -444,8 +445,8 @@ struct Container {
 }
 ```
 
-- `Spec!(T)`: Enforce a function input's spec on entry, a function output's spec on
-  exit, or a data field's spec as part of its containing type's spec.
+- `Spec!(T)`: Enforce a function input's type spec on entry, a function output's type spec on
+  exit, or a field's type spec as part of its containing type's spec.
 - `Spec!(T, out)`: Enforce a function input's spec only on exit (not on entry).
 - `Spec!(T, inout)`: Enforce a function input's spec on both entry and exit.
 - Modes `out` and `inout` are only valid for function inputs.
