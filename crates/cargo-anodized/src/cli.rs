@@ -3,11 +3,7 @@ use std::path::PathBuf;
 use clap::{Args, Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(
-    name = "cargo-anodized",
-    version,
-    about = "Cargo tool integration for Anodized"
-)]
+#[command(version, about)]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Command,
