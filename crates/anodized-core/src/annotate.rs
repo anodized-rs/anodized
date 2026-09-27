@@ -319,12 +319,6 @@ impl FnSpec {
                         errors.add(error);
                     }
                 }
-                Keyword::Binds | Keyword::Inspects => {
-                    errors.add(Error::new_spanned(
-                        &field.member,
-                        "no longer supported, use the following form instead: `ensures: |PAT| [EXPR, EXPR, ...]`",
-                    ));
-                }
                 Keyword::Ensures => {
                     if let Err(error) = parse_postconds(&mut id_gen, field, &mut ensures) {
                         errors.add(error);
@@ -339,7 +333,7 @@ impl FnSpec {
         if !is_sorted {
             errors.add(Error::new(
                 span,
-                "fields are out of order: the expected order is: `<QUALIFIERS>`, `requires`, `maintains`, `captures`, `inspects`, `ensures`, where `<QUALIFIERS>` are:\n
+                "fields are out of order: the expected order is: `<QUALIFIERS>`, `requires`, `maintains`, `captures`, `ensures`, where `<QUALIFIERS>` are:\n
 `functional` (`pure` and `total`),\n
 `pure` (`deterministic` and `effectfree`),\n
 `total` (`infallible` and `terminating`)",

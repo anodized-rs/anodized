@@ -369,13 +369,19 @@ fn out_of_order() {
 }
 
 #[test]
-#[should_panic(expected = "no longer supported")]
-fn multiple_binds() {
+#[should_panic(expected = "unknown spec field")]
+fn deprecated_inspects() {
     let _: SpecItemFn = parse_quote! {
-        #[spec(
-            inspects: y,
-            inspects: z,
-        )]
+        #[spec(inspects: y)]
+        fn f() {}
+    };
+}
+
+#[test]
+#[should_panic(expected = "unknown spec field")]
+fn deprecated_binds() {
+    let _: SpecItemFn = parse_quote! {
+        #[spec(binds: y)]
         fn f() {}
     };
 }
@@ -669,7 +675,7 @@ fn multiple_cfg_attributes() {
 }
 
 #[test]
-#[should_panic(expected = "no longer supported")]
+#[should_panic(expected = "unknown spec field")]
 fn cfg_on_binds() {
     let _: SpecItemFn = parse_quote! {
         #[spec(
