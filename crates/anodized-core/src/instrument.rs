@@ -14,6 +14,7 @@ pub mod patterns;
 pub mod traits;
 pub mod types;
 
+/// Selects whether specifications are discarded, encoded for static analysis, or checked dynamically.
 #[derive(Debug, Clone)]
 pub enum Mode {
     /// Discard specs and leave implementation code unaltered.
@@ -21,9 +22,11 @@ pub enum Mode {
     /// Enable static analysis: encode specs as new items and leave implementation code unaltered.
     Static(SpecEncoding),
     /// Enable dynamic analysis (e.g. testing, fuzzing): add runtime checks to implementation code.
+    /// With printing and panicking disabled, conditions are type-checked and captures still execute.
     Dynamic(CheckSettings),
 }
 
+/// Selects the representation of specifications emitted by [`Mode::Static`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SpecEncoding {
     /// The default encoding, i.e. items named `__anodized_*`.
@@ -46,6 +49,7 @@ pub struct PanicSettings {
     pub has_try_fn: bool,
 }
 
+/// Compiler configuration settings interpreted by [`Mode::from_raw_cfg`].
 #[derive(Debug, Clone)]
 pub struct RawCfg {
     pub anodized_discard_specs: bool,
@@ -74,6 +78,16 @@ impl RawCfg {
 }
 
 impl Mode {
+    /// Selects an analysis mode from compiler configuration settings.
+    ///
+    /// `anodized_charon` selects [`SpecEncoding::Charon`] and implies static mode.
+    /// `anodized_embed_specs` alone selects [`SpecEncoding::Default`]. With no settings,
+    /// selects dynamic mode with printing and panicking disabled.
+    ///
+    /// # Panics
+    ///
+    /// Panics if discarding specs is combined with any other setting, static and dynamic
+    /// settings are combined, or `anodized_try` is enabled without `anodized_panic`.
     pub const fn from_raw_cfg(raw_cfg: RawCfg) -> Self {
         let (any_static, any_runtime) = raw_cfg.get_any_static_any_runtime();
 

@@ -16,7 +16,10 @@ use crate::{
 };
 
 impl Mode {
-    /// Expand trait items by mangling each method and adding a wrapper default impl.
+    /// Process trait specifications according to the selected analysis mode.
+    ///
+    /// Static mode emits specification items using the selected encoding. Dynamic mode
+    /// mangles each method and adds a wrapper default implementation as described below.
     ///
     /// Mangling a function involves the following:
     /// 1. Rename the function following the pattern: `fn add` -> `fn __anodized_add`.
@@ -210,7 +213,10 @@ impl Mode {
         Ok(the_trait)
     }
 
-    /// Expand impl items by mangling methods for trait impls.
+    /// Process trait implementation specifications according to the selected analysis mode.
+    ///
+    /// Static mode emits specification items using the selected encoding. Dynamic mode
+    /// mangles methods and inserts qualifier checks and runtime checks.
     ///
     /// The `#[spec]` attribute on an impl `fn` must narrow the `#[spec]` of the trait `fn`:
     /// - The impl's preconditions must follow from the trait's preconditions.
