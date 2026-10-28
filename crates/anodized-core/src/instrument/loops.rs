@@ -42,7 +42,7 @@ impl Mode {
     }
 
     fn instrument_loop_body(&self, spec: &LoopSpec, stmts: &mut Vec<Stmt>) {
-        if self.emits_fn_spec_items() {
+        if self.emits_loop_spec_items() {
             let maintains_block =
                 Self::build_precondition_fn_body(std::iter::empty(), &[], &spec.maintains);
             stmts.insert(

@@ -162,6 +162,14 @@ impl Mode {
         )
     }
 
+    /// Whether to emit loop invariant and variant bindings.
+    pub(crate) fn emits_loop_spec_items(&self) -> bool {
+        matches!(
+            self,
+            Mode::Static(SpecEncoding::Default | SpecEncoding::Charon)
+        )
+    }
+
     pub fn emits_try_fn(&self) -> bool {
         if let Self::Dynamic(check_settings) = self
             && let Some(panic_settings) = &check_settings.does_panic
