@@ -142,11 +142,17 @@ impl Mode {
         !matches!(self, Mode::Off)
     }
 
-    pub(crate) fn uses_anodized_items(&self) -> bool {
+    /// Whether to emit function specification items, optionally marked for Charon.
+    pub(crate) fn emits_fn_spec_items(&self) -> bool {
         matches!(
             self,
-            Mode::Static(SpecEncoding::Default | SpecEncoding::Charon) | Mode::Dynamic(_)
+            Mode::Static(SpecEncoding::Default | SpecEncoding::Charon)
         )
+    }
+
+    /// Whether to emit type specification predicates and trait qualifier constants.
+    pub(crate) fn emits_type_spec_items(&self) -> bool {
+        self.emits_fn_spec_items() || matches!(self, Mode::Dynamic(_))
     }
 
     pub fn emits_try_fn(&self) -> bool {
@@ -184,10 +190,7 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
             ));
         }
 
-        if matches!(
-            self,
-            Self::Static(SpecEncoding::Default | SpecEncoding::Charon)
-        ) {
+        if self.emits_fn_spec_items() {
             // Embed `spec` elements as `__anodized_fn_*` items.
             let attrs: [Attribute; 2] = [
                 parse_quote!(#[doc(hidden)]),

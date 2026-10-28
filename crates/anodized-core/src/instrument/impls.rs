@@ -40,10 +40,7 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
 
                     let fn_spec = item_fn.parse_spec_from_attrs()?;
 
-                    if matches!(
-                        self,
-                        Self::Static(SpecEncoding::Default | SpecEncoding::Charon)
-                    ) {
+                    if self.emits_fn_spec_items() {
                         // Embed `spec` elements as `__anodized_fn_*` items.
                         let attrs: [Attribute; 2] = [
                             parse_quote!(#[doc(hidden)]),

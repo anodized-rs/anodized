@@ -42,10 +42,7 @@ impl Mode {
     }
 
     fn instrument_loop_body(&self, spec: &LoopSpec, stmts: &mut Vec<Stmt>) {
-        if matches!(
-            self,
-            Self::Static(SpecEncoding::Default | SpecEncoding::Charon)
-        ) {
+        if self.emits_fn_spec_items() {
             let maintains_block =
                 Self::build_precondition_fn_body(std::iter::empty(), &[], &spec.maintains);
             stmts.insert(
