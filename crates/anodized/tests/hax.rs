@@ -90,7 +90,7 @@ pub fn f_while(x: &[u8]) -> u8 {
 )]
 pub fn f_blob(x: u8) {}
 
-// Raw F* with reference
+// Raw F* with Rust syntax interpolation
 #[spec(
     #[cfg(hax)]
     requires: opaque!(fstar!("${x} >. ${f2()}")),
