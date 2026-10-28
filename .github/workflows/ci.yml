@@ -67,19 +67,28 @@ jobs:
         include:
           - toolchain: stable
             flags: ""
+            test_flags: --tests --no-fail-fast
           - toolchain: stable
             flags: '--config ''build.rustflags=["--cfg","anodized_discard_specs"]'''
+            test_flags: --tests --no-fail-fast
+          - toolchain: stable
+            flags: '--config ''build.rustflags=["--cfg","anodized_embed_specs"]'''
+            test_flags: --tests --no-fail-fast
           - toolchain: stable
             flags: '--config ''build.rustflags=["--cfg","anodized_print"]'''
+            test_flags: --tests --no-fail-fast
           - toolchain: stable
             flags: '--config ''build.rustflags=["--cfg","anodized_panic"]'''
+            test_flags: --tests --no-fail-fast
           - toolchain: stable
             flags: '--config ''build.rustflags=["--cfg","anodized_print","--cfg","anodized_panic"]'''
+            test_flags: --tests --no-fail-fast
           - toolchain: stable
             flags: '--config ''build.rustflags=["--cfg","anodized_print","--cfg","anodized_panic","--cfg","anodized_try"]'''
+            test_flags: --tests --no-fail-fast
           - toolchain: nightly
-            flags: '+nightly --config ''build.rustflags=["--cfg","anodized_embed_specs","--cfg","anodized_charon"]'''
-            test_flags: -- --skip compile_errors
+            flags: '+nightly --config ''build.rustflags=["--cfg","anodized_charon"]'''
+            test_flags: --tests --no-fail-fast -- --skip compile_errors
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -100,7 +109,7 @@ jobs:
         run: cargo ${{ matrix.flags }} clippy -p anodized --all-targets -- -D warnings
 
       - name: Integration test anodized with flags `${{ matrix.flags }}`
-        run: cargo ${{ matrix.flags }} test -p anodized --tests --no-fail-fast ${{ matrix.test_flags }}
+        run: cargo ${{ matrix.flags }} test -p anodized ${{ matrix.test_flags }}
 
   test-anodized-fmt:
     name: Lint and test anodized-fmt
