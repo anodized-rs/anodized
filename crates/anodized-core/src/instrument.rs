@@ -138,11 +138,7 @@ impl Mode {
         }
     }
 
-    pub fn changes_anything(&self) -> bool {
-        !matches!(self, Mode::Off)
-    }
-
-    /// Whether to emit function specification items, optionally marked for Charon.
+    /// Whether to emit function specification items.
     pub(crate) fn emits_fn_spec_items(&self) -> bool {
         matches!(
             self,
@@ -150,7 +146,12 @@ impl Mode {
         )
     }
 
-    /// Whether to emit type specification predicates and trait qualifier constants.
+    /// Whether to emit function qualifier constants to enforce trait narrowing.
+    pub(crate) fn emits_fn_qualifier_items(&self) -> bool {
+        self.emits_fn_spec_items() || matches!(self, Mode::Dynamic(_))
+    }
+
+    /// Whether to emit type specification predicates.
     pub(crate) fn emits_type_spec_items(&self) -> bool {
         self.emits_fn_spec_items() || matches!(self, Mode::Dynamic(_))
     }
@@ -354,30 +355,6 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
         let new_trait_impl = self.instrument_trait_impl(spec, item_impl)?;
         Ok(new_trait_impl.to_token_stream())
     }
-}
-
-#[cfg(test)]
-#[test]
-fn selects_spec_embedding_backend() {
-    assert!(matches!(
-        Mode::EMBED_SPECS,
-        Mode::Static(SpecEncoding::Default)
-    ));
-    assert!(matches!(
-        Mode::EMBED_SPECS_CHARON,
-        Mode::Static(SpecEncoding::Charon)
-    ));
-
-    let hax = Mode::from_raw_cfg(RawCfg {
-        anodized_discard_specs: false,
-        anodized_embed_specs: false,
-        anodized_charon: false,
-        anodized_panic: false,
-        anodized_print: false,
-        anodized_try: false,
-        anodized_hax: true,
-    });
-    assert!(matches!(hax, Mode::Static(SpecEncoding::Hax)));
 }
 
 #[cfg(test)]

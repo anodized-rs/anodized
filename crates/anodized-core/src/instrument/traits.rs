@@ -118,7 +118,7 @@ impl Mode {
                         new_trait_items.push(TraitItem::Fn(spec_ensures_fn));
                     }
 
-                    if self.emits_type_spec_items() {
+                    if self.emits_fn_qualifier_items() {
                         let spec_trait_qualifiers_const = Self::build_qualifier_const_item(
                             &attrs,
                             "__anodized_fn_qualifiers_trait",
@@ -332,7 +332,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         new_items.push(ImplItem::Fn(spec_ensures_fn));
                     }
 
-                    if self.emits_type_spec_items() {
+                    if self.emits_fn_qualifier_items() {
                         let spec_qualifiers_const = Self::build_qualifier_const_item(
                             &attrs,
                             "__anodized_fn_qualifiers",
