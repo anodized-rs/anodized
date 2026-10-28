@@ -38,7 +38,7 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
 
                     let fn_spec = item_fn.parse_spec_from_attrs()?;
 
-                    if let Self::EmbedSpecs(_) = self {
+                    if let Self::Static(_) = self {
                         // Embed `spec` elements as `__anodized_fn_*` items.
                         let attrs: [Attribute; 2] = [
                             parse_quote!(#[doc(hidden)]),
@@ -120,7 +120,7 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                     // Instrument function body.
                     self.instrument_fn(&fn_spec, &mut item_fn.sig, &mut item_fn.block)?;
 
-                    if let Self::InjectChecks(check_settings) = self
+                    if let Self::Dynamic(check_settings) = self
                         && let Some(ref panic_settings) = check_settings.does_panic
                         && panic_settings.has_try_fn
                     {

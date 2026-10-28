@@ -16,16 +16,16 @@ pub mod types;
 
 #[derive(Debug, Clone)]
 pub enum Mode {
-    /// Make no changes to the code.
-    ChangeNothing,
-    /// Embed spec elements as new items without changing existing code.
-    EmbedSpecs(SpecEmbedding),
-    /// Inject code to enable compile-time and/or runtime checks.
-    InjectChecks(CheckSettings),
+    /// Discard specs and leave implementation code unaltered.
+    Off,
+    /// Enable static analysis: encode specs as new items and leave implementation code unaltered.
+    Static(SpecEncoding),
+    /// Enable dynamic analysis (e.g. testing, fuzzing): add runtime checks to implementation code.
+    Dynamic(CheckSettings),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SpecEmbedding {
+pub enum SpecEncoding {
     /// The default encoding, i.e. items named `__anodized_*`.
     Default,
     /// The default encoding with Charon contract attributes.
@@ -83,23 +83,23 @@ impl Mode {
                     "`anodized_discard_specs` is incompatible with all other `anodized_*` settings"
                 );
             }
-            Self::ChangeNothing
+            Self::Off
         } else if any_static {
             if any_runtime {
                 panic!(
                     "`anodized_*` static settings `embed_specs` and `charon` are incompatible with dynamic settings `panic`, `print`, and `try`"
                 );
             }
-            Self::EmbedSpecs(if raw_cfg.anodized_charon {
-                SpecEmbedding::Charon
+            Self::Static(if raw_cfg.anodized_charon {
+                SpecEncoding::Charon
             } else {
-                SpecEmbedding::Default
+                SpecEncoding::Default
             })
         } else {
             if raw_cfg.anodized_try && !raw_cfg.anodized_panic {
                 panic!("`anodized_try` requires `anodized_panic`");
             }
-            Self::InjectChecks(CheckSettings {
+            Self::Dynamic(CheckSettings {
                 does_print: raw_cfg.anodized_print,
                 does_panic: if raw_cfg.anodized_panic {
                     Some(PanicSettings {
@@ -113,11 +113,11 @@ impl Mode {
     }
 
     pub fn changes_anything(&self) -> bool {
-        !matches!(self, Mode::ChangeNothing)
+        !matches!(self, Mode::Off)
     }
 
     pub fn emits_try_fn(&self) -> bool {
-        if let Self::InjectChecks(check_settings) = self
+        if let Self::Dynamic(check_settings) = self
             && let Some(panic_settings) = &check_settings.does_panic
         {
             panic_settings.has_try_fn
@@ -128,14 +128,14 @@ impl Mode {
 
     pub fn with_try_fn(&self, value: bool) -> Self {
         match self {
-            Mode::ChangeNothing => Mode::ChangeNothing,
-            Mode::EmbedSpecs(spec_embedding) => Mode::EmbedSpecs(*spec_embedding),
-            Mode::InjectChecks(check_settings) => {
+            Mode::Off => Mode::Off,
+            Mode::Static(spec_encoding) => Mode::Static(*spec_embedding),
+            Mode::Dynamic(check_settings) => {
                 let mut check_settings = check_settings.clone();
                 if let Some(panic_settings) = &mut check_settings.does_panic {
                     panic_settings.has_try_fn = value;
                 };
-                Mode::InjectChecks(check_settings)
+                Mode::Dynamic(check_settings)
             }
         }
     }
@@ -151,7 +151,7 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
             ));
         }
 
-        if let Self::EmbedSpecs(_) = self {
+        if let Self::Static(_) = self {
             // Embed `spec` elements as `__anodized_fn_*` items.
             let attrs: [Attribute; 2] = [
                 parse_quote!(#[doc(hidden)]),
@@ -211,7 +211,7 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
         // Instrument function body.
         self.instrument_fn(&spec, &mut item_fn.sig, &mut item_fn.block)?;
 
-        if let Self::InjectChecks(check_settings) = self
+        if let Self::Dynamic(check_settings) = self
             && let Some(ref panic_settings) = check_settings.does_panic
             && panic_settings.has_try_fn
         {

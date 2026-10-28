@@ -242,7 +242,7 @@ fn type_spec_enforcement_instrument_item_fn() {
         }
     };
 
-    let observed = Mode::InjectChecks(CheckSettings::DEFAULT)
+    let observed = Mode::Dynamic(CheckSettings::DEFAULT)
         .instrument_item_fn(spec_item_fn.spec, spec_item_fn.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -279,7 +279,7 @@ fn type_spec_enforcement_spec_marker_input_out() {
         }
     };
 
-    let observed = Mode::InjectChecks(CheckSettings::DEFAULT)
+    let observed = Mode::Dynamic(CheckSettings::DEFAULT)
         .instrument_item_fn(spec_item_fn.spec, spec_item_fn.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -312,7 +312,7 @@ fn type_spec_enforcement_spec_marker_input() {
         }
     };
 
-    let observed = Mode::InjectChecks(CheckSettings::DEFAULT)
+    let observed = Mode::Dynamic(CheckSettings::DEFAULT)
         .instrument_item_fn(spec_item_fn.spec, spec_item_fn.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -340,7 +340,7 @@ fn type_spec_enforcement_unmarked_input() {
         }
     };
 
-    let observed = Mode::InjectChecks(CheckSettings::DEFAULT)
+    let observed = Mode::Dynamic(CheckSettings::DEFAULT)
         .instrument_item_fn(spec_item_fn.spec, spec_item_fn.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -366,7 +366,7 @@ fn type_spec_enforcement_unmarked_output() {
         }
     };
 
-    let observed = Mode::InjectChecks(CheckSettings::DEFAULT)
+    let observed = Mode::Dynamic(CheckSettings::DEFAULT)
         .instrument_item_fn(spec_item_fn.spec, spec_item_fn.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -444,7 +444,7 @@ fn emit_try_fn_instrument_item_fn() {
         }
     };
 
-    let observed = Mode::InjectChecks(CheckSettings::PRINT_AND_TRY)
+    let observed = Mode::Dynamic(CheckSettings::PRINT_AND_TRY)
         .instrument_item_fn(spec_item_fn.spec, spec_item_fn.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);

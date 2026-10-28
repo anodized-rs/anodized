@@ -45,7 +45,7 @@ impl Mode {
                         parse_quote!(#[allow(warnings)]),
                     ];
 
-                    if let Self::EmbedSpecs(_) = self {
+                    if let Self::Static(_) = self {
                         // Embed `spec` elements as `__anodized_fn_*` items.
                         let mut spec_requires_attrs = attrs.to_vec();
                         let mut spec_requires_sig = self.build_precondition_fn_sig(
@@ -132,7 +132,7 @@ impl Mode {
                         self.instrument_loops_in_fn_body(default_body)?;
                     }
 
-                    if let Mode::InjectChecks(_) = self {
+                    if let Mode::Dynamic(_) = self {
                         let mangled_ident = mangle_ident(&func.sig.ident);
 
                         let mut mangled_fn = func.clone();
@@ -152,7 +152,7 @@ impl Mode {
                         func.semi_token = None;
                     }
 
-                    if let Self::InjectChecks(check_settings) = self
+                    if let Self::Dynamic(check_settings) = self
                         && let Some(ref panic_settings) = check_settings.does_panic
                         && panic_settings.has_try_fn
                     {
@@ -248,7 +248,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         parse_quote!(#[allow(warnings)]),
                     ];
 
-                    if let Self::EmbedSpecs(_) = self {
+                    if let Self::Static(_) = self {
                         // Embed `spec` elements as `__anodized_fn_*` items.
                         let mut spec_requires_attrs = attrs.to_vec();
                         let mut spec_requires_sig = self.build_precondition_fn_sig(
@@ -325,7 +325,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         new_items.push(ImplItem::Const(spec_qualifiers_const));
                     }
 
-                    if let Mode::InjectChecks(_) = self {
+                    if let Mode::Dynamic(_) = self {
                         self.with_try_fn(false).instrument_fn(
                             &fn_spec,
                             &mut func.sig,
