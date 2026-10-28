@@ -1,3 +1,6 @@
+#![cfg_attr(anodized_charon, feature(register_tool))]
+#![cfg_attr(anodized_charon, register_tool(charon))]
+
 use anodized::spec;
 
 #[spec(
@@ -10,10 +13,10 @@ use anodized::spec;
         let length = vec.len();
         length < 100
     },
-    captures: {
+    captures: old_len = {
         let snapshot = vec.clone();
         snapshot.len()
-    } as old_len,
+    },
     ensures: {
         let length = vec.len();
         length > old_len

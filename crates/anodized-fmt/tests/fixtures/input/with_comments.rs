@@ -24,7 +24,7 @@ fn double_positive(x: i32) -> i32 {
 
 // Multiple comments for same arg
 #[spec(
-    // First parameter must be positive
+    // First input must be positive
         // Another comment about the precondition
     requires: a > 0,
     // Result is positive
@@ -37,7 +37,7 @@ fn add(a: i32, b: i32) -> i32 {
 // Test: capture pattern matches tuples
 #[spec(
     // Capture the point coordinates
-    captures: point as (x , y , z),
+    captures: (x , y , z) = point,
     // All coordinates must be less than 100
     ensures: x < 100 && y < 100 && z < 100,
 )]
@@ -47,16 +47,14 @@ fn validate_point(point: (i32, i32, i32)) -> bool {
 
 // Test: Capture with all spec clauses
 #[spec(
-             // Bind the result
-        binds: result,
     // Capture initial balance
     // Balance must be positive before withdrawal
-    captures: *balance as initial,
+    captures: initial = *balance,
     // Balance must be positive before withdrawal
     requires: *balance > 0,
     // Ensure correct calculation
         // Result should be initial balance minus amount
-    ensures: result == initial - amount,
+    ensures: |result| result == initial - amount,
 )]
 fn withdraw_with_capture(balance: &mut u64, amount: u64) -> u64 {
     todo!()
@@ -79,7 +77,7 @@ requires:   value != 0,
 
     #[spec(
                 // Captures the base value
-            captures : self.base as initial_base,
+            captures : initial_base = self.base,
     // Base must be positive
         requires: self.base > 0,
             // Result combines base and value
@@ -103,7 +101,7 @@ trait Validator {
 
     #[spec(
         // Must capture the data
-         captures:  data.clone() as snapshot,
+         captures:  snapshot = data.clone(),
              // Data must not be empty
         requires: !data.is_empty(),
     // Result reflects the snapshot
@@ -114,7 +112,7 @@ trait Validator {
 
 // Multiple clauses in requires without internal comments
 #[spec(
-           // Preconditions for all three parameters
+           // Preconditions for all three inputs
     requires: x > 0 &&
               y > 0 &&
               z > 0,
@@ -178,8 +176,8 @@ fn requires_array_syntax(x: i32, y: i32, z: i32) -> i32 {
     requires: x > 0,
          // Capture initial values
     captures: [
-        x as old_x,
-        y as old_y,
+        old_x = x,
+        old_y = y,
     ],
         // Multiple post-conditions
     ensures: [

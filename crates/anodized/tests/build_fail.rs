@@ -1,4 +1,6 @@
 #![cfg(not(feature = "hax"))]
+#![cfg_attr(anodized_charon, feature(register_tool))]
+#![cfg_attr(anodized_charon, register_tool(charon))]
 
 #[test]
 fn qualifier_narrowing_fails_to_compile() {

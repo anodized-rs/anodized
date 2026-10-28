@@ -1,4 +1,7 @@
+#![cfg_attr(anodized_charon, feature(register_tool))]
+#![cfg_attr(anodized_charon, register_tool(charon))]
 #![allow(unused)]
+
 use anodized::spec;
 
 struct Counter {
@@ -6,6 +9,7 @@ struct Counter {
     capacity: u32,
 }
 
+#[spec]
 impl Counter {
     #[spec(
         maintains: self.count <= self.capacity,
@@ -24,9 +28,9 @@ fn increment_success() {
     c.increment();
 }
 
-#[cfg(anodized_panic)]
+#[cfg(all(anodized_print, anodized_panic))]
 #[test]
-#[should_panic(expected = "Post-invariant failed: self.count <= self.capacity")]
+#[should_panic(expected = "postcondition failed")]
 fn increment_violates_invariant() {
     let mut c = Counter {
         count: 10,
@@ -36,9 +40,9 @@ fn increment_violates_invariant() {
     c.increment();
 }
 
-#[cfg(anodized_panic)]
+#[cfg(all(anodized_print, anodized_panic))]
 #[test]
-#[should_panic(expected = "Pre-invariant failed: self.count <= self.capacity")]
+#[should_panic(expected = "precondition failed")]
 fn increment_violates_pre_invariant() {
     let mut c = Counter {
         count: 11,

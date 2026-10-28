@@ -3,22 +3,26 @@ use syn::{
     visit_mut::{self, VisitMut},
 };
 
-use crate::{LoopSpec, Spec};
+use crate::{FnSpec, LoopSpec};
 
-pub(crate) fn haxify_fn(spec: &Spec, attrs: &mut Vec<Attribute>) {
+pub(crate) fn haxify_fn(spec: &FnSpec, attrs: &mut Vec<Attribute>) {
     for precond in &spec.requires {
-        let body = haxify_expr(&precond.closure.body);
+        let body = haxify_expr(&precond.expr);
         attrs.push(parse_quote! { #[::hax_lib::requires(#body)] });
     }
     for invariant in &spec.maintains {
-        let body = haxify_expr(&invariant.closure.body);
+        let body = haxify_expr(&invariant.expr);
         attrs.push(parse_quote! { #[::hax_lib::requires(#body)] });
         attrs.push(parse_quote! { #[::hax_lib::ensures_ref(|_| #body)] });
     }
     for postcond in &spec.ensures {
-        let inputs = &postcond.closure.inputs;
-        let body = haxify_expr(&postcond.closure.body);
-        attrs.push(parse_quote! { #[::hax_lib::ensures_ref(|#inputs| #body)] });
+        let body = haxify_expr(&postcond.expr);
+        if let Some(pat) = &postcond.pat {
+            let pat = pat.get_pat();
+            attrs.push(parse_quote! { #[::hax_lib::ensures_ref(|#pat| #body)] });
+        } else {
+            attrs.push(parse_quote! { #[::hax_lib::ensures_ref(|output| #body)] });
+        }
     }
 }
 
@@ -28,15 +32,20 @@ pub(crate) fn haxify_impl_or_trait(attrs: &mut Vec<Attribute>) {
 
 pub(crate) fn haxify_for_loop(spec: &LoopSpec, stmts: &mut Vec<Stmt>) {
     for condition in &spec.maintains {
-        let pat = &condition.closure.inputs;
-        let invariant = haxify_expr(&condition.closure.body);
-        stmts.push(parse_quote! { ::hax_lib::loop_invariant!(|#pat| #invariant); });
+        if let Expr::Closure(closure) = &condition.expr {
+            let pat = &closure.inputs;
+            let invariant = haxify_expr(&closure.body);
+            stmts.push(parse_quote! { ::hax_lib::loop_invariant!(|#pat| #invariant); });
+        } else {
+            let invariant = haxify_expr(&condition.expr);
+            stmts.push(parse_quote! { ::hax_lib::loop_invariant!(#invariant); });
+        }
     }
 }
 
 pub(crate) fn haxify_while_loop(spec: &LoopSpec, stmts: &mut Vec<Stmt>) {
     for condition in &spec.maintains {
-        let invariant = haxify_expr(&condition.closure.body);
+        let invariant = haxify_expr(&condition.expr);
         stmts.push(parse_quote! { ::hax_lib::loop_invariant!(#invariant); });
     }
     if let Some(expr) = &spec.decreases {

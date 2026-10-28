@@ -12,7 +12,7 @@ use hax_lib::fstar;
 #[spec(requires: x > 0)]
 pub fn f1(x: u8) {}
 
-#[spec(ensures: *output == 1)]
+#[spec(ensures: |output| output == 1)]
 pub fn f2() -> u8 {
     1
 }
@@ -23,7 +23,7 @@ pub fn f2() -> u8 {
 pub trait T {
     #[spec(
         requires: x > 0,
-        ensures: *output > 0,
+        ensures: |output| output > 0,
     )]
     fn f3(x: u8) -> u8;
 }
@@ -32,7 +32,7 @@ pub trait T {
 impl T for u8 {
     #[spec(
         requires: true,
-        ensures: *output > 1,
+        ensures: |output| output > 1,
     )]
     fn f3(x: u8) -> u8 {
         2
@@ -43,7 +43,7 @@ impl T for u8 {
 
 #[spec(
     // TODO: Would also need a spec that max is an element of x
-    ensures: forall(|j: usize| implies!(j < x.len(), x[j] <= *output)),
+    ensures: |output| forall(|j: usize| implies!(j < x.len(), x[j] <= output)),
 )]
 pub fn f_loop(x: &[u8]) -> u8 {
     let mut max = 0;
@@ -62,8 +62,8 @@ pub fn f_loop(x: &[u8]) -> u8 {
 
 #[spec(
     // TODO: Would also need a spec that max is an element of x
-    ensures: forall(|j: usize| implies!(j < x.len(), x[j] <= *output),
-))]
+    ensures: |output| forall(|j: usize| implies!(j < x.len(), x[j] <= output)),
+)]
 pub fn f_while(x: &[u8]) -> u8 {
     let mut max = 0;
     let mut i = 0;
@@ -104,4 +104,13 @@ pub fn f_ref(x: u8) {}
 pub struct S {
     #[allow(unused)]
     x: u8,
+}
+
+#[test]
+fn hax_spec_examples_execute() {
+    f1(1);
+    assert_eq!(f2(), 1);
+    assert_eq!(<u8 as T>::f3(1), 2);
+    assert_eq!(f_loop(&[1, 3, 2]), 3);
+    assert_eq!(f_while(&[1, 3, 2]), 3);
 }

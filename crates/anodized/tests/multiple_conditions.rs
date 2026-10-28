@@ -1,4 +1,7 @@
+#![cfg_attr(anodized_charon, feature(register_tool))]
+#![cfg_attr(anodized_charon, register_tool(charon))]
 #![allow(unused, unused_variables)]
+
 use anodized::spec;
 
 struct SafeBuffer<T> {
@@ -7,6 +10,7 @@ struct SafeBuffer<T> {
     locked: bool,
 }
 
+#[spec]
 impl<T> SafeBuffer<T> {
     #[spec(
         requires: [
@@ -31,9 +35,9 @@ fn get_element_success() {
     buffer.get_element(1);
 }
 
-#[cfg(anodized_panic)]
+#[cfg(all(anodized_print, anodized_panic))]
 #[test]
-#[should_panic(expected = "Precondition failed: ! self.locked")]
+#[should_panic(expected = "precondition failed")]
 fn get_element_panics_when_locked() {
     let buffer = SafeBuffer {
         items: vec![10, 20, 30],
@@ -43,9 +47,9 @@ fn get_element_panics_when_locked() {
     buffer.get_element(1);
 }
 
-#[cfg(anodized_panic)]
+#[cfg(all(anodized_print, anodized_panic))]
 #[test]
-#[should_panic(expected = "Precondition failed: index < self.items.len()")]
+#[should_panic(expected = "precondition failed")]
 fn get_element_panics_on_out_of_bounds() {
     let buffer = SafeBuffer {
         items: vec![10, 20, 30],

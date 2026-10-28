@@ -1,6 +1,26 @@
+#![cfg_attr(anodized_charon, feature(register_tool))]
+#![cfg_attr(anodized_charon, register_tool(charon))]
 #![allow(clippy::unit_cmp, clippy::needless_return)]
 
 use anodized::spec;
+use std::cell::RefCell;
+
+struct ExecLog(RefCell<Vec<&'static str>>);
+
+#[allow(unused)]
+impl ExecLog {
+    fn new() -> Self {
+        Self(RefCell::new(Vec::new()))
+    }
+
+    fn push(&self, entry: &'static str) {
+        self.0.borrow_mut().push(entry);
+    }
+
+    fn into_vec(self) -> Vec<&'static str> {
+        self.0.into_inner()
+    }
+}
 
 #[spec(
     requires: [
@@ -12,8 +32,8 @@ use anodized::spec;
         return log.push("maintains2") == (),
     ],
     captures: [
-        return log.push("captures1") as _alias1,
-        return log.push("captures2") as _alias2,
+        _alias1 = return log.push("captures1"),
+        _alias2 = return log.push("captures2"),
     ],
     ensures: [
         return log.push("ensures1") == (),
@@ -21,7 +41,7 @@ use anodized::spec;
     ],
 )]
 #[allow(unused)]
-fn func(log: &mut Vec<&'static str>) {
+fn func(log: &ExecLog) {
     log.push("body");
     return;
 }
@@ -29,12 +49,12 @@ fn func(log: &mut Vec<&'static str>) {
 #[cfg(any(anodized_panic, anodized_print))]
 #[test]
 fn execution_order() {
-    let mut log = Vec::new();
-    func(&mut log);
+    let log = ExecLog::new();
+    func(&log);
 
     // Verify the exact execution order
     assert_eq!(
-        log,
+        log.into_vec(),
         [
             "requires1",
             "requires2",
@@ -61,8 +81,8 @@ fn execution_order() {
         log.push("maintains2") != (),
     ],
     captures: [
-        log.push("captures1") as _alias1,
-        log.push("captures2") as _alias2,
+        _alias1 = log.push("captures1"),
+        _alias2 = log.push("captures2"),
     ],
     ensures: [
         log.push("ensures1") != (),
@@ -70,20 +90,20 @@ fn execution_order() {
     ],
 )]
 #[allow(unused)]
-fn func_all_conditions_fail(log: &mut Vec<&'static str>) {
+fn func_all_conditions_fail(log: &ExecLog) {
     log.push("body");
     return;
 }
 
-#[cfg(anodized_print)]
+#[cfg(all(anodized_print, not(anodized_panic)))]
 #[test]
 fn execution_order_print_only() {
-    let mut log = Vec::new();
-    func_all_conditions_fail(&mut log);
+    let log = ExecLog::new();
+    func_all_conditions_fail(&log);
 
     // Verify the exact execution order
     assert_eq!(
-        log,
+        log.into_vec(),
         [
             "requires1",
             "requires2",
@@ -110,8 +130,8 @@ fn execution_order_print_only() {
         log.push("maintains2") == (),
     ],
     captures: [
-        log.push("captures1") as _alias1,
-        log.push("captures2") as _alias2,
+        _alias1 = log.push("captures1"),
+        _alias2 = log.push("captures2"),
     ],
     ensures: [
         log.push("ensures1") == (),
@@ -119,7 +139,7 @@ fn execution_order_print_only() {
     ],
 )]
 #[allow(unused)]
-async fn async_func(log: &mut Vec<&'static str>) {
+async fn async_func(log: &ExecLog) {
     log.push("body");
     return;
 }
@@ -127,11 +147,11 @@ async fn async_func(log: &mut Vec<&'static str>) {
 #[cfg(any(anodized_panic, anodized_print))]
 #[test]
 fn async_execution_order() {
-    let mut log = Vec::new();
-    pollster::block_on(async_func(&mut log));
+    let log = ExecLog::new();
+    pollster::block_on(async_func(&log));
 
     assert_eq!(
-        log,
+        log.into_vec(),
         [
             "requires1",
             "requires2",
@@ -145,5 +165,53 @@ fn async_execution_order() {
             "ensures1",
             "ensures2",
         ]
+    );
+}
+
+#[spec(maintains: { self.log.push(self.label); true })]
+#[cfg_attr(anodized_hax, allow(dead_code))]
+pub struct TypeWithSpec<'a> {
+    label: &'static str,
+    log: &'a ExecLog,
+}
+
+#[spec(
+    requires: { i2.log.push("pre"); true },
+    ensures: { i2.log.push("post"); true },
+)]
+#[cfg_attr(anodized_hax, allow(unused_variables))]
+pub fn func_io<'a>(
+    i1: Spec!(TypeWithSpec<'a>),
+    i2: Spec!(&mut TypeWithSpec, inout),
+    _: Spec!(&TypeWithSpec),
+) -> Spec!(TypeWithSpec<'a>) {
+    TypeWithSpec {
+        label: "out",
+        log: i1.log,
+    }
+}
+
+#[cfg(anodized_panic)]
+#[test]
+fn type_spec_check_execution_order() {
+    let log = ExecLog::new();
+
+    let i1 = TypeWithSpec {
+        label: "in1",
+        log: &log,
+    };
+    let mut i2 = TypeWithSpec {
+        label: "in2",
+        log: &log,
+    };
+    let i3 = TypeWithSpec {
+        label: "in3",
+        log: &log,
+    };
+    let _ = func_io(i1, &mut i2, &i3);
+
+    assert_eq!(
+        log.into_vec(),
+        ["in1", "in2", "in3", "pre", "out", "in2", "post"]
     );
 }

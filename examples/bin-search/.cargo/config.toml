@@ -1,0 +1,15 @@
+target-applies-to-host = false
+
+[host]
+rustflags = [
+    "--cfg", "anodized_print",
+    "--cfg", "anodized_panic",
+    "--cfg", "anodized_try",
+]
+
+[build]
+rustflags = [
+    "--cfg", "anodized_print",
+    "--cfg", "anodized_panic",
+    "--cfg", "anodized_try",
+]

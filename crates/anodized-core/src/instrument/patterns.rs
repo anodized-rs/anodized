@@ -1,0 +1,138 @@
+use proc_macro2::Span;
+use syn::{Expr, Ident, Pat, PatIdent, parse_quote, visit_mut::VisitMut};
+
+#[cfg(test)]
+#[path = "patterns_tests.rs"]
+mod patterns_tests;
+
+/// A 'tame' pattern can be used inside a `#[spec]`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TamePat {
+    /// The pattern binds only by `ref`. It may contain wildcard (`_`) and rest (`..`) patterns.
+    Borrowing(Pat),
+    /// The deconstructed value can be reconstructed from the pattern's bindings.
+    Invertible(Pat, Box<Expr>),
+}
+
+impl TamePat {
+    pub fn get_pat(&self) -> &Pat {
+        match self {
+            Self::Borrowing(pat) | Self::Invertible(pat, _) => pat,
+        }
+    }
+}
+
+/// Tame an irrefutable pattern, so that it may be used inside a `#[spec]`.
+///
+/// 1. If the pattern binds *no* names by `ref` and does not contain rest (`..`) patterns,
+///    then rename wildcards (`_`) to fresh idents and mark as `Invertible`.
+/// 2. If the pattern binds *all* names by `ref`, then mark as `Borrowing`.
+/// 3. Otherwise return `Err`.
+pub fn tame_pattern(id_gen: &mut IdentGenerator, mut pat: Pat) -> syn::Result<TamePat> {
+    let mut ident_count: u32 = 0;
+    let mut ref_count: u32 = 0;
+    let mut has_rest = false;
+    ForEachMutPattern::with(|subpat| match subpat {
+        Pat::Ident(subpat_ident) => {
+            ident_count += 1;
+            if subpat_ident.by_ref.is_some() {
+                ref_count += 1;
+            }
+        }
+        Pat::Rest(_) => has_rest = true,
+        Pat::Struct(subpat_struct) if subpat_struct.rest.is_some() => has_rest = true,
+        _ => {}
+    })
+    .visit_pat_mut(&mut pat);
+
+    if ref_count == 0 && !has_rest {
+        ForEachMutPattern::with(|subpat| {
+            if let Pat::Wild(subpat_wild) = subpat {
+                *subpat = Pat::Ident(PatIdent {
+                    attrs: subpat_wild.attrs.clone(),
+                    by_ref: None,
+                    mutability: None,
+                    ident: id_gen.generate_next(),
+                    subpat: None,
+                });
+            }
+        })
+        .visit_pat_mut(&mut pat);
+
+        let mut clean_pat = pat.clone();
+        // Transform `clean_pat` to eliminate `mut`, `@`, and type ascriptions.
+        ForEachMutPattern::with(|subpat| {
+            // TODO: Remove attributes.
+            match subpat {
+                Pat::Ident(subpat_ident) => {
+                    subpat_ident.mutability = None;
+                    subpat_ident.subpat = None;
+                }
+                Pat::Type(subpat_typed) => {
+                    *subpat = std::mem::replace(&mut *subpat_typed.pat, parse_quote! { _ });
+                }
+                _ => {}
+            }
+        })
+        .visit_pat_mut(&mut clean_pat);
+        let expr = parse_quote! { #clean_pat };
+
+        Ok(TamePat::Invertible(pat, expr))
+    } else if ident_count == ref_count {
+        Ok(TamePat::Borrowing(pat))
+    } else {
+        let message = if has_rest {
+            "inside `#[spec]`, patterns containing `..` must bind only by `ref`"
+        } else {
+            "inside `#[spec]`, patterns cannot mix move and `ref` bindings"
+        };
+        Err(syn::Error::new_spanned(pat, message))
+    }
+}
+
+pub struct IdentGenerator {
+    index: usize,
+}
+
+impl IdentGenerator {
+    pub fn new() -> Self {
+        Self { index: 0 }
+    }
+
+    pub fn generate_next(&mut self) -> Ident {
+        self.index += 1;
+        syn::Ident::new(
+            &format!("__anodized_ident_{}", self.index),
+            Span::mixed_site(),
+        )
+    }
+}
+
+impl Default for IdentGenerator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+struct ForEachMutPattern<F> {
+    body: F,
+}
+
+impl<F> ForEachMutPattern<F>
+where
+    F: FnMut(&mut Pat),
+{
+    pub fn with(body: F) -> Self {
+        Self { body }
+    }
+}
+
+impl<F> VisitMut for ForEachMutPattern<F>
+where
+    F: FnMut(&mut Pat),
+{
+    fn visit_pat_mut(&mut self, pat: &mut syn::Pat) {
+        (self.body)(pat);
+        syn::visit_mut::visit_pat_mut(self, pat);
+    }
+}

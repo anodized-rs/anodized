@@ -5,6 +5,82 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+## 0.7.0 (2026 Sep 27)
+
+### Breaking Changes
+
+- **[anodized-core] Revised the public specification AST** - `Spec` is now `FnSpec`, `DataSpec`
+  is now `TypeSpec`, and postcondition patterns are represented by `TamePat`. Parsing is now
+  contextual through `Specified`, replacing direct parsing of a standalone function spec (#207,
+  #209, #219).
+- **[anodized] Simplified `try_call!` failure values** - `anodized::result::Error::{Pre, Post}`
+  no longer carry a formatted diagnostic-message payload; `Post` retains the function output
+  (#186).
+
+### Added
+
+- **[anodized] Opt-in, enforceable type refinements with `Spec!(...)`** - Mark function inputs,
+  outputs, and fields to enforce their type specifications at their relevant boundaries.
+  Input markers support the `out` and `inout` modes, and refinements compose recursively through
+  references, slices, arrays, `Option`, `Result`, `Box`, `Vec`, and tuples (#191, #217, #219).
+- **[anodized] More expressive postcondition output patterns** - `ensures:` bindings can now use
+  irrefutable destructuring and move patterns, while preserving the value returned to the caller
+  (#196, #199, #205).
+- **[anodized-core] Trait methods support input patterns** - Trait function specifications now
+  handle supported argument patterns when forwarding calls to their implementation shims (#162).
+- **[cargo-anodized] `cargo anodized fmt`** - Added a Cargo plugin that runs `rustfmt` and
+  `anodized-fmt`, with package, manifest, workspace, check, and verbose options (#215).
+- **[anodized-core] Charon/Aeneas spec embedding** - `--cfg anodized_embed_specs` emits embedded
+  specification items, and `--cfg anodized_charon` additionally marks supported preconditions
+  and postconditions with Charon contract attributes (#212).
+
+### Fixed
+
+- **[anodized-core] `#[cfg]` on a condition is honored in every check mode** - The guard was
+  emitted only alongside the printing path, so a condition gated off by its `#[cfg]` was still
+  checked under `--cfg anodized_panic` without `--cfg anodized_print` (#192).
+- **[anodized-core] Robust pattern handling in postconditions** - Fixed edge cases involving
+  wildcards, `mut`, `@`, type ascriptions, references, and boxed values, with clearer compiler
+  diagnostics for unsupported patterns (#199, #205).
+- **[anodized-core] Function bodies and captures use the appropriate closure traits** - Bodies
+  that require `FnOnce` compile correctly, while capture expressions remain mutation-free (#187,
+  #202).
+
+### Changed
+
+- **[anodized-core] Invalid `anodized_*` configuration combinations now fail early** -
+  `anodized_try` requires `anodized_panic`; spec embedding and discarding cannot be combined with
+  runtime-check settings (#214).
+- **[anodized-core] Runtime-check diagnostics again identify pre- and post-invariant failures**
+  (#197).
+
+## 0.6.0 (2026 Aug 08)
+
+### Breaking Changes
+
+- **[anodized] Revised function-spec syntax** - `captures:` now uses assignments (`pattern = expression`) instead of `expression as pattern`; the automatic `old_` capture binding is removed. Postcondition output bindings now belong to each `ensures:` clause, for example `ensures: |result| [condition_a, condition_b]`; `binds:` and `inspects:` are no longer supported (#173, #178, #179, #180).
+- **[anodized] Tightened condition evaluation** - Preconditions and invariants are no longer written as closures, and condition evaluation must implement `Fn`, preventing mutations of captured state (#157, #163).
+- **[workspace] Raised the minimum supported Rust version to 1.95** (#158).
+- **[anodized-core] Reworked the public specification AST** - `PreCondition` is now `Condition`, postconditions store an optional pattern and expression, and parser terminology/types now use fields (`SpecFields` and `syn::FieldValue`) instead of arguments (`SpecArgs` and `SpecArg`) (#165, #178, #181).
+
+### Added
+
+- **[anodized] `try_call!` and `anodized::result`** - With `--cfg anodized_try` and `--cfg anodized_panic`, wrap a specified call to receive a `Result` that distinguishes precondition and postcondition failures. This enables fuzzing and property-based testing to discard invalid inputs without masking postcondition failures (#156, #158, #159, #160).
+- **[examples] Property-based and fuzzing examples for binary search** - Added QuickCheck, proptest, and cargo-fuzz demonstrations using `try_call!` (#166, #167).
+- **[anodized] Postcondition closure-array form** - A single output pattern can bind the return value for a group of postconditions, e.g. `ensures: |output| [first_check, second_check]` (#179).
+- **[anodized-fmt] Array formatting and comment preservation in arrays** (#140).
+
+### Changed
+
+- **[anodized-core] Improved runtime-check instrumentation and spec embedding** - Checks now enforce `bool` results and use mode-specific configuration internally (#143, #151, #153, #154).
+- **[workspace] Expanded CI coverage** - Added checks for test utilities and fuzz targets, including formatter fuzzing (#141, #142).
+
+### Documentation
+
+- **[anodized] Refined the README introduction and positioning** (#155).
+
 ## 0.5.1 (2026 May 29)
 
 ### Fixed

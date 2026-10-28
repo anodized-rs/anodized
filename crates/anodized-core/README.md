@@ -24,38 +24,41 @@ This crate is the interoperability layer for tools connected to the [Anodized](h
 
 ## Specification Syntax
 
-The `#[spec]` attribute's parameters follow a specific grammar, which is formally defined using EBNF as follows.
+The `#[spec]` attribute's fields follow a specific grammar, which is formally defined using EBNF as follows.
 
 ```ebnf
-params = [ requires_params ]
-       , [ maintains_params ]
+fields = [ qualifiers ]
+         [ requires_fields ]
+       , [ maintains_fields ]
        (* not a typo: at most one `captures:` *)
-       , [ captures_param ]
-       (* not a typo: at most one `binds:` *)
-       , [ binds_param ]
-       , [ ensures_params ];
+       , [ captures_field ]
+       , [ ensures_fields ];
 
-requires_params  = { requires_param };
-maintains_params = { maintains_param };
-ensures_params   = { ensures_param };
+qualifiers = { qualifier };
+qualifier = `functional` | `pure` | `total`
+          | `deterministic` | `effectfree` | `infallible` | `terminating`;
 
-requires_param  = [ cfg_attr ] , `requires:` , pre_conditions, `,`;
-maintains_param = [ cfg_attr ] , `maintains:` , pre_conditions, `,`;
-captures_param  = `captures:` , captures, `,`;
-binds_param     = `binds:` , pattern, `,`;
-ensures_param   = [ cfg_attr ] , `ensures:` , post_conditions, `,`;
+requires_fields  = { requires_field };
+maintains_fields = { maintains_field };
+ensures_fields   = { ensures_field };
 
-pre_conditions = pre_condition_expr | pre_condition_list;
-pre_condition_list = `[` , pre_condition_expr , { `,` , pre_condition_expr } , [ `,` ] , `]`;
-pre_condition_expr = expr | pre_closure_expr;
+requires_field  = [ cfg_attr ] , `requires:` , conditions, `,`;
+maintains_field = [ cfg_attr ] , `maintains:` , conditions, `,`;
+captures_field  = `captures:` , captures, `,`;
+ensures_field   = [ cfg_attr ] , `ensures:` , postconds, `,`;
 
-captures = capture_expr | capture_list;
-capture_list = `[` , capture_expr , { `,` , capture_expr } , [ `,` ] , `]`;
-capture_expr = expr | (expr , `as` , ident);
+conditions = expr | condition_list;
+condition_list = `[` , expr , { `,` , expr } , [ `,` ] , `]`;
 
-post_conditions = post_condition_expr | post_condition_list;
-post_condition_list = `[` , post_condition_expr , { `,` , post_condition_expr } , [ `,` ] , `]`;
-post_condition_expr = expr | post_closure_expr;
+captures = capture_stmt | capture_list;
+capture_list = `[` , capture_stmt , { `,` , capture_stmt } , [ `,` ] , `]`;
+capture_stmt = pattern , `=` , expr;
+
+postconds = postcond_expr | postcond_list | postcond_list_closure;
+postcond_list = `[` , postcond_expr , { `,` , postcond_expr } , [ `,` ] , `]`;
+postcond_expr = expr | postcond_closure;
+postcond_closure = `|` , pattern , `|` , expr;
+postcond_list_closure = `|` , pattern , `|` , condition_list;
 
 cfg_attr = `#[cfg(` , settings , `)]`;
 ```
@@ -63,12 +66,11 @@ cfg_attr = `#[cfg(` , settings , `)]`;
 **Notes:**
 
 - The last `,` is optional.
-- The `params` rule defines a sequence of optional parameter groups that must appear in the specified order.
-- `expr` is a Rust [`expression`](https://doc.rust-lang.org/reference/expressions.html); type checking will fail if it does not evaluate to `bool`.
-- `pre_closure_expr` is a Rust [`closure`](https://doc.rust-lang.org/reference/expressions/closure-expr.html) that receives no inputs and returns `bool`; type checking will fail if it does not evaluate to `bool` and does not take no arguments.
-- `post_closure_expr` is a Rust [`closure`](https://doc.rust-lang.org/reference/expressions/closure-expr.html) that receives the function's return value as a reference; type checking will fail if it does not evaluate to `bool`.
-- `pattern` is an irrefutable Rust [`pattern`](https://doc.rust-lang.org/reference/patterns.html); type checking will fail if its type does not match the function's return value.
+- The `fields` rule defines a sequence of optional field groups that must appear in the specified order.
+- `expr` is a Rust [`expression`](https://doc.rust-lang.org/reference/expressions.html).
+- `pattern` is an irrefutable Rust [`pattern`](https://doc.rust-lang.org/reference/patterns.html).
 - `settings` is the content of the [`cfg`](https://doc.rust-lang.org/reference/conditional-compilation.html) attribute (e.g. `test`, `debug_assertions`).
+- Every valid spec field can be parsed as a Rust [`struct` expression field](https://doc.rust-lang.org/reference/expressions/struct-expr.html#grammar-StructExprField).
 
 ## Instrumentation
 
@@ -80,10 +82,10 @@ Given an original function like this:
 #[spec(
     requires: <PRECONDITION>,
     maintains: <INVARIANT>,
-    captures: <CAPTURE_EXPR> as <ALIAS>,
-    ensures: |<PATTERN>| <POSTCONDITION>,
+    captures: <ALIAS> = <CAPTURE_EXPR>,
+    ensures: |<OUTPUT_BINDING>| <POSTCONDITION>,
 )]
-fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
+fn my_function(<FUNCTION_INPUTS>) -> <RETURN_TYPE> {
     <BODY>
 }
 ```
@@ -91,35 +93,61 @@ fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
 The macro rewrites the body to be conceptually equivalent to the following:
 
 ```rust,ignore
-fn my_function(<ARGUMENTS>) -> <RETURN_TYPE> {
-    // 1. Preconditions and invariants are checked
-    check!((| | <PRECONDITION>)(), "Precondition failed: <PRECONDITION>");
-    check!((| | <INVARIANT>)(), "Pre-invariant failed: <INVARIANT>");
+fn my_function(<FUNCTION_INPUTS>) -> <RETURN_TYPE> {
+    // 1. Preconditions and invariants are checked.
+    let __anodized_pre = true;
+    let __anodized_pre = __anodized_pre & check_condition!(
+        <PRECONDITION>,
+        "precondition failed: <PRECONDITION>",
+    );
+    let __anodized_pre = __anodized_pre & check_condition!(
+        <INVARIANT>,
+        "preinvariant failed: <INVARIANT>",
+    );
+    if !__anodized_pre {
+        handle_failure!();
+    }
 
-    // 2. Values are captured and the original function body is executed
-    // Note 1: captures and body execution happen in a single tuple assignment
-    //         to ensure captured values aren't accessible to the function body
-    // Note 2: the body is evaluated in a closure, so returns inside the body
-    //         do not bypass postcondition checks
+    // 2. Values are captured and the original function body is executed.
+    // Note 1: Captures and body execution happen in a single tuple assignment
+    //         to ensure captured values aren't accessible to the function body.
+    // Note 2: The body is evaluated in a closure, so returns inside the body
+    //         do not bypass postcondition checks.
     let (<ALIAS>, __anodized_output): (_, <RETURN_TYPE>) = (
         <CAPTURE_EXPR>,
         (|| { <BODY> })(),
     );
 
-    // 3. Invariants and postconditions are checked
-    // Note 1: Captured values are in scope for postconditions
+    // 3. Invariants and postconditions are checked.
+    // Note 1: Captured values are in scope for postconditions.
     // Note 2: `__anodized_output` is also in scope for postconditions,
-    //         but referring to it is strongly discouraged
-    check!((| | <INVARIANT>)(), "Post-invariant failed: <INVARIANT>");
-    // Postcondition is checked by invoking the closure with a reference to the return value
-    check!(
-        (|<PATTERN>: &<RETURN_TYPE>| <POSTCONDITION>)(&__anodized_output),
-        "Postcondition failed: | <PATTERN> | <POSTCONDITION>",
+    //         but referring to it is strongly discouraged.
+    let __anodized_post = true;
+    let __anodized_post = __anodized_post & check_condition!(
+        <INVARIANT>,
+        "postinvariant failed: <INVARIANT>",
     );
+    // Each postcondition is evaluated with its output bindings in scope.
+    // Note 1: Details of pattern handling are omitted for brevity.
+    let __anodized_post = __anodized_post & check_condition!(
+        { let <OUTPUT_BINDING> = __anodized_output; <POSTCONDITION> },
+        "postcondition failed: | <OUTPUT_BINDING> | <POSTCONDITION>",
+    );
+    if !__anodized_post {
+        handle_failure!();
+    }
+
+    // `check_condition!` represents the generated condition expression. Depending on
+    // enabled settings, it evaluates the condition, prints a diagnostic, or short-circuits
+    // to `true` when no runtime action is enabled.
 
     // 4. The result is returned
     __anodized_output
 }
 ```
 
-When a condition has a `#[cfg(...)]` attribute, the corresponding `check!` is wrapped in an `if cfg!(...)` block. This follows standard Rust `#[cfg]` semantics: the check only runs when the configuration predicate is true. Details of the injected code are determined by `cfg` settings.
+When a condition has a `#[cfg(...)]` attribute, its generated evaluator is individually guarded
+with `!cfg!(...) || ...`. This follows standard Rust `#[cfg]` semantics: the condition is evaluated
+only when the configuration predicate is true, but the condition remains type-checked in every build
+configuration, with details of diagnostics and failure handling determined by the `anodized_*`
+settings.

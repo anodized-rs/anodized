@@ -1,8 +1,11 @@
+#![cfg_attr(anodized_charon, feature(register_tool))]
+#![cfg_attr(anodized_charon, register_tool(charon))]
+
 use anodized::spec;
 
 #[spec(
     requires: x.is_finite(),
-    ensures: output + output == x,
+    ensures: |output| output + output == x,
 )]
 #[allow(unused)]
 async fn async_half(x: f32) -> f32 {

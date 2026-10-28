@@ -1,0 +1,14 @@
+[package]
+publish = false
+name = "bin-search"
+description = "Anodized example: binary search"
+version = "0.0.0"
+edition = "2024"
+
+[dependencies]
+anodized = { path = "../../crates/anodized" }
+
+[dev-dependencies]
+proptest = "1.11.0"
+proptest-derive = "0.8.0"
+quickcheck = "1.1.0"

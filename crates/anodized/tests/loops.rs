@@ -1,8 +1,11 @@
+#![cfg_attr(anodized_charon, feature(register_tool))]
+#![cfg_attr(anodized_charon, register_tool(charon))]
 #![allow(clippy::needless_range_loop)]
+
 use anodized::spec;
 
 #[spec(
-    ensures: [
+    ensures: |ref output| [
         seq.iter().any(|elem| elem == output),
         seq.iter().all(|elem| elem <= output),
     ],
@@ -24,10 +27,10 @@ pub fn find_maximum(seq: &[u8]) -> u8 {
 
 #[spec(
     requires: seq.is_sorted(),
-    ensures: [
-        *output <= seq.len(),
-        seq[0..*output].iter().all(|item| item < value),
-        seq[*output..].iter().all(|item| item >= value),
+    ensures: |output| [
+        output <= seq.len(),
+        seq[0..output].iter().all(|item| item < value),
+        seq[output..].iter().all(|item| item >= value),
     ],
 )]
 pub fn find_insert_position<T: Ord>(seq: &[T], value: &T) -> usize {

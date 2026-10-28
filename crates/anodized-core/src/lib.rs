@@ -1,27 +1,35 @@
 #![doc = include_str!("../README.md")]
 
 use proc_macro2::Span;
-use syn::{Error, Expr, ExprClosure, Meta, Pat};
+use syn::{Error, Expr, Meta, Pat};
 
-use crate::qualifiers::FnQualifiers;
+use crate::{instrument::patterns::TamePat, qualifiers::FnQualifiers};
 
 pub mod annotate;
 pub mod instrument;
 pub mod qualifiers;
+pub mod syntax;
 
 #[cfg(test)]
 mod test_util;
 
+/// Mandates that an AST node's `#[spec]` attribute be empty, i.e. contain no fields.
+#[derive(Debug)]
+pub struct EmptySpec;
+
 /// Specifies the intended behavior of a function or method: `fn`.
 #[derive(Debug)]
-// TODO: Rename to `FnSpec` to reduce ambiguity.
-pub struct Spec {
+pub struct FnSpec {
     /// Qualifiers that constrain the behavior of the computation.
     pub qualifiers: FnQualifiers,
+    /// Whether each input satisfies its type spec on entry/exit.
+    pub input_spec_flags: Vec<InputSpecFlags>,
+    /// Whether the output satisfies its type spec on exit.
+    pub output_spec_flag: bool,
     /// Preconditions: conditions that must hold when the function is called.
-    pub requires: Vec<PreCondition>,
+    pub requires: Vec<Condition>,
     /// Invariants: conditions that must hold both when the function is called and when it returns.
-    pub maintains: Vec<PreCondition>,
+    pub maintains: Vec<Condition>,
     /// Captures: expressions to snapshot at function entry for use in postconditions.
     pub captures: Vec<Capture>,
     /// Postconditions: conditions that must hold when the function returns.
@@ -30,19 +38,42 @@ pub struct Spec {
     span: Span,
 }
 
-impl Spec {
-    /// Empty spec that contains no elements.
-    pub fn empty() -> Self {
-        Self {
-            qualifiers: FnQualifiers::empty(),
-            requires: vec![],
-            maintains: vec![],
-            captures: vec![],
-            ensures: vec![],
-            span: Span::call_site(),
+/// Determines where the type spec of an input in a `fn` signature must hold.
+#[derive(Debug)]
+pub enum InputSpecFlags {
+    /// The type spec must hold neither on entry nor exit.
+    Neither,
+    /// The type spec must hold only on entry.
+    In(Pat),
+    /// The type spec must hold only on exit. The exit check needs a tame pattern.
+    Out(TamePat),
+    /// The type spec must hold both on entry and exit. The exit check needs a tame pattern.
+    Both(TamePat),
+}
+
+impl InputSpecFlags {
+    /// Whether the type spec must hold on entry.
+    pub fn on_entry(&self) -> Option<&Pat> {
+        match self {
+            InputSpecFlags::Neither => None,
+            InputSpecFlags::In(pat) => Some(pat),
+            InputSpecFlags::Out(_) => None,
+            InputSpecFlags::Both(tame_pat) => Some(tame_pat.get_pat()),
         }
     }
 
+    /// Whether the type spec must hold on exit. The pattern must be tame for runtime checks.
+    pub fn on_exit(&self) -> Option<&TamePat> {
+        match self {
+            InputSpecFlags::Neither => None,
+            InputSpecFlags::In(_) => None,
+            InputSpecFlags::Out(tame_pat) => Some(tame_pat),
+            InputSpecFlags::Both(tame_pat) => Some(tame_pat),
+        }
+    }
+}
+
+impl FnSpec {
     /// Returns `true` if the spec is empty (specifies nothing), otherwise returns `false`.
     pub fn is_empty(&self) -> bool {
         self.qualifiers.is_empty()
@@ -50,6 +81,11 @@ impl Spec {
             && self.maintains.is_empty()
             && self.ensures.is_empty()
             && self.captures.is_empty()
+            && !self.output_spec_flag
+            && !self
+                .input_spec_flags
+                .iter()
+                .any(|input_spec| input_spec.on_entry().is_some() || input_spec.on_exit().is_some())
     }
 
     /// Construct an error from the whole spec.
@@ -58,27 +94,26 @@ impl Spec {
     }
 }
 
-/// Specifies the intended behavior of a data type: `struct` or `enum`.
+/// Specifies the intended behavior of a type: `struct` or `enum`.
 #[derive(Debug)]
-pub struct DataSpec {
-    /// Invariants: conditions that must hold for all instances of the data type.
-    pub maintains: Vec<PreCondition>,
+pub struct TypeSpec {
+    /// Whether each field satisfies its type spec. Variant index first, field index second.
+    pub field_spec_flags: Vec<Vec<bool>>,
+    /// Invariants: conditions that must hold for all instances of the type.
+    pub maintains: Vec<Condition>,
     /// The span in the source code, from which this spec was parsed.
     span: Span,
 }
 
-impl DataSpec {
-    /// Empty spec that contains no elements.
-    pub fn empty() -> Self {
-        Self {
-            maintains: vec![],
-            span: Span::call_site(),
-        }
-    }
-
+impl TypeSpec {
     /// Returns `true` if the spec is empty (specifies nothing), otherwise returns `false`.
     pub fn is_empty(&self) -> bool {
         self.maintains.is_empty()
+            && !self
+                .field_spec_flags
+                .iter()
+                .flatten()
+                .any(|field_spec| *field_spec)
     }
 
     /// Construct an error from the whole spec.
@@ -91,7 +126,7 @@ impl DataSpec {
 #[derive(Debug)]
 pub struct LoopSpec {
     /// Loop invariants: conditions that must hold both before and after the loop's body runs.
-    pub maintains: Vec<LoopInvariant>,
+    pub maintains: Vec<Condition>,
     /// Loop variant: an expression that decreases with each run of the loop's body.
     pub decreases: Option<LoopVariant>,
     /// The span in the source code, from which this spec was parsed.
@@ -119,13 +154,11 @@ impl LoopSpec {
     }
 }
 
-/// A precondition represented by a `bool`-valued expression.
+/// A condition represented by a `bool`-valued expression.
 #[derive(Debug)]
-// TODO: Rename to `Condition` for clarity.
-pub struct PreCondition {
-    /// The closure that validates the precondition,
-    /// takes no input, e.g. `|| input.is_valid()`.
-    pub closure: ExprClosure,
+pub struct Condition {
+    /// The expression that validates the condition, e.g. `value > 42`.
+    pub expr: Expr,
     /// **Static analyzers can safely ignore this field.**
     ///
     /// Build configuration filter to decide whether to add runtime checks.
@@ -133,12 +166,13 @@ pub struct PreCondition {
     pub cfg: Option<Meta>,
 }
 
-/// A postcondition represented by a closure that takes the return value as a reference.
+/// A postcondition represented by a pattern to bind the output and a `bool`-valued expression.
 #[derive(Debug)]
 pub struct PostCondition {
-    /// The closure that validates the postcondition, taking the function's
-    /// return value by reference, e.g. `|output| *output > 0`.
-    pub closure: ExprClosure,
+    /// The pattern to bind or destructure the function's output, e.g. `answer` or `(left, right)`.
+    pub pat: Option<TamePat>,
+    /// The expression that validates the postcondition, e.g. `answer == "forty-two"`.
+    pub expr: Expr,
     /// **Static analyzers can safely ignore this field.**
     ///
     /// Build configuration filter to decide whether to add runtime checks.
@@ -149,25 +183,10 @@ pub struct PostCondition {
 /// Captures an expression's value at function entry.
 #[derive(Debug)]
 pub struct Capture {
-    /// The expression to capture.
-    pub expr: Expr,
     /// The pattern to bind/destructure the captured value.
     pub pat: Pat,
-}
-
-/// Holds true before and after each iteration of a loop's body.
-#[derive(Debug)]
-pub struct LoopInvariant {
-    /// The closure that defines the invariant.
-    ///
-    /// On a `for` loop, the closure's single argument is the logical index.
-    /// On a `while` loop, the closure has no arguments.
-    pub closure: ExprClosure,
-    /// **Static analyzers can safely ignore this field.**
-    ///
-    /// Build configuration filter to decide whether to add runtime checks.
-    /// Passed to a `cfg!()` guard in the instrumented code.
-    pub cfg: Option<Meta>,
+    /// The expression to capture.
+    pub expr: Expr,
 }
 
 /// Decreases with each run of a loop's body.

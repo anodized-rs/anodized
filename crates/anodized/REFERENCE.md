@@ -7,17 +7,20 @@
 | [`fn`, free or inherent `impl`](#function-specs) | Pre- and postconditions, invariants. |
 | [`trait`](#trait-specs)                          | Enforces each `impl` to conform.     |
 | [`for` and `while`](#loop-specs)                 | Loop invariants and variant (bound). |
-| [`struct` and `enum`](#data-specs)               | Refinements to constrain instances.  |
+| [`struct` and `enum`](#type-specs)               | Type refinements to constrain data.  |
 
 ## Build Configurations
 
 Anodized uses `cfg` options to control how each `#[spec]` changes the Rust code.
 
-| `--cfg` Setting                                     | Effect                 |
-| --------------------------------------------------- | ---------------------- |
-| [`anodized_discard_specs`](#anodized_discard_specs) | disable spec embedding |
-| [`anodized_panic`](#anodized_panic)                 | runtime check: panic   |
-| [`anodized_print`](#anodized_print)                 | runtime check: print   |
+| `--cfg` Setting                                     | Effect                   |
+| --------------------------------------------------- | ------------------------ |
+| [`anodized_discard_specs`](#anodized_discard_specs) | discard specs completely |
+| [`anodized_embed_specs`](#anodized_embed_specs)     | embed specs for analysis |
+| [`anodized_charon`](#anodized_charon)               | mark specs for Charon    |
+| [`anodized_panic`](#anodized_panic)                 | runtime check: panic     |
+| [`anodized_print`](#anodized_print)                 | runtime check: print     |
+| [`anodized_try`](#anodized_try)                     | runtime check: `Result`  |
 
 Select the desired options via compiler `cfg` flags, for example:
 
@@ -29,7 +32,25 @@ RUSTFLAGS="--cfg anodized_print" cargo test
 
 Disable embedding the specs as Rust code.
 
-**Important:** This has **no effect on runtime performance** because the embedded specs are always dead code. On the other hand, it **prevents syntax/type checking** specs, so it may decrease compilation time.
+**Important:** Discarding specs removes their generated code and prevents syntax/type checking of their expressions. With no `anodized_*` flags, runtime checks are disabled, but `captures` expressions still execute alongside the function body: a `.clone()` in a capture still runs. The separate `anodized_embed_specs` mode embeds specifications without changing the function body.
+
+### `anodized_embed_specs`
+
+Embed each specification as hidden Rust items alongside the annotated code, without changing the
+annotated items themselves. This mode is for static-analysis tools such as Charon/Aeneas and Hax
+that consume Anodized specs, so runtime instrumentation is inactive.
+
+`anodized_embed_specs` cannot be combined with `anodized_discard_specs`, `anodized_panic`,
+`anodized_print`, or `anodized_try`.
+
+### `anodized_charon`
+
+Enable marking embedded specifications with [Charon](https://github.com/AeneasVerif/charon) contract
+attributes. Generated precondition and postcondition items are marked with
+`#[charon::contract(...)]` so that Charon and Aeneas can associate them with the annotated function.
+
+Use this setting with a nightly Rust toolchain. Like `anodized_embed_specs`, it cannot be combined
+with `anodized_discard_specs` or any runtime-check setting.
 
 ## Runtime Checks
 
@@ -42,6 +63,11 @@ Checks each condition via an `assert!`, so a violation panics with a descriptive
 ### `anodized_print`
 
 Reports each violation with `eprintln!`, so execution can continue. Useful for experiments, logging, etc.
+
+### `anodized_try`
+
+Enables the `try_call!` macro, which checks conditions but defers action to the caller by
+returning a `Result`. See the `anodized::result` module for details.
 
 Use `#[cfg]` attributes on individual conditions to control when checks run (see the [#[cfg] section](#cfg-configure-runtime-checks) below).
 
@@ -61,12 +87,12 @@ use anodized::spec;
 
     // Runtime checks only in debug builds (like `debug_assert!`)
     #[cfg(debug_assertions)]
-    ensures: output.is_ok(),
+    ensures: |output| output.is_ok(),
 )]
 fn perform_complex_operation(input: i32) -> Result<i32, String> { todo!() }
 ```
 
-The `#[cfg]` attribute follows standard Rust semantics: when the configuration predicate is false, the runtime check for the condition is completely omitted.
+The `#[cfg]` attribute follows standard Rust semantics: when the configuration predicate is false, the runtime check for the condition is completely omitted. This holds in every build configuration that runs checks, whether or not `anodized_print` is enabled.
 
 **Important:** Anodized guarantees that each condition remains syntactically valid and type-correct regardless of its `#[cfg]` settings. This prevents conditions from becoming invalid between different build configurations, and keeps the entire spec always visible to analysis tools.
 
@@ -88,13 +114,17 @@ Specifications are built from conditions, which come in three flavors:
 
 - **`maintains: <conditions>`: Invariants** must hold true both before and after the function runs. It's most useful for expressing properties of `self` that a method must preserve.
 
-For convenience, `<conditions>` can be either a single condition or a list (i.e. `[<condition>, <condition>, ...]`).
+You can include any number of each flavor. Multiple conditions of the same flavor are combined with a logical **AND** (`&&`).
 
-The conditions must be given in the following order: `requires`, `maintains`, and `ensures`. This order is enforced to mirror the logical flow of a function's execution: preconditions (`requires`) are checked upon entry, invariants (`maintains`) must hold true upon both entry and exit, and postconditions (`ensures`) are checked upon exit.
+For convenience, `<conditions>` can be either a single condition or a group (i.e. `[<condition>, <condition>, ...]`).
 
 A condition is a `bool`-valued Rust expression; as simple as that. This is a non-trivial design choice, so its benefits are explained in the section below: [Why Conditions Are Rust Expressions](#why-conditions-are-rust-expressions).
 
-You can include any number of each flavor. Multiple conditions of the same flavor are combined with a logical **AND** (`&&`).
+**Note** that each condition behaves as an [`Fn() -> bool`](https://doc.rust-lang.org/std/ops/trait.Fn.html)
+closure, which means that it _cannot_ mutate the function's inputs, captured values (see below),
+or the function's output (for a postcondition).
+
+The conditions must be given in the following order: `requires`, `maintains`, and `ensures`. This order is enforced to mirror the logical flow of a function's execution: preconditions (`requires`) are checked upon entry, invariants (`maintains`) must hold true upon both entry and exit, and postconditions (`ensures`) are checked upon exit.
 
 ```rust, no_run
 use anodized::spec;
@@ -110,17 +140,18 @@ fn push_checked<T>(vec: &mut Vec<T>, value: T) { todo!() }
 
 ### `captures`: Capture Entry-Time Values
 
-Sometimes postconditions need to compare the function's final state with its initial state. The `captures` parameter lets you capture values at function entry for use in postconditions.
+Sometimes postconditions need to compare the function's final state with its initial state. The `captures` field lets you capture values at function entry for use in postconditions.
 
 ```rust, no_run
 use anodized::spec;
 
 #[spec(
+    requires: !items.is_empty(),
     captures: [
         // Copy types: captured directly
-        items.len() as orig_len,
+        orig_len = items.len(),
         // Non-Copy types: use .clone() explicitly
-        items.clone() as orig_items,
+        orig_items = items.clone(),
     ],
     ensures: [
         items.len() == orig_len + 1,
@@ -129,9 +160,9 @@ use anodized::spec;
 )]
 fn add_item<T: Clone + Eq>(items: &mut Vec<T>, item: T) { todo!() }
 
-// A capture may have a pattern to destructure tuples, structs, arrays, and other composite types:
+// A capture assignment may use a pattern to destructure tuples, structs, arrays, and other composite types:
 #[spec(
-    captures: triple as (first, second, third),
+    captures: (first, second, third) = triple,
     ensures: [
         first == triple.0,
         second == triple.1,
@@ -141,97 +172,73 @@ fn add_item<T: Clone + Eq>(items: &mut Vec<T>, item: T) { todo!() }
 fn match_tuple(triple: (bool, char, i32)) { todo!() }
 ```
 
-- **Simple identifiers** get an automatic `old_` prefix, i.e. `x` becomes `old_x`.
-- **Complex expressions** require an explicit alias using `as`, i.e. `self.items.len() as orig_len`.
-- **Patterns** may be used to destructure the captured value, e.g. `person.clone() as Person { name, age }`.- **No automatic cloning**: Each captured expression is **moved**. For a `Copy` type, a copy is made implicitly. For a non-`Copy` type, you must explicitly use `.clone()`, `.to_owned()`, or another appropriate method.
+- **Capture assignments** bind a name or pattern on the left to an entry-time expression on the right, e.g. `orig_len = self.items.len()`.
+- **Patterns** may be used to destructure the captured value, e.g. `Person { name, age } = person.clone()`.
+- **No automatic cloning**: Each captured expression is **moved**. For a `Copy` type, a copy is made implicitly. For a non-`Copy` type, you must explicitly use `.clone()`, `.to_owned()`, or another appropriate method.
 - Capturing happens **after** preconditions are checked but **before** the function body executes.
 - The captured values are **only** available to postconditions, not to preconditions or the function body itself.
 
-### `binds`: Bind the Return Value
+### Bind the Return Value in `ensures` Closures
 
-In **postconditions** (`ensures`), you can refer to the function's return value by the default name `output`.
+When you write a **postcondition** (`ensures`) as a plain `bool` expression, it does not have access to the function's return value.
+
+To give it access to the function's return value, write the condition as a closure.
 
 ```rust, no_run
 use anodized::spec;
 
 #[spec(
-    ensures: *output > 0,
+    ensures: |output| output > 0,
 )]
 fn get_positive_value() -> i32 { todo!() }
 ```
 
-**Note** that a postcondition is a closure that takes the function's return value by reference. When you write a postcondition as a "naked" expression `<EXPR>`, that is shorthand for `|<PATTERN>| <EXPR>`, where `<PATTERN>` is the spec-wide binding. In error messages, a postcondition is always displayed as a closure to make it clear (e.g. `| output | *output > 0`).
+An output pattern can bind or destructure a return value directly, including a non-`Copy` value.
+For move patterns, Anodized reconstructs the return value after each postcondition, so it can still
+be returned to the caller. Use a reference pattern such as `|ref output|` when the postcondition
+is naturally expressed in terms of a borrow.
 
-The default spec-wide binding is `output`. If that collides with an existing identifier, you can choose a different name for it in two ways:
+Output patterns must be irrefutable. A pattern cannot mix move and `ref` bindings. A pattern that
+contains `..` may bind other values only by `ref`, because the omitted values cannot be
+reconstructed.
 
-**1. Spec-Wide Binding**: Use the `binds` parameter to set a new name for the return value across all postconditions in the specification. It must be placed immediately before any `ensures` conditions.
-
-```rust, no_run
-use anodized::spec;
-
-#[spec(
-    binds: new_value,
-    ensures: *new_value > old_value,
-)]
-fn increment(old_value: i32) -> i32 { todo!() }
-```
-
-**2. Explicit Binding**: Write the postcondition with an explicit binding, i.e. as a closure `|<PATTERN>| <EXPR>`. This has the highest precedence and affects only that single condition.
+**1. Per-Group Binding**: Use the following shorthand form to set a binding for an entire group of postconditions.
 
 ```rust, no_run
 use anodized::spec;
 
 #[spec(
-    ensures: [
-        // This postcondition uses the default binding.
-        output.is_ascii(),
-        // This postcondition binds the output as `c`.
-        |c| c.is_digit(16),
+    // Bind the return value to `output` for the entire group of postconditions.
+    ensures: |output| [
+        output > input,
+        output % 2 == 0,
     ],
 )]
-fn create_data() -> char { todo!() }
+fn calculate_larger_even_result(input: i32) -> i32 { todo!() }
 ```
 
-**3. Binding Precedence**: The explicit binding takes precedence; same as in Rust. Plain postconditions still use the spec-wide binding.
+**2. Beyond Names: Destructure Return Values**
 
-```rust, no_run
-use anodized::spec;
-
-// A function where 'output' is an argument name, requiring a different name.
-#[spec(
-    // Set a spec-wide binding for the return value: `result`.
-    binds: result,
-    ensures: [
-        // This postcondition uses the spec-wide binding: `result`.
-        *result > output,
-        // This postcondition uses an explicit binding: `val`.
-        |val| *val % 2 == 0,
-    ],
-)]
-fn calculate_even_result(output: i32) -> i32 { todo!() }
-```
-
-**4. Beyond Names: Destructuring Return Values**
-
-Bindings also lets you destructure return values, making complex postconditions easier to read and write. You can use any valid Rust pattern, including tuple patterns, struct patterns, or even more complex nested patterns.
+Bindings also let you destructure return values, making complex postconditions easier to read and
+write. You can use irrefutable tuple, struct, slice, and nested patterns, subject to the pattern
+rules above.
 
 ```rust, no_run
 use anodized::spec;
 
 #[spec(
     // Destructure the returned tuple into `(a, b)`.
-    binds: (a, b),
-    // Postconditions can now use the bound variables `a` and `b`.
-    ensures: [
+    ensures: |(a, b)| [
+        // Postconditions can now use the bound variables `a` and `b`.
         a <= b,
-        // They can also reference the arguments.
-        (*a, *b) == pair || (*b, *a) == pair,
+        // They can also reference the inputs.
+        (a, b) == pair || (b, a) == pair,
     ],
 )]
 fn sort_pair(pair: (i32, i32)) -> (i32, i32) { todo!() }
 ```
 
-**5. Example With All Function Spec Arguments**
+**5. Example With All Function Spec Fields**
 
 ```rust, no_run
 use anodized::spec;
@@ -239,12 +246,11 @@ use anodized::spec;
 #[spec(
     requires: *balance >= amount,
     maintains: *balance >= 0,
-    captures: *balance as initial_balance,
-    binds: (new_balance, receipt_amount),
-    ensures: [
-        *new_balance == initial_balance - amount,
-        *receipt_amount == amount,
-        *balance == *new_balance,
+    captures: initial_balance = *balance,
+    ensures: |(new_balance, receipt_amount)| [
+        new_balance == initial_balance - amount,
+        receipt_amount == amount,
+        *balance == new_balance,
     ],
 )]
 fn withdraw(balance: &mut u64, amount: u64) -> (u64, u64) { todo!() }
@@ -254,7 +260,7 @@ fn withdraw(balance: &mut u64, amount: u64) -> (u64, u64) { todo!() }
 
 Anodized supports specs on loops to ensure correctness and bounded iteration.
 
-Loop specs support the following elements:
+Loop specs support the following fields:
 
 - `maintains`: Loop invariants that must hold both before and after each iteration.
 - `decreases`: A loop variant expression that shows strict progress toward termination.
@@ -265,9 +271,10 @@ Loop specs support the following elements:
 use anodized::spec;
 
 #[spec(
-    ensures: [
-        seq.iter().any(|elem| elem == output),
-        seq.iter().all(|elem| elem <= output),
+    requires: !seq.is_empty(),
+    ensures: |output| [
+        seq.iter().any(|elem| *elem == output),
+        seq.iter().all(|elem| *elem <= output),
     ],
 )]
 fn find_maximum(seq: &[u8]) -> u8 {
@@ -293,10 +300,10 @@ use anodized::spec;
 
 #[spec(
     requires: seq.is_sorted(),
-    ensures: [
-        *output <= seq.len(),
-        seq[0..*output].iter().all(|item| item < value),
-        seq[*output..].iter().all(|item| item >= value),
+    ensures: |output| [
+        output <= seq.len(),
+        seq[0..output].iter().all(|item| item < value),
+        seq[output..].iter().all(|item| item >= value),
     ],
 )]
 fn find_insert_position<T: Ord>(seq: &[T], value: &T) -> usize {
@@ -338,7 +345,8 @@ trait MonotonicGenerator {
     fn current(&self) -> i32;
 
     #[spec(
-        captures: self.current() as old_val,
+        requires: self.current() < i32::MAX,
+        captures: old_val = self.current(),
         ensures: self.current() > old_val,
     )]
     fn update(&mut self);
@@ -367,9 +375,10 @@ Important restrictions:
   - Static analyzers **must validate** narrowing as part of verification.
 - Names prefixed with `__anodized_` are internal and must not be implemented directly.
 
-### Data Specs
+### Type Specs (a.k.a. Type Refinements)
 
-Anodized supports specs on data types, meant to constrain all instances. This capability is equivalent to refinement types.
+Anodized supports type specs on `struct`s and `enum`s to constrain all their instances. This
+capability is equivalent to refinement types.
 
 **On a Struct**
 
@@ -401,7 +410,6 @@ use anodized::spec;
         Descending(vec) => vec.iter().rev().is_sorted(),
     }
 )]
-#[allow(unused)]
 enum MonotonicVec<T: Ord> {
     Ascending(Vec<T>),
     Descending(Vec<T>),
@@ -411,4 +419,36 @@ enum MonotonicVec<T: Ord> {
 Important restrictions:
 
 - Runtime checks are **not implemented** yet.
-- Only the `maintains` spec parameter is supported.
+- Only the `maintains` spec field is supported.
+
+### Type Spec Enforcement
+
+Type specs are not enforced at `#[spec]` boundaries unless a type is explicitly marked with the
+`Spec!(...)` macro.
+
+```rust, no_run
+use anodized::spec;
+
+#[spec]
+struct TypeWithSpec;
+
+#[spec]
+fn update(
+    input: Spec!(TypeWithSpec),
+    output: Spec!(&mut TypeWithSpec, out),
+) -> Spec!(TypeWithSpec) {
+    todo!()
+}
+
+#[spec]
+struct Container {
+    enforced: Spec!(TypeWithSpec),
+    unenforced: TypeWithSpec,
+}
+```
+
+- `Spec!(T)`: Enforce a function input's type spec on entry, a function output's type spec on
+  exit, or a field's type spec as part of its containing type's spec.
+- `Spec!(T, out)`: Enforce a function input's spec only on exit (not on entry).
+- `Spec!(T, inout)`: Enforce a function input's spec on both entry and exit.
+- Modes `out` and `inout` are only valid for function inputs.

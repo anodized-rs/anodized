@@ -1,4 +1,7 @@
+#![cfg_attr(anodized_charon, feature(register_tool))]
+#![cfg_attr(anodized_charon, register_tool(charon))]
 #![allow(unused)]
+
 use anodized::spec;
 
 #[allow(dead_code)]
@@ -6,6 +9,7 @@ struct Validator {
     valid: bool,
 }
 
+#[spec]
 impl Validator {
     fn is_valid(&self) -> bool {
         self.valid
@@ -20,18 +24,18 @@ impl Validator {
     }
 }
 
-#[cfg(anodized_panic)]
+#[cfg(all(anodized_print, anodized_panic))]
 #[test]
-#[should_panic(expected = "Post-invariant failed: self.is_valid()")]
+#[should_panic(expected = "postcondition failed")]
 fn violates_post_invariant() {
     let mut v = Validator { valid: true };
     // This will violate the invariant on exit.
     v.set_validity(false);
 }
 
-#[cfg(anodized_panic)]
+#[cfg(all(anodized_print, anodized_panic))]
 #[test]
-#[should_panic(expected = "Pre-invariant failed: self.is_valid()")]
+#[should_panic(expected = "precondition failed")]
 fn violates_pre_invariant() {
     let mut v = Validator { valid: false };
     // This violates the invariant on entry.

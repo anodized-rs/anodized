@@ -1,3 +1,6 @@
+#![cfg_attr(anodized_charon, feature(register_tool))]
+#![cfg_attr(anodized_charon, register_tool(charon))]
+
 use anodized::spec;
 
 #[spec]
@@ -8,16 +11,16 @@ pub trait TestTrait {
     /// Has no default
     #[spec(
         requires: x > 0,
-        captures: self.current() as old_val,
-        ensures: *output > old_val,
+        captures: old_val = self.current(),
+        ensures: |output| output > old_val,
     )]
     fn add_to(&self, x: i32) -> i32;
 
     /// Has a default
     #[spec(
         requires: x > 0,
-        captures: self.current() as old_val,
-        ensures: *output > old_val,
+        captures: old_val = self.current(),
+        ensures: |output| output > old_val,
     )]
     fn mul_by(&self, x: i32) -> i32 {
         x * 2
@@ -66,17 +69,17 @@ fn should_succeed() {
     assert_eq!(test.mul_by(500), 1000);
 }
 
-#[cfg(anodized_panic)]
+#[cfg(all(anodized_print, anodized_panic))]
 #[test]
-#[should_panic(expected = "Precondition failed: x > 0")]
+#[should_panic(expected = "precondition failed")]
 fn should_fail_add_to() {
     let test = TestStruct(3);
     assert_eq!(test.add_to(0), 3);
 }
 
-#[cfg(anodized_panic)]
+#[cfg(all(anodized_print, anodized_panic))]
 #[test]
-#[should_panic(expected = "Postcondition failed: | output | * output > old_val")]
+#[should_panic(expected = "postcondition failed")]
 fn should_fail_negative_mul_by() {
     let test = TestStruct(-3);
     assert_eq!(test.mul_by(1), 3);

@@ -1,3 +1,6 @@
+#![cfg_attr(anodized_charon, feature(register_tool))]
+#![cfg_attr(anodized_charon, register_tool(charon))]
+
 use anodized::spec;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -12,6 +15,7 @@ struct Job {
     state: State,
 }
 
+#[spec]
 impl Job {
     #[spec(
         requires: matches!(self.state, State::Idle),
@@ -29,9 +33,9 @@ fn job_start_success() {
     job.start();
 }
 
-#[cfg(anodized_panic)]
+#[cfg(all(anodized_print, anodized_panic))]
 #[test]
-#[should_panic(expected = "Precondition failed: matches! (self.state, State::Idle)")]
+#[should_panic(expected = "precondition failed")]
 fn job_start_panics_if_not_idle() {
     let mut job = Job {
         state: State::Running,

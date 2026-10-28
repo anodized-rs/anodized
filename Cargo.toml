@@ -5,12 +5,19 @@ members = [
     "crates/anodized-fmt",
     "crates/anodized-logic",
     "crates/anodized-macros",
+    "crates/cargo-anodized",
+    "crates/test-util",
+    "fuzz",
+]
+exclude = [
+    "examples/bin-search",
 ]
 resolver = "2"
 
 [workspace.package]
-version = "0.5.1"
+version = "0.7.0"
 edition = "2024"
+rust-version = "1.95"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/anodized-rs/anodized"
 description = "A common specification layer for Rust"
@@ -19,7 +26,7 @@ categories = [
     "development-tools::procedural-macro-helpers",
 ]
 keywords = [
-    "correctness",
+    "specification",
     "design-by-contract",
     "fuzzing",
     "testing",
@@ -27,10 +34,17 @@ keywords = [
 ]
 
 [workspace.dependencies]
-anodized-core = { version = "0.5.1", path = "crates/anodized-core" }
-anodized-logic = { version = "0.5.1", path = "crates/anodized-logic" }
-anodized-macros = { version = "0.5.1", path = "crates/anodized-macros" }
+anodized-core = { version = "0.7.0", path = "crates/anodized-core" }
+anodized-fmt = { version = "0.7.0", path = "crates/anodized-fmt" }
+anodized-logic = { version = "0.7.0", path = "crates/anodized-logic" }
+anodized-macros = { version = "0.7.0", path = "crates/anodized-macros" }
+test-util = { path = "crates/test-util" }
+
+clap = { version = "4", features = ["derive"] }
 num-bigint = "0.4.6"
+pretty_assertions = "1"
+prettyplease = "0.2"
 proc-macro2 = { version = "1.0", features = ["span-locations"] }
 quote = "1.0"
 syn = { version = "2.0", features = ["extra-traits", "full", "visit", "visit-mut"] }
+thiserror = "2"
