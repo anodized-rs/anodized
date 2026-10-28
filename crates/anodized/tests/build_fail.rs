@@ -2,6 +2,7 @@
 #![cfg_attr(anodized_charon, register_tool(charon))]
 
 #[test]
+#[cfg(not(anodized_charon))]
 fn qualifier_narrowing_fails_to_compile() {
     let output = std::process::Command::new("cargo")
         .arg("build")
