@@ -79,7 +79,7 @@ Tools select how specifications are processed through `instrument::Mode`:
 - `Mode::Off` discards specifications and leaves implementation code unaltered.
 - `Mode::Static(SpecEncoding::Default)` encodes specifications as hidden `__anodized_*` items for static analysis.
 - `Mode::Static(SpecEncoding::Charon)` adds Charon contract attributes to that encoding.
-- `Mode::Static(SpecEncoding::Hax)` encodes specifications as Hax attributes and loop annotations.
+- `Mode::Static(SpecEncoding::Hax)` encodes specifications as Hax attributes.
 - `Mode::Dynamic(CheckSettings)` adds runtime checks according to the supplied settings.
 
 `Mode::from_raw_cfg` maps compiler configuration settings to these modes and rejects incompatible
