@@ -24,10 +24,12 @@ pub enum Mode {
     InjectChecks(CheckSettings),
 }
 
-#[derive(Debug, Clone)]
-pub struct SpecEmbedding {
-    /// Emit Charon's `contract` attributes on spec elements.
-    pub uses_charon: bool,
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SpecEmbedding {
+    /// Embed specifications as Anodized items.
+    Anodized,
+    /// Embed specifications as Anodized items with Charon contract attributes.
+    Charon,
 }
 
 #[derive(Debug, Clone)]
@@ -85,11 +87,13 @@ impl Mode {
         } else if any_static {
             if any_runtime {
                 panic!(
-                    "`anodized_embed_specs` is incompatible with `anodized_panic/print/try` settings"
+                    "`anodized_*` static settings `embed_specs` and `charon` are incompatible with dynamic settings `panic`, `print`, and `try`"
                 );
             }
-            Self::EmbedSpecs(SpecEmbedding {
-                uses_charon: raw_cfg.anodized_charon,
+            Self::EmbedSpecs(if raw_cfg.anodized_charon {
+                SpecEmbedding::Charon
+            } else {
+                SpecEmbedding::Anodized
             })
         } else {
             if raw_cfg.anodized_try && !raw_cfg.anodized_panic {
@@ -125,6 +129,7 @@ impl Mode {
     pub fn with_try_fn(&self, value: bool) -> Self {
         match self {
             Mode::ChangeNothing => Mode::ChangeNothing,
+            Mode::EmbedSpecs(spec_embedding) => Mode::EmbedSpecs(*spec_embedding),
             Mode::InjectChecks(check_settings) => {
                 let mut check_settings = check_settings.clone();
                 if let Some(panic_settings) = &mut check_settings.does_panic {
@@ -132,7 +137,6 @@ impl Mode {
                 };
                 Mode::InjectChecks(check_settings)
             }
-            Mode::EmbedSpecs(spec_embedding) => Mode::EmbedSpecs(spec_embedding.clone()),
         }
     }
 
