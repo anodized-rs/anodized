@@ -129,7 +129,7 @@ impl Mode {
     pub fn with_try_fn(&self, value: bool) -> Self {
         match self {
             Mode::Off => Mode::Off,
-            Mode::Static(spec_encoding) => Mode::Static(*spec_embedding),
+            Mode::Static(spec_encoding) => Mode::Static(*spec_encoding),
             Mode::Dynamic(check_settings) => {
                 let mut check_settings = check_settings.clone();
                 if let Some(panic_settings) = &mut check_settings.does_panic {
