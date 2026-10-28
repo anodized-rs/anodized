@@ -58,10 +58,10 @@ pub struct RawCfg {
     pub anodized_discard_specs: bool,
     pub anodized_embed_specs: bool,
     pub anodized_charon: bool,
+    pub anodized_hax: bool,
     pub anodized_panic: bool,
     pub anodized_print: bool,
     pub anodized_try: bool,
-    pub anodized_hax: bool,
 }
 
 impl RawCfg {
@@ -70,10 +70,10 @@ impl RawCfg {
             anodized_discard_specs: _,
             anodized_embed_specs,
             anodized_charon,
+            anodized_hax,
             anodized_panic,
             anodized_print,
             anodized_try,
-            anodized_hax,
         } = *self;
         (
             anodized_embed_specs || anodized_charon || anodized_hax,
@@ -363,30 +363,30 @@ impl Mode {
         anodized_discard_specs: false,
         anodized_embed_specs: false,
         anodized_charon: false,
+        anodized_hax: false,
         anodized_panic: false,
         anodized_print: false,
         anodized_try: false,
-        anodized_hax: false,
     });
 
     pub(crate) const EMBED_SPECS: Self = Self::from_raw_cfg(RawCfg {
         anodized_discard_specs: false,
         anodized_embed_specs: true,
         anodized_charon: false,
+        anodized_hax: false,
         anodized_panic: false,
         anodized_print: false,
         anodized_try: false,
-        anodized_hax: false,
     });
 
     pub(crate) const EMBED_SPECS_CHARON: Self = Self::from_raw_cfg(RawCfg {
         anodized_discard_specs: false,
         anodized_embed_specs: false,
         anodized_charon: true,
+        anodized_hax: false,
         anodized_panic: false,
         anodized_print: false,
         anodized_try: false,
-        anodized_hax: false,
     });
 }
 

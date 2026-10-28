@@ -15,10 +15,10 @@ const CONFIG: Mode = Mode::from_raw_cfg(RawCfg {
     anodized_discard_specs: cfg!(anodized_discard_specs),
     anodized_embed_specs: cfg!(anodized_embed_specs),
     anodized_charon: cfg!(anodized_charon),
+    anodized_hax: cfg!(anodized_hax),
     anodized_panic: cfg!(anodized_panic),
     anodized_print: cfg!(anodized_print),
     anodized_try: cfg!(anodized_try),
-    anodized_hax: cfg!(anodized_hax),
 });
 
 /// Attaches a specification to supported program elements.
