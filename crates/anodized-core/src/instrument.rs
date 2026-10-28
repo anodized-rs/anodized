@@ -34,7 +34,7 @@ pub enum SpecEncoding {
     Default,
     /// The default encoding with Charon contract attributes.
     Charon,
-    /// Encode specifications as Hax attributes and loop annotations.
+    /// Encode specs into Hax attributes.
     Hax,
 }
 
