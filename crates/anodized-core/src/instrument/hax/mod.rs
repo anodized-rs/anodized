@@ -13,15 +13,15 @@ pub(crate) fn haxify_fn(spec: &FnSpec, attrs: &mut Vec<Attribute>) {
     for invariant in &spec.maintains {
         let body = haxify_expr(&invariant.expr);
         attrs.push(parse_quote! { #[::hax_lib::requires(#body)] });
-        attrs.push(parse_quote! { #[::hax_lib::ensures_ref(|_| #body)] });
+        attrs.push(parse_quote! { #[::hax_lib::ensures(|_| #body)] });
     }
     for postcond in &spec.ensures {
         let body = haxify_expr(&postcond.expr);
         if let Some(pat) = &postcond.pat {
             let pat = pat.get_pat();
-            attrs.push(parse_quote! { #[::hax_lib::ensures_ref(|#pat| #body)] });
+            attrs.push(parse_quote! { #[::hax_lib::ensures(|#pat| #body)] });
         } else {
-            attrs.push(parse_quote! { #[::hax_lib::ensures_ref(|output| #body)] });
+            attrs.push(parse_quote! { #[::hax_lib::ensures(|output| #body)] });
         }
     }
 }
