@@ -18,16 +18,16 @@ impl Mode {
         visitor.finish()
     }
 
-    pub fn instrument_expr_while(&self, spec: LoopSpec, expr_while: &mut ExprWhile) {
+    pub fn instrument_expr_while(&self, spec: &LoopSpec, expr_while: &mut ExprWhile) {
         self.instrument_loop_body(spec, &mut expr_while.body.stmts);
     }
 
-    pub fn instrument_expr_for_loop(&self, spec: LoopSpec, expr_for_loop: &mut ExprForLoop) {
+    pub fn instrument_expr_for_loop(&self, spec: &LoopSpec, expr_for_loop: &mut ExprForLoop) {
         self.instrument_loop_body(spec, &mut expr_for_loop.body.stmts);
     }
 
-    fn instrument_loop_body(&self, spec: LoopSpec, stmts: &mut Vec<Stmt>) {
-        if let Self::Static(_) = self {
+    fn instrument_loop_body(&self, spec: &LoopSpec, stmts: &mut Vec<Stmt>) {
+        if self.emits_loop_spec_items() {
             let maintains_block =
                 Self::build_precondition_fn_body(std::iter::empty(), &[], &spec.maintains);
             stmts.insert(
@@ -98,9 +98,7 @@ impl VisitMut for LoopSpecVisitor<'_> {
         visit_mut::visit_expr_while_mut(self, expr_while);
 
         match expr_while.parse_spec_from_attrs() {
-            Ok(spec) => self
-                .config
-                .instrument_loop_body(spec, &mut expr_while.body.stmts),
+            Ok(spec) => self.config.instrument_expr_while(&spec, expr_while),
             Err(error) => self.add_error(error),
         }
     }
@@ -109,7 +107,7 @@ impl VisitMut for LoopSpecVisitor<'_> {
         visit_mut::visit_expr_for_loop_mut(self, expr_for_loop);
 
         match expr_for_loop.parse_spec_from_attrs() {
-            Ok(spec) => self.config.instrument_expr_for_loop(spec, expr_for_loop),
+            Ok(spec) => self.config.instrument_expr_for_loop(&spec, expr_for_loop),
             Err(error) => self.add_error(error),
         }
     }

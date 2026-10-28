@@ -23,7 +23,7 @@ impl Mode {
 
         item_struct.to_tokens(&mut tokens);
 
-        if self.changes_anything() {
+        if self.emits_type_spec_items() {
             let inductive_predicate = Self::build_enum_inductive_predicate(
                 std::iter::once((&item_struct.ident, &item_struct.fields)),
                 &spec.field_spec_flags,
@@ -54,7 +54,7 @@ impl Mode {
 
         item_enum.to_tokens(&mut tokens);
 
-        if self.changes_anything() {
+        if self.emits_type_spec_items() {
             let inductive_predicate = Self::build_enum_inductive_predicate(
                 item_enum
                     .variants
