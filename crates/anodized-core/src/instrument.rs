@@ -148,12 +148,18 @@ impl Mode {
 
     /// Whether to emit function qualifier constants to enforce trait narrowing.
     pub(crate) fn emits_fn_qualifier_items(&self) -> bool {
-        self.emits_fn_spec_items() || matches!(self, Mode::Dynamic(_))
+        matches!(
+            self,
+            Mode::Static(SpecEncoding::Default | SpecEncoding::Charon) | Mode::Dynamic(_)
+        )
     }
 
     /// Whether to emit type specification predicates.
     pub(crate) fn emits_type_spec_items(&self) -> bool {
-        self.emits_fn_spec_items() || matches!(self, Mode::Dynamic(_))
+        matches!(
+            self,
+            Mode::Static(SpecEncoding::Default | SpecEncoding::Charon) | Mode::Dynamic(_)
+        )
     }
 
     pub fn emits_try_fn(&self) -> bool {
