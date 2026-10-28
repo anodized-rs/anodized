@@ -26,9 +26,9 @@ pub enum Mode {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SpecEmbedding {
-    /// Embed specifications as Anodized items.
-    Anodized,
-    /// Embed specifications as Anodized items with Charon contract attributes.
+    /// The default encoding, i.e. items named `__anodized_*`.
+    Default,
+    /// The default encoding with Charon contract attributes.
     Charon,
 }
 
@@ -93,7 +93,7 @@ impl Mode {
             Self::EmbedSpecs(if raw_cfg.anodized_charon {
                 SpecEmbedding::Charon
             } else {
-                SpecEmbedding::Anodized
+                SpecEmbedding::Default
             })
         } else {
             if raw_cfg.anodized_try && !raw_cfg.anodized_panic {
