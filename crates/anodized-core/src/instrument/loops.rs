@@ -27,7 +27,7 @@ impl Mode {
     }
 
     fn instrument_loop_body(&self, spec: LoopSpec, stmts: &mut Vec<Stmt>) {
-        if let Self::Static(_) = self {
+        if self.emits_loop_spec_items() {
             let maintains_block =
                 Self::build_precondition_fn_body(std::iter::empty(), &[], &spec.maintains);
             stmts.insert(
@@ -98,9 +98,7 @@ impl VisitMut for LoopSpecVisitor<'_> {
         visit_mut::visit_expr_while_mut(self, expr_while);
 
         match expr_while.parse_spec_from_attrs() {
-            Ok(spec) => self
-                .config
-                .instrument_loop_body(spec, &mut expr_while.body.stmts),
+            Ok(spec) => self.config.instrument_expr_while(spec, expr_while),
             Err(error) => self.add_error(error),
         }
     }

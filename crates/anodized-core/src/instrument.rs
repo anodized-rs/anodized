@@ -126,8 +126,36 @@ impl Mode {
         }
     }
 
-    pub fn changes_anything(&self) -> bool {
-        !matches!(self, Mode::Off)
+    /// Whether to emit function specification items.
+    pub(crate) fn emits_fn_spec_items(&self) -> bool {
+        matches!(
+            self,
+            Mode::Static(SpecEncoding::Default | SpecEncoding::Charon)
+        )
+    }
+
+    /// Whether to emit function qualifier constants (needed to enforce trait narrowing).
+    pub(crate) fn emits_fn_qualifier_items(&self) -> bool {
+        matches!(
+            self,
+            Mode::Static(SpecEncoding::Default | SpecEncoding::Charon) | Mode::Dynamic(_)
+        )
+    }
+
+    /// Whether to emit type specification predicates.
+    pub(crate) fn emits_type_spec_items(&self) -> bool {
+        matches!(
+            self,
+            Mode::Static(SpecEncoding::Default | SpecEncoding::Charon) | Mode::Dynamic(_)
+        )
+    }
+
+    /// Whether to emit loop invariant and variant bindings.
+    pub(crate) fn emits_loop_spec_items(&self) -> bool {
+        matches!(
+            self,
+            Mode::Static(SpecEncoding::Default | SpecEncoding::Charon)
+        )
     }
 
     pub fn emits_try_fn(&self) -> bool {
@@ -165,7 +193,7 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
             ));
         }
 
-        if let Self::Static(_) = self {
+        if self.emits_fn_spec_items() {
             // Embed `spec` elements as `__anodized_fn_*` items.
             let attrs: [Attribute; 2] = [
                 parse_quote!(#[doc(hidden)]),

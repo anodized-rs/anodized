@@ -48,7 +48,7 @@ impl Mode {
                         parse_quote!(#[allow(warnings)]),
                     ];
 
-                    if let Self::Static(_) = self {
+                    if self.emits_fn_spec_items() {
                         // Embed `spec` elements as `__anodized_fn_*` items.
                         let mut spec_requires_attrs = attrs.to_vec();
                         let mut spec_requires_sig = self.build_precondition_fn_sig(
@@ -113,7 +113,7 @@ impl Mode {
                         new_trait_items.push(TraitItem::Fn(spec_ensures_fn));
                     }
 
-                    if self.changes_anything() {
+                    if self.emits_fn_qualifier_items() {
                         let spec_trait_qualifiers_const = Self::build_qualifier_const_item(
                             &attrs,
                             "__anodized_fn_qualifiers_trait",
@@ -254,7 +254,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         parse_quote!(#[allow(warnings)]),
                     ];
 
-                    if let Self::Static(_) = self {
+                    if self.emits_fn_spec_items() {
                         // Embed `spec` elements as `__anodized_fn_*` items.
                         let mut spec_requires_attrs = attrs.to_vec();
                         let mut spec_requires_sig = self.build_precondition_fn_sig(
@@ -321,7 +321,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         new_items.push(ImplItem::Fn(spec_ensures_fn));
                     }
 
-                    if self.changes_anything() {
+                    if self.emits_fn_qualifier_items() {
                         let spec_qualifiers_const = Self::build_qualifier_const_item(
                             &attrs,
                             "__anodized_fn_qualifiers",
