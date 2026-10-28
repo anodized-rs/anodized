@@ -93,19 +93,9 @@ impl Mode {
     /// # Panics
     ///
     /// Panics if discarding specs is combined with any other setting, static and dynamic
-    /// settings are combined, or `anodized_try` is enabled without `anodized_panic`.
+    /// settings are combined, both Hax and Charon encodings are selected, or
+    /// `anodized_try` is enabled without `anodized_panic`.
     pub const fn from_raw_cfg(raw_cfg: RawCfg) -> Self {
-        if raw_cfg.anodized_hax {
-            if raw_cfg.anodized_embed_specs
-                || raw_cfg.anodized_charon
-                || raw_cfg.anodized_panic
-                || raw_cfg.anodized_print
-                || raw_cfg.anodized_try
-            {
-                panic!("`anodized_hax` is incompatible with spec embedding and runtime checks");
-            }
-            return Self::Static(SpecEncoding::Hax);
-        }
         let (any_static, any_runtime) = raw_cfg.get_any_static_any_runtime();
 
         if raw_cfg.anodized_discard_specs {
@@ -118,10 +108,15 @@ impl Mode {
         } else if any_static {
             if any_runtime {
                 panic!(
-                    "`anodized_*` static settings `embed_specs` and `charon` are incompatible with dynamic settings `panic`, `print`, and `try`"
+                    "`anodized_*` static settings `embed_specs`, `charon`, and `hax` are incompatible with dynamic settings `panic`, `print`, and `try`"
                 );
             }
-            Self::Static(if raw_cfg.anodized_charon {
+            if raw_cfg.anodized_hax && raw_cfg.anodized_charon {
+                panic!("`anodized_hax` and `anodized_charon` select incompatible spec encodings");
+            }
+            Self::Static(if raw_cfg.anodized_hax {
+                SpecEncoding::Hax
+            } else if raw_cfg.anodized_charon {
                 SpecEncoding::Charon
             } else {
                 SpecEncoding::Default
@@ -371,7 +366,7 @@ fn selects_spec_embedding_backend() {
     ));
 
     let hax = Mode::from_raw_cfg(RawCfg {
-        anodized_discard_specs: true,
+        anodized_discard_specs: false,
         anodized_embed_specs: false,
         anodized_charon: false,
         anodized_panic: false,
