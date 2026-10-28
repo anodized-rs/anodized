@@ -13,7 +13,7 @@ license.workspace = true
 
 [features]
 default = []
-hax = ["dep:hax-lib"]
+hax = ["dep:hax-lib", "anodized-macros/hax"]
 
 [lints.rust.unexpected_cfgs]
 level = "warn"
@@ -21,10 +21,10 @@ check-cfg = [
     "cfg(anodized_charon)",
     "cfg(anodized_discard_specs)",
     "cfg(anodized_embed_specs)",
+    "cfg(anodized_hax)",
     "cfg(anodized_panic)",
     "cfg(anodized_print)",
     "cfg(anodized_try)",
-    "cfg(anodized_hax)",
 ]
 
 [dependencies]

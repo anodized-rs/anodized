@@ -1,5 +1,8 @@
 #![doc = include_str!("../README.md")]
 
+#[cfg(all(anodized_hax, not(feature = "hax")))]
+compile_error!("`anodized_hax` requires enabling the `hax` feature on the `anodized` dependency");
+
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::ToTokens;
