@@ -146,7 +146,7 @@ impl Mode {
         )
     }
 
-    /// Whether to emit function qualifier constants to enforce trait narrowing.
+    /// Whether to emit function qualifier constants (needed to enforce trait narrowing).
     pub(crate) fn emits_fn_qualifier_items(&self) -> bool {
         matches!(
             self,
