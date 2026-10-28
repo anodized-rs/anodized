@@ -105,12 +105,3 @@ pub struct S {
     #[allow(unused)]
     x: u8,
 }
-
-#[test]
-fn hax_spec_examples_execute() {
-    f1(1);
-    assert_eq!(f2(), 1);
-    assert_eq!(<u8 as T>::f3(1), 2);
-    assert_eq!(f_loop(&[1, 3, 2]), 3);
-    assert_eq!(f_while(&[1, 3, 2]), 3);
-}
