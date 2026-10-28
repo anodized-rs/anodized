@@ -10,7 +10,7 @@ use crate::{
     EmptySpec,
     annotate::Specified as _,
     instrument::{
-        Mode, SpecEmbedding, fns::sanitize_input_patterns, hax::haxify_fn, make_item_error,
+        Mode, SpecEncoding, fns::sanitize_input_patterns, hax::haxify_fn, make_item_error,
     },
     syntax::remove_unique_attr,
 };
@@ -42,7 +42,7 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
 
                     if matches!(
                         self,
-                        Self::EmbedSpecs(SpecEmbedding::Anodized | SpecEmbedding::Charon)
+                        Self::Static(SpecEncoding::Default | SpecEncoding::Charon)
                     ) {
                         // Embed `spec` elements as `__anodized_fn_*` items.
                         let attrs: [Attribute; 2] = [
@@ -125,7 +125,7 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                     // Instrument function body.
                     self.instrument_fn(&fn_spec, &mut item_fn.sig, &mut item_fn.block)?;
 
-                    if let Self::InjectChecks(check_settings) = self
+                    if let Self::Dynamic(check_settings) = self
                         && let Some(ref panic_settings) = check_settings.does_panic
                         && panic_settings.has_try_fn
                     {
@@ -151,7 +151,7 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                         item_fn.attrs = vec![parse_quote!(#[doc(hidden)]), parse_quote!(#[inline])];
                     }
 
-                    if let Self::EmbedSpecs(SpecEmbedding::Hax) = self {
+                    if let Self::Static(SpecEncoding::Hax) = self {
                         haxify_fn(&fn_spec, &mut item_fn.attrs);
                     }
                     new_items.push(ImplItem::Fn(item_fn));

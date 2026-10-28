@@ -23,9 +23,15 @@ const CONFIG: Mode = Mode::from_raw_cfg(RawCfg {
 
 /// Attaches a specification to supported program elements.
 ///
-/// This macro parses the spec and transforms the item's code to provide the following features:
-/// - compile-time validation: the spec's syntax, scope, and types
-/// - runtime checks: for supported items, configured by `cfg` settings
+/// Compiler `cfg` settings select how the specification is processed:
+/// - `anodized_discard_specs` discards it after parsing.
+/// - `anodized_embed_specs` encodes it as hidden items for static analysis.
+/// - `anodized_charon` selects static encoding with Charon contract attributes.
+/// - `anodized_hax` selects static encoding with Hax attributes and loop annotations.
+/// - Otherwise, dynamic mode validates specification expressions and adds runtime checks
+///   controlled by `anodized_panic`, `anodized_print`, and `anodized_try`.
+///
+/// With no settings, runtime failure actions are disabled, but captures still execute.
 #[proc_macro_attribute]
 pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
     // Parse the `#[spec]` attribute's arguments.

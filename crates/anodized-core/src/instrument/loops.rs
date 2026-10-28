@@ -13,7 +13,7 @@ use crate::{
     LoopSpec,
     annotate::Specified,
     instrument::{
-        Mode, SpecEmbedding,
+        Mode, SpecEncoding,
         hax::{haxify_for_loop, haxify_while_loop},
     },
 };
@@ -28,7 +28,7 @@ impl Mode {
     pub fn instrument_expr_while(&self, spec: &LoopSpec, expr_while: &mut ExprWhile) {
         self.instrument_loop_body(spec, &mut expr_while.body.stmts);
 
-        if matches!(self, Self::EmbedSpecs(SpecEmbedding::Hax)) {
+        if matches!(self, Self::Static(SpecEncoding::Hax)) {
             haxify_while_loop(spec, &mut expr_while.body.stmts);
         }
     }
@@ -36,7 +36,7 @@ impl Mode {
     pub fn instrument_expr_for_loop(&self, spec: &LoopSpec, expr_for_loop: &mut ExprForLoop) {
         self.instrument_loop_body(spec, &mut expr_for_loop.body.stmts);
 
-        if matches!(self, Self::EmbedSpecs(SpecEmbedding::Hax)) {
+        if matches!(self, Self::Static(SpecEncoding::Hax)) {
             haxify_for_loop(spec, &mut expr_for_loop.body.stmts);
         }
     }
@@ -44,7 +44,7 @@ impl Mode {
     fn instrument_loop_body(&self, spec: &LoopSpec, stmts: &mut Vec<Stmt>) {
         if matches!(
             self,
-            Self::EmbedSpecs(SpecEmbedding::Anodized | SpecEmbedding::Charon)
+            Self::Static(SpecEncoding::Default | SpecEncoding::Charon)
         ) {
             let maintains_block =
                 Self::build_precondition_fn_body(std::iter::empty(), &[], &spec.maintains);

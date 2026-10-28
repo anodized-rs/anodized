@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Breaking Changes
+
+- **[anodized-core] Explicit analysis modes and spec encodings** - Renamed `Mode::ChangeNothing`,
+  `Mode::EmbedSpecs`, and `Mode::InjectChecks` to `Mode::Off`, `Mode::Static`, and `Mode::Dynamic`.
+  Replaced the `SpecEmbedding` struct and its `uses_charon` flag with the `SpecEncoding` enum,
+  whose variants are `Default` and `Charon`.
+
 ## 0.7.0 (2026 Sep 27)
 
 ### Breaking Changes

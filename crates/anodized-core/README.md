@@ -74,6 +74,18 @@ cfg_attr = `#[cfg(` , settings , `)]`;
 
 ## Instrumentation
 
+Tools select how specifications are processed through `instrument::Mode`:
+
+- `Mode::Off` discards specifications and leaves implementation code unaltered.
+- `Mode::Static(SpecEncoding::Default)` encodes specifications as hidden `__anodized_*` items for static analysis.
+- `Mode::Static(SpecEncoding::Charon)` adds Charon contract attributes to that encoding.
+- `Mode::Static(SpecEncoding::Hax)` encodes specifications as Hax attributes and loop annotations.
+- `Mode::Dynamic(CheckSettings)` adds runtime checks according to the supplied settings.
+
+`Mode::from_raw_cfg` maps compiler configuration settings to these modes and rejects incompatible
+combinations. With no `anodized_*` settings, it selects dynamic mode with runtime failure actions
+disabled. Captures still execute in that mode.
+
 The `#[spec]` macro transforms the function body by injecting code, determined by compiler `cfg` settings (e.g. `anodized_panic`, `anodized_print`). This process, known as instrumentation, follows a clear pattern.
 
 Given an original function like this:
@@ -90,7 +102,7 @@ fn my_function(<FUNCTION_INPUTS>) -> <RETURN_TYPE> {
 }
 ```
 
-The macro rewrites the body to be conceptually equivalent to the following:
+In dynamic mode, instrumentation rewrites the body to be conceptually equivalent to the following:
 
 ```rust,ignore
 fn my_function(<FUNCTION_INPUTS>) -> <RETURN_TYPE> {
