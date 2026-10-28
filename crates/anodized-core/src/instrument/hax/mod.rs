@@ -21,7 +21,7 @@ pub(crate) fn haxify_fn(spec: &FnSpec, attrs: &mut Vec<Attribute>) {
             let pat = pat.get_pat();
             attrs.push(parse_quote! { #[::hax_lib::ensures(|#pat| #body)] });
         } else {
-            attrs.push(parse_quote! { #[::hax_lib::ensures(|output| #body)] });
+            attrs.push(parse_quote! { #[::hax_lib::ensures(|_| #body)] });
         }
     }
 }
