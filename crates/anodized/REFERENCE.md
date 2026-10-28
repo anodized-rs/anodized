@@ -52,6 +52,27 @@ attributes. Generated precondition and postcondition items are marked with
 Use this setting with a nightly Rust toolchain. Like `anodized_embed_specs`, it cannot be combined
 with `anodized_discard_specs` or any runtime-check setting.
 
+`anodized_charon` selects spec embedding by itself; `anodized_embed_specs` is optional when using it.
+Crates containing annotated items must register the Charon tool at the crate root:
+
+```rust,ignore
+#![cfg_attr(anodized_charon, feature(register_tool))]
+#![cfg_attr(anodized_charon, register_tool(charon))]
+```
+
+To run this repository's unit and integration tests in Charon mode, skipping the runtime diagnostic
+snapshots, use:
+
+```bash
+RUSTFLAGS="--cfg anodized_charon" cargo +nightly test --lib --tests -- --skip compile_errors
+```
+
+Run doctests separately without the Charon configuration so their dependencies use the default mode:
+
+```bash
+RUSTFLAGS="" cargo +nightly test --doc
+```
+
 ## Runtime Checks
 
 To disable runtime checks completely, run without any `anodized_*` options.
