@@ -87,10 +87,11 @@ jobs:
             flags: '--config ''build.rustflags=["--cfg","anodized_print","--cfg","anodized_panic","--cfg","anodized_try"]'''
             test_flags: --tests --no-fail-fast
           - toolchain: nightly
-            flags: '--config ''build.rustflags=["--cfg","anodized_charon"]'''
+            flags: '+nightly --config ''build.rustflags=["--cfg","anodized_charon"]'''
             test_flags: --tests --no-fail-fast -- --skip compile_errors
           - toolchain: stable
-            flags: '--features hax --config ''build.rustflags=["--cfg","anodized_hax"]'''
+            flags: '--config ''build.rustflags=["--cfg","anodized_hax"]'''
+            features: --features hax
             test_flags: --tests --no-fail-fast
     steps:
       - name: Checkout repository
@@ -109,10 +110,10 @@ jobs:
           components: clippy
 
       - name: Lint anodized with flags `${{ matrix.flags }}`
-        run: cargo ${{ matrix.toolchain == 'nightly' && '+nightly' || '' }} clippy -p anodized ${{ matrix.flags }} --all-targets -- -D warnings
+        run: cargo ${{ matrix.flags }} clippy -p anodized ${{ matrix.features }} --all-targets -- -D warnings
 
       - name: Integration test anodized with flags `${{ matrix.flags }}`
-        run: cargo ${{ matrix.toolchain == 'nightly' && '+nightly' || '' }} test -p anodized ${{ matrix.flags }} ${{ matrix.test_flags }}
+        run: cargo ${{ matrix.flags }} test -p anodized ${{ matrix.features }} ${{ matrix.test_flags }}
 
   test-anodized-fmt:
     name: Lint and test anodized-fmt
