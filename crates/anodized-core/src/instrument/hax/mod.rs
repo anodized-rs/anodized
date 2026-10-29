@@ -1,5 +1,5 @@
 use syn::{
-    Attribute, Expr, ExprCall, Stmt, parse_quote,
+    Attribute, Error, Expr, ExprCall, Result, Stmt, parse_quote,
     visit_mut::{self, VisitMut},
 };
 
@@ -30,7 +30,13 @@ pub(crate) fn haxify_impl_or_trait(attrs: &mut Vec<Attribute>) {
     attrs.push(parse_quote! { #[::hax_lib::attributes] });
 }
 
-pub(crate) fn haxify_for_loop(spec: &LoopSpec, stmts: &mut Vec<Stmt>) {
+pub(crate) fn haxify_for_loop(spec: &LoopSpec, stmts: &mut Vec<Stmt>) -> Result<()> {
+    if spec.maintains.len() > 1 {
+        return Err(Error::new_spanned(
+            &spec.maintains[1].expr,
+            "Hax supports only one `maintains` clause per loop; combine conditions with `&&`",
+        ));
+    }
     for condition in &spec.maintains {
         if let Expr::Closure(closure) = &condition.expr {
             let pat = &closure.inputs;
@@ -44,9 +50,16 @@ pub(crate) fn haxify_for_loop(spec: &LoopSpec, stmts: &mut Vec<Stmt>) {
             stmts.insert(0, parse_quote! { ::hax_lib::loop_invariant!(#invariant); });
         }
     }
+    Ok(())
 }
 
-pub(crate) fn haxify_while_loop(spec: &LoopSpec, stmts: &mut Vec<Stmt>) {
+pub(crate) fn haxify_while_loop(spec: &LoopSpec, stmts: &mut Vec<Stmt>) -> Result<()> {
+    if spec.maintains.len() > 1 {
+        return Err(Error::new_spanned(
+            &spec.maintains[1].expr,
+            "Hax supports only one `maintains` clause per loop; combine conditions with `&&`",
+        ));
+    }
     for condition in &spec.maintains {
         let invariant = haxify_expr(&condition.expr);
         stmts.insert(0, parse_quote! { ::hax_lib::loop_invariant!(#invariant); });
@@ -55,6 +68,7 @@ pub(crate) fn haxify_while_loop(spec: &LoopSpec, stmts: &mut Vec<Stmt>) {
         let variant = haxify_expr(&expr.expr);
         stmts.insert(0, parse_quote! { ::hax_lib::loop_decreases!(#variant); });
     }
+    Ok(())
 }
 
 pub(crate) fn haxify_expr(expr: &Expr) -> Expr {

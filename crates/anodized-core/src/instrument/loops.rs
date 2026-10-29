@@ -29,13 +29,7 @@ impl Mode {
         self.instrument_loop_body(spec, &mut expr_while.body.stmts);
 
         if matches!(self, Self::Static(SpecEncoding::Hax)) {
-            if spec.maintains.len() > 1 {
-                return Err(Error::new_spanned(
-                    &spec.maintains[1].expr,
-                    "Hax supports only one `maintains` clause per loop; combine conditions with `&&`",
-                ));
-            }
-            haxify_while_loop(spec, &mut expr_while.body.stmts);
+            haxify_while_loop(spec, &mut expr_while.body.stmts)?;
         }
         Ok(())
     }
@@ -48,13 +42,7 @@ impl Mode {
         self.instrument_loop_body(spec, &mut expr_for_loop.body.stmts);
 
         if matches!(self, Self::Static(SpecEncoding::Hax)) {
-            if spec.maintains.len() > 1 {
-                return Err(Error::new_spanned(
-                    &spec.maintains[1].expr,
-                    "Hax supports only one `maintains` clause per loop; combine conditions with `&&`",
-                ));
-            }
-            haxify_for_loop(spec, &mut expr_for_loop.body.stmts);
+            haxify_for_loop(spec, &mut expr_for_loop.body.stmts)?;
         }
         Ok(())
     }
