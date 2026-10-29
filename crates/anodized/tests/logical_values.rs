@@ -2,10 +2,10 @@ use anodized::logic::values::logical;
 use anodized::spec;
 
 #[spec(
-    captures: old_opt = logical(opt),
+    captures: old_opt = opt.as_ref().map(logical),
     ensures: |ret| [
         opt.is_none(),
-        logical(&ret) == old_opt,
+        ret.as_ref().map(logical) == old_opt,
     ],
 )]
 pub fn take<T>(opt: &mut Option<T>) -> Option<T> {
@@ -31,14 +31,14 @@ pub trait Stack<T> {
     fn top(&self) -> Option<&T>;
 
     #[spec(
-        captures: some_x = logical(&Some(&x)),
-        ensures: logical(&self.top()) == some_x,
+        captures: old_x = logical(&x),
+        ensures: self.top().map(logical) == Some(old_x),
     )]
     fn push(&mut self, x: T);
 
     #[spec(
-        captures: old_top = logical(&self.top()),
-        ensures: |ret| logical(&ret.as_ref()) == old_top,
+        captures: old_top = self.top().map(logical),
+        ensures: |ret| ret.as_ref().map(logical) == old_top,
     )]
     fn pop(&mut self) -> Option<T>;
 }
