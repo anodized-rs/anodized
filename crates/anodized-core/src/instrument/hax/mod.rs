@@ -35,7 +35,10 @@ pub(crate) fn haxify_for_loop(spec: &LoopSpec, stmts: &mut Vec<Stmt>) {
         if let Expr::Closure(closure) = &condition.expr {
             let pat = &closure.inputs;
             let invariant = haxify_expr(&closure.body);
-            stmts.insert(0, parse_quote! { ::hax_lib::loop_invariant!(|#pat| #invariant); });
+            stmts.insert(
+                0,
+                parse_quote! { ::hax_lib::loop_invariant!(|#pat| #invariant); },
+            );
         } else {
             let invariant = haxify_expr(&condition.expr);
             stmts.insert(0, parse_quote! { ::hax_lib::loop_invariant!(#invariant); });
