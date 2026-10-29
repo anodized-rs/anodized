@@ -1,7 +1,7 @@
 use core::marker::PhantomData;
 
 /// Lifts a Rust value into logic.
-pub fn logical<T>(_: &T) -> Logical<T> {
+pub fn logical<T: ?Sized>(_: &T) -> Logical<T> {
     Logical(PhantomData)
 }
 
@@ -17,6 +17,12 @@ pub struct Logical<T: ?Sized>(
     // `*const T` permits unsized `T`.
     PhantomData<fn() -> *const T>,
 );
+
+impl<T: ?Sized> From<&T> for Logical<T> {
+    fn from(value: &T) -> Self {
+        logical(value)
+    }
+}
 
 impl<T: ?Sized> Clone for Logical<T> {
     fn clone(&self) -> Self {
