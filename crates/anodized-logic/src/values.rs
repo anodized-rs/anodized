@@ -1,11 +1,11 @@
 use core::marker::PhantomData;
 
-/// Lifts any Rust value into logic.
+/// Lifts a Rust value into logic.
 pub fn logical<T>(_: &T) -> Logical<T> {
     Logical(PhantomData)
 }
 
-/// A Rust value lifted into logic.
+/// A Rust value in logic.
 ///
 /// For *any* `T`, `Logical<T>` is `Copy` and `Eq`. This allows using `==` and duplicating a value
 /// of a fully generic type `T` in specifications. The intended use case is static analysis.
