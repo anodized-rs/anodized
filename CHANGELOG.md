@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **[anodized] Hax integration** - `--cfg anodized_hax` translates specifications into
   `hax_lib` annotations for static verification, including function contracts, loop invariants,
-  and loop decreases clauses (#128).
+  and loop decreases clauses (#128). For more information on Hax, see: https://github.com/pereq-dev/hax.
 
 ### Changed
 
