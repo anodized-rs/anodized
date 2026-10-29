@@ -35,10 +35,10 @@ pub(crate) fn haxify_for_loop(spec: &LoopSpec, stmts: &mut Vec<Stmt>) {
         if let Expr::Closure(closure) = &condition.expr {
             let pat = &closure.inputs;
             let invariant = haxify_expr(&closure.body);
-            stmts.push(parse_quote! { ::hax_lib::loop_invariant!(|#pat| #invariant); });
+            stmts.insert(0, parse_quote! { ::hax_lib::loop_invariant!(|#pat| #invariant); });
         } else {
             let invariant = haxify_expr(&condition.expr);
-            stmts.push(parse_quote! { ::hax_lib::loop_invariant!(#invariant); });
+            stmts.insert(0, parse_quote! { ::hax_lib::loop_invariant!(#invariant); });
         }
     }
 }
@@ -46,11 +46,11 @@ pub(crate) fn haxify_for_loop(spec: &LoopSpec, stmts: &mut Vec<Stmt>) {
 pub(crate) fn haxify_while_loop(spec: &LoopSpec, stmts: &mut Vec<Stmt>) {
     for condition in &spec.maintains {
         let invariant = haxify_expr(&condition.expr);
-        stmts.push(parse_quote! { ::hax_lib::loop_invariant!(#invariant); });
+        stmts.insert(0, parse_quote! { ::hax_lib::loop_invariant!(#invariant); });
     }
     if let Some(expr) = &spec.decreases {
         let variant = haxify_expr(&expr.expr);
-        stmts.push(parse_quote! { ::hax_lib::loop_decreases!(#variant); });
+        stmts.insert(0, parse_quote! { ::hax_lib::loop_decreases!(#variant); });
     }
 }
 
