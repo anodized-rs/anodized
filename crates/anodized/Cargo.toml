@@ -11,10 +11,6 @@ categories.workspace = true
 keywords.workspace = true
 license.workspace = true
 
-[features]
-default = []
-hax = ["dep:hax-lib", "anodized-macros/hax"]
-
 [lints.rust.unexpected_cfgs]
 level = "warn"
 check-cfg = [
@@ -30,8 +26,8 @@ check-cfg = [
 [dependencies]
 anodized-logic.workspace = true
 anodized-macros.workspace = true
-hax-lib = { optional = true, git = "https://github.com/cryspen/hax.git", branch = "anodized-example" }
 
 [dev-dependencies]
+hax-lib = "0.4.2"
 pollster = "0.4"
 trybuild = "1.0"

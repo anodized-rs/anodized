@@ -1,9 +1,8 @@
-#![cfg(not(feature = "hax"))]
 #![cfg_attr(anodized_charon, feature(register_tool))]
 #![cfg_attr(anodized_charon, register_tool(charon))]
 
 #[test]
-#[cfg(not(anodized_charon))]
+#[cfg(not(any(anodized_charon, anodized_hax)))]
 fn qualifier_narrowing_fails_to_compile() {
     let output = std::process::Command::new("cargo")
         .arg("build")
