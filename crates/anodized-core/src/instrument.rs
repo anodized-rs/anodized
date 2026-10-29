@@ -8,6 +8,7 @@ use syn::{
 use crate::{EmptySpec, FnSpec, instrument::fns::sanitize_input_patterns};
 
 pub mod fns;
+pub mod hax;
 pub mod impls;
 pub mod loops;
 pub mod patterns;
@@ -33,6 +34,8 @@ pub enum SpecEncoding {
     Default,
     /// The default encoding with Charon contract attributes.
     Charon,
+    /// Encode specs into Hax attributes.
+    Hax,
 }
 
 #[derive(Debug, Clone)]
@@ -55,6 +58,7 @@ pub struct RawCfg {
     pub anodized_discard_specs: bool,
     pub anodized_embed_specs: bool,
     pub anodized_charon: bool,
+    pub anodized_hax: bool,
     pub anodized_panic: bool,
     pub anodized_print: bool,
     pub anodized_try: bool,
@@ -66,12 +70,13 @@ impl RawCfg {
             anodized_discard_specs: _,
             anodized_embed_specs,
             anodized_charon,
+            anodized_hax,
             anodized_panic,
             anodized_print,
             anodized_try,
         } = *self;
         (
-            anodized_embed_specs || anodized_charon,
+            anodized_embed_specs || anodized_charon || anodized_hax,
             anodized_panic || anodized_print || anodized_try,
         )
     }
@@ -81,13 +86,15 @@ impl Mode {
     /// Selects an analysis mode from compiler configuration settings.
     ///
     /// `anodized_charon` selects [`SpecEncoding::Charon`] and implies static mode.
+    /// `anodized_hax` selects [`SpecEncoding::Hax`] and implies static mode.
     /// `anodized_embed_specs` alone selects [`SpecEncoding::Default`]. With no settings,
     /// selects dynamic mode with printing and panicking disabled.
     ///
     /// # Panics
     ///
     /// Panics if discarding specs is combined with any other setting, static and dynamic
-    /// settings are combined, or `anodized_try` is enabled without `anodized_panic`.
+    /// settings are combined, both Hax and Charon encodings are selected, or
+    /// `anodized_try` is enabled without `anodized_panic`.
     pub const fn from_raw_cfg(raw_cfg: RawCfg) -> Self {
         let (any_static, any_runtime) = raw_cfg.get_any_static_any_runtime();
 
@@ -101,10 +108,15 @@ impl Mode {
         } else if any_static {
             if any_runtime {
                 panic!(
-                    "`anodized_*` static settings `embed_specs` and `charon` are incompatible with dynamic settings `panic`, `print`, and `try`"
+                    "`anodized_*` static settings `embed_specs`, `charon`, and `hax` are incompatible with dynamic settings `panic`, `print`, and `try`"
                 );
             }
-            Self::Static(if raw_cfg.anodized_charon {
+            if raw_cfg.anodized_hax && raw_cfg.anodized_charon {
+                panic!("`anodized_hax` and `anodized_charon` select incompatible spec encodings");
+            }
+            Self::Static(if raw_cfg.anodized_hax {
+                SpecEncoding::Hax
+            } else if raw_cfg.anodized_charon {
                 SpecEncoding::Charon
             } else {
                 SpecEncoding::Default
@@ -252,6 +264,9 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
 
         // Instrument function body.
         self.instrument_fn(&spec, &mut item_fn.sig, &mut item_fn.block)?;
+        if let Self::Static(SpecEncoding::Hax) = self {
+            hax::haxify_fn(&spec, &mut item_fn.attrs);
+        }
 
         if let Self::Dynamic(check_settings) = self
             && let Some(ref panic_settings) = check_settings.does_panic
@@ -362,6 +377,7 @@ impl Mode {
         anodized_discard_specs: false,
         anodized_embed_specs: false,
         anodized_charon: false,
+        anodized_hax: false,
         anodized_panic: false,
         anodized_print: false,
         anodized_try: false,
@@ -371,6 +387,7 @@ impl Mode {
         anodized_discard_specs: false,
         anodized_embed_specs: true,
         anodized_charon: false,
+        anodized_hax: false,
         anodized_panic: false,
         anodized_print: false,
         anodized_try: false,
@@ -380,6 +397,7 @@ impl Mode {
         anodized_discard_specs: false,
         anodized_embed_specs: false,
         anodized_charon: true,
+        anodized_hax: false,
         anodized_panic: false,
         anodized_print: false,
         anodized_try: false,

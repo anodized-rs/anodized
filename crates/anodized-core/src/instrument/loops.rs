@@ -9,7 +9,14 @@ use syn::{
     visit_mut::{self, VisitMut},
 };
 
-use crate::{LoopSpec, annotate::Specified, instrument::Mode};
+use crate::{
+    LoopSpec,
+    annotate::Specified,
+    instrument::{
+        Mode, SpecEncoding,
+        hax::{haxify_for_loop, haxify_while_loop},
+    },
+};
 
 impl Mode {
     pub fn instrument_loops_in_fn_body(&self, body: &mut Block) -> Result<()> {
@@ -18,15 +25,29 @@ impl Mode {
         visitor.finish()
     }
 
-    pub fn instrument_expr_while(&self, spec: LoopSpec, expr_while: &mut ExprWhile) {
+    pub fn instrument_expr_while(&self, spec: &LoopSpec, expr_while: &mut ExprWhile) -> Result<()> {
         self.instrument_loop_body(spec, &mut expr_while.body.stmts);
+
+        if matches!(self, Self::Static(SpecEncoding::Hax)) {
+            haxify_while_loop(spec, &mut expr_while.body.stmts)?;
+        }
+        Ok(())
     }
 
-    pub fn instrument_expr_for_loop(&self, spec: LoopSpec, expr_for_loop: &mut ExprForLoop) {
+    pub fn instrument_expr_for_loop(
+        &self,
+        spec: &LoopSpec,
+        expr_for_loop: &mut ExprForLoop,
+    ) -> Result<()> {
         self.instrument_loop_body(spec, &mut expr_for_loop.body.stmts);
+
+        if matches!(self, Self::Static(SpecEncoding::Hax)) {
+            haxify_for_loop(spec, &mut expr_for_loop.body.stmts)?;
+        }
+        Ok(())
     }
 
-    fn instrument_loop_body(&self, spec: LoopSpec, stmts: &mut Vec<Stmt>) {
+    fn instrument_loop_body(&self, spec: &LoopSpec, stmts: &mut Vec<Stmt>) {
         if self.emits_loop_spec_items() {
             let maintains_block =
                 Self::build_precondition_fn_body(std::iter::empty(), &[], &spec.maintains);
@@ -97,8 +118,11 @@ impl VisitMut for LoopSpecVisitor<'_> {
     fn visit_expr_while_mut(&mut self, expr_while: &mut ExprWhile) {
         visit_mut::visit_expr_while_mut(self, expr_while);
 
-        match expr_while.parse_spec_from_attrs() {
-            Ok(spec) => self.config.instrument_expr_while(spec, expr_while),
+        match expr_while
+            .parse_spec_from_attrs()
+            .and_then(|spec| self.config.instrument_expr_while(&spec, expr_while))
+        {
+            Ok(()) => {}
             Err(error) => self.add_error(error),
         }
     }
@@ -106,8 +130,11 @@ impl VisitMut for LoopSpecVisitor<'_> {
     fn visit_expr_for_loop_mut(&mut self, expr_for_loop: &mut ExprForLoop) {
         visit_mut::visit_expr_for_loop_mut(self, expr_for_loop);
 
-        match expr_for_loop.parse_spec_from_attrs() {
-            Ok(spec) => self.config.instrument_expr_for_loop(spec, expr_for_loop),
+        match expr_for_loop
+            .parse_spec_from_attrs()
+            .and_then(|spec| self.config.instrument_expr_for_loop(&spec, expr_for_loop))
+        {
+            Ok(()) => {}
             Err(error) => self.add_error(error),
         }
     }

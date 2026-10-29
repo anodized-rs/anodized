@@ -11,7 +11,12 @@ use syn::{
 use crate::{
     EmptySpec,
     annotate::Specified as _,
-    instrument::{Mode, fns::sanitize_input_patterns, make_item_error},
+    instrument::{
+        Mode, SpecEncoding,
+        fns::sanitize_input_patterns,
+        hax::{haxify_fn, haxify_impl_or_trait},
+        make_item_error,
+    },
     syntax::remove_unique_attr,
 };
 
@@ -183,6 +188,9 @@ impl Mode {
                         func.attrs = vec![parse_quote!(#[doc(hidden)]), parse_quote!(#[inline])];
                     }
 
+                    if let Self::Static(SpecEncoding::Hax) = self {
+                        haxify_fn(&fn_spec, &mut func.attrs);
+                    }
                     new_trait_items.push(TraitItem::Fn(func));
                 }
                 TraitItem::Const(mut const_item) => {
@@ -210,6 +218,9 @@ impl Mode {
             }
         }
         the_trait.items = new_trait_items;
+        if let Self::Static(SpecEncoding::Hax) = self {
+            haxify_impl_or_trait(&mut the_trait.attrs);
+        }
         Ok(the_trait)
     }
 
@@ -357,6 +368,9 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         }
                     }
 
+                    if let Self::Static(SpecEncoding::Hax) = self {
+                        haxify_fn(&fn_spec, &mut func.attrs);
+                    }
                     new_items.push(ImplItem::Fn(func));
                 }
                 ImplItem::Const(mut const_item) => {
@@ -385,6 +399,9 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
         }
 
         the_impl.items = new_items;
+        if let Self::Static(SpecEncoding::Hax) = self {
+            haxify_impl_or_trait(&mut the_impl.attrs);
+        }
         Ok(the_impl)
     }
 }

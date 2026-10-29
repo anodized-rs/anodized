@@ -89,6 +89,9 @@ jobs:
           - toolchain: nightly
             flags: '+nightly --config ''build.rustflags=["--cfg","anodized_charon"]'''
             test_flags: --tests --no-fail-fast -- --skip compile_errors
+          - toolchain: stable
+            flags: '--config ''build.rustflags=["--cfg","anodized_hax"]'''
+            test_flags: --tests --no-fail-fast
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

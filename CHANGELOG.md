@@ -12,7 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **[anodized-core] Explicit analysis modes and spec encodings** - Renamed `Mode::ChangeNothing`,
   `Mode::EmbedSpecs`, and `Mode::InjectChecks` to `Mode::Off`, `Mode::Static`, and `Mode::Dynamic`.
   Replaced the `SpecEmbedding` struct and its `uses_charon` flag with the `SpecEncoding` enum,
-  whose variants are `Default` and `Charon`.
+  whose variants are `Default`, `Charon`, and `Hax`.
+
+### Added
+
+- **[anodized] Hax integration** - `--cfg anodized_hax` translates specifications into
+  `hax_lib` annotations for static verification, including function contracts, loop invariants,
+  and loop decreases clauses (#128). For more information on Hax, see: https://github.com/pereq-dev/hax.
 
 ### Changed
 

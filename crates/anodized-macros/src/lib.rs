@@ -15,6 +15,7 @@ const CONFIG: Mode = Mode::from_raw_cfg(RawCfg {
     anodized_discard_specs: cfg!(anodized_discard_specs),
     anodized_embed_specs: cfg!(anodized_embed_specs),
     anodized_charon: cfg!(anodized_charon),
+    anodized_hax: cfg!(anodized_hax),
     anodized_panic: cfg!(anodized_panic),
     anodized_print: cfg!(anodized_print),
     anodized_try: cfg!(anodized_try),
@@ -26,6 +27,7 @@ const CONFIG: Mode = Mode::from_raw_cfg(RawCfg {
 /// - `anodized_discard_specs` discards it after parsing.
 /// - `anodized_embed_specs` encodes it as hidden items for static analysis.
 /// - `anodized_charon` selects static encoding with Charon contract attributes.
+/// - `anodized_hax` selects static encoding with Hax attributes.
 /// - Otherwise, dynamic mode validates specification expressions and adds runtime checks
 ///   controlled by `anodized_panic`, `anodized_print`, and `anodized_try`.
 ///

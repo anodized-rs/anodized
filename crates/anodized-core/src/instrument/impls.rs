@@ -9,7 +9,9 @@ use syn::{
 use crate::{
     EmptySpec,
     annotate::Specified as _,
-    instrument::{Mode, fns::sanitize_input_patterns, make_item_error},
+    instrument::{
+        Mode, SpecEncoding, fns::sanitize_input_patterns, hax::haxify_fn, make_item_error,
+    },
     syntax::remove_unique_attr,
 };
 
@@ -146,6 +148,9 @@ Instead, ensure that both the impl block and the fn have a `#[spec]` annotation.
                         item_fn.attrs = vec![parse_quote!(#[doc(hidden)]), parse_quote!(#[inline])];
                     }
 
+                    if let Self::Static(SpecEncoding::Hax) = self {
+                        haxify_fn(&fn_spec, &mut item_fn.attrs);
+                    }
                     new_items.push(ImplItem::Fn(item_fn));
                 }
                 ImplItem::Const(mut const_item) => {
