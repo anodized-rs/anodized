@@ -7,22 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.8.0 (2026 Oct 29)
+
 ### Breaking Changes
 
 - **[anodized-core] Explicit analysis modes and spec encodings** - Renamed `Mode::ChangeNothing`,
   `Mode::EmbedSpecs`, and `Mode::InjectChecks` to `Mode::Off`, `Mode::Static`, and `Mode::Dynamic`.
   Replaced the `SpecEmbedding` struct and its `uses_charon` flag with the `SpecEncoding` enum,
-  whose variants are `Default`, `Charon`, and `Hax`.
+  whose variants are `Default`, `Charon`, and `Hax` (#236, #128).
 
 ### Added
 
+- **[anodized-logic] Logical values for static analysis** - `Logical<T>` and `logical()`
+  represent Rust values in specifications without requiring `T: Copy` or `T: Eq`.
+  Logical equality cannot be evaluated at runtime (#242).
+- **[cargo-anodized] Optional Z3 wrapper** - Enable the `z3` feature to use
+  `cargo anodized z3-smt2-in`, which emulates `z3 -smt2 -in` (#228, #229).
 - **[anodized] Hax integration** - `--cfg anodized_hax` translates specifications into
   `hax_lib` annotations for static verification, including function contracts, loop invariants,
   and loop decreases clauses (#128). For more information on Hax, see: https://github.com/pereq-dev/hax.
 
 ### Changed
 
-- **[workspace] Lowered the minimum supported Rust version to 1.93**.
+- **[workspace] Lowered the minimum supported Rust version to 1.93** (#238).
 
 ## 0.7.0 (2026 Sep 27)
 
