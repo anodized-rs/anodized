@@ -18,14 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **[anodized-logic] Logical values for static analysis** - `Logical<T>` and `logical()`
-  represent Rust values in specifications without requiring `T: Copy` or `T: Eq`.
+- **[anodized] Hax integration** - `--cfg anodized_hax` translates specifications into
+  `hax_lib` annotations for static verification, including function contracts, loop invariants,
+  and loop decreases clauses (#128).
+  For more information on Hax, see: https://github.com/pereq-dev/hax.
+- **[anodized-logic] Logical values for static analysis** - `Logical<T>` and allows using `==` and
+  duplicating values in specifications without requiring `T: Eq` or `T: Copy`.
   Logical equality cannot be evaluated at runtime (#242).
 - **[cargo-anodized] Optional Z3 wrapper** - Enable the `z3` feature to use
   `cargo anodized z3-smt2-in`, which emulates `z3 -smt2 -in` (#228, #229).
-- **[anodized] Hax integration** - `--cfg anodized_hax` translates specifications into
-  `hax_lib` annotations for static verification, including function contracts, loop invariants,
-  and loop decreases clauses (#128). For more information on Hax, see: https://github.com/pereq-dev/hax.
 
 ### Changed
 
