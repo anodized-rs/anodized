@@ -7,10 +7,10 @@ pub fn logical<T>(_: &T) -> Logical<T> {
 
 /// A Rust value lifted into logic.
 ///
-/// For *any* `T`, `Logical<T>` is `Copy` and `Eq`.
+/// For *any* `T`, `Logical<T>` is `Copy` and `Eq`. This allows using `==` and duplicating a value
+/// of a fully generic type `T` in specifications. The intended use case is static analysis.
 ///
-/// A logical value has no runtime representation, so operations such as `==` have meaning only for
-/// static analysis and panic at runtime.
+/// A logical value has no runtime representation, so operations such as `==` panic.
 pub struct Logical<T: ?Sized>(
     // `fn() -> *const T` makes `Logical<T>` covariant in `T`, always `Send` and `Sync`,
     // and without drop-check effects.
