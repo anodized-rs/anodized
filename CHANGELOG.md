@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Replaced the `SpecEmbedding` struct and its `uses_charon` flag with the `SpecEncoding` enum,
   whose variants are `Default` and `Charon`.
 
+### Changed
+
+- **[workspace] Lowered the minimum supported Rust version to 1.93**.
+
 ## 0.7.0 (2026 Sep 27)
 
 ### Breaking Changes
