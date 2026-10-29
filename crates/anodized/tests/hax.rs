@@ -68,10 +68,7 @@ pub fn f_while(x: &[u8]) -> u8 {
     let mut max = 0;
     let mut i = 0;
     #[spec(
-        maintains: [
-            i <= x.len(),
-            forall(|j: usize| implies!(j < i, x[j] <= max)),
-        ],
+        maintains: i <= x.len() && forall(|j: usize| implies!(j < i, x[j] <= max)),
         decreases: x.len() - i,
     )]
     while i < x.len() {

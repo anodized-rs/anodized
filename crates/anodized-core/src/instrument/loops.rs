@@ -25,20 +25,38 @@ impl Mode {
         visitor.finish()
     }
 
-    pub fn instrument_expr_while(&self, spec: &LoopSpec, expr_while: &mut ExprWhile) {
+    pub fn instrument_expr_while(&self, spec: &LoopSpec, expr_while: &mut ExprWhile) -> Result<()> {
         self.instrument_loop_body(spec, &mut expr_while.body.stmts);
 
         if matches!(self, Self::Static(SpecEncoding::Hax)) {
+            if spec.maintains.len() > 1 {
+                return Err(Error::new_spanned(
+                    &spec.maintains[1].expr,
+                    "Hax supports only one `maintains` clause per loop; combine conditions with `&&`",
+                ));
+            }
             haxify_while_loop(spec, &mut expr_while.body.stmts);
         }
+        Ok(())
     }
 
-    pub fn instrument_expr_for_loop(&self, spec: &LoopSpec, expr_for_loop: &mut ExprForLoop) {
+    pub fn instrument_expr_for_loop(
+        &self,
+        spec: &LoopSpec,
+        expr_for_loop: &mut ExprForLoop,
+    ) -> Result<()> {
         self.instrument_loop_body(spec, &mut expr_for_loop.body.stmts);
 
         if matches!(self, Self::Static(SpecEncoding::Hax)) {
+            if spec.maintains.len() > 1 {
+                return Err(Error::new_spanned(
+                    &spec.maintains[1].expr,
+                    "Hax supports only one `maintains` clause per loop; combine conditions with `&&`",
+                ));
+            }
             haxify_for_loop(spec, &mut expr_for_loop.body.stmts);
         }
+        Ok(())
     }
 
     fn instrument_loop_body(&self, spec: &LoopSpec, stmts: &mut Vec<Stmt>) {
@@ -112,8 +130,11 @@ impl VisitMut for LoopSpecVisitor<'_> {
     fn visit_expr_while_mut(&mut self, expr_while: &mut ExprWhile) {
         visit_mut::visit_expr_while_mut(self, expr_while);
 
-        match expr_while.parse_spec_from_attrs() {
-            Ok(spec) => self.config.instrument_expr_while(&spec, expr_while),
+        match expr_while
+            .parse_spec_from_attrs()
+            .and_then(|spec| self.config.instrument_expr_while(&spec, expr_while))
+        {
+            Ok(()) => {}
             Err(error) => self.add_error(error),
         }
     }
@@ -121,8 +142,11 @@ impl VisitMut for LoopSpecVisitor<'_> {
     fn visit_expr_for_loop_mut(&mut self, expr_for_loop: &mut ExprForLoop) {
         visit_mut::visit_expr_for_loop_mut(self, expr_for_loop);
 
-        match expr_for_loop.parse_spec_from_attrs() {
-            Ok(spec) => self.config.instrument_expr_for_loop(&spec, expr_for_loop),
+        match expr_for_loop
+            .parse_spec_from_attrs()
+            .and_then(|spec| self.config.instrument_expr_for_loop(&spec, expr_for_loop))
+        {
+            Ok(()) => {}
             Err(error) => self.add_error(error),
         }
     }
