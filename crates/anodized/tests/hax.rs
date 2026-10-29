@@ -1,3 +1,4 @@
+#![cfg(anodized_hax)]
 #![allow(unused_variables, unused_imports, unused, clippy::needless_range_loop)]
 
 use anodized::{
