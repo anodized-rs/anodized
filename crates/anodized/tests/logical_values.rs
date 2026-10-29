@@ -1,3 +1,6 @@
+#![cfg_attr(anodized_charon, feature(register_tool))]
+#![cfg_attr(anodized_charon, register_tool(charon))]
+
 use anodized::logic::values::logical;
 use anodized::spec;
 
