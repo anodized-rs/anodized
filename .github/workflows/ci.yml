@@ -109,7 +109,7 @@ jobs:
           components: clippy
 
       - name: Lint anodized with flags `${{ matrix.flags }}`
-        run: cargo ${{ matrix.flags }} clippy -p anodized ${{ matrix.features }} --all-targets -- -D warnings
+        run: cargo ${{ matrix.flags }} clippy -p anodized --all-targets -- -D warnings
 
       - name: Integration test anodized with flags `${{ matrix.flags }}`
         run: cargo ${{ matrix.flags }} test -p anodized ${{ matrix.test_flags }}
