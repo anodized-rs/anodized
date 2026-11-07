@@ -7,18 +7,20 @@
 | [`fn`, free or inherent `impl`](#function-specs) | Pre- and postconditions, invariants. |
 | [`trait`](#trait-specs)                          | Enforces each `impl` to conform.     |
 | [`for` and `while`](#loop-specs)                 | Loop invariants and variant (bound). |
-| [`struct` and `enum`](#data-specs)               | Refinements to constrain instances.  |
+| [`struct` and `enum`](#type-specs)               | Type refinements to constrain data.  |
 
 ## Build Configurations
 
 Anodized uses `cfg` options to control how each `#[spec]` changes the Rust code.
 
-| `--cfg` Setting                                     | Effect                  |
-| --------------------------------------------------- | ----------------------- |
-| [`anodized_discard_specs`](#anodized_discard_specs) | disable spec embedding  |
-| [`anodized_panic`](#anodized_panic)                 | runtime check: panic    |
-| [`anodized_print`](#anodized_print)                 | runtime check: print    |
-| [`anodized_try`](#anodized_try)                     | runtime check: `Result` |
+| `--cfg` Setting                                     | Effect                   |
+| --------------------------------------------------- | ------------------------ |
+| [`anodized_discard_specs`](#anodized_discard_specs) | discard specs completely |
+| [`anodized_embed_specs`](#anodized_embed_specs)     | embed specs for analysis |
+| [`anodized_charon`](#anodized_charon)               | mark specs for Charon    |
+| [`anodized_panic`](#anodized_panic)                 | runtime check: panic     |
+| [`anodized_print`](#anodized_print)                 | runtime check: print     |
+| [`anodized_try`](#anodized_try)                     | runtime check: `Result`  |
 
 Select the desired options via compiler `cfg` flags, for example:
 
@@ -30,7 +32,33 @@ RUSTFLAGS="--cfg anodized_print" cargo test
 
 Disable embedding the specs as Rust code.
 
-**Important:** This has **no effect on runtime performance** because the embedded specs are always dead code. On the other hand, it **prevents syntax/type checking** specs, so it may decrease compilation time.
+**Important:** Discarding specs removes their generated code and prevents syntax/type checking of their expressions. With no `anodized_*` flags, runtime checks are disabled, but `captures` expressions still execute alongside the function body: a `.clone()` in a capture still runs. The separate `anodized_embed_specs` mode embeds specifications without changing the function body.
+
+### `anodized_embed_specs`
+
+Embed each specification as hidden Rust items alongside the annotated code, without changing the
+annotated items themselves. This mode is for static-analysis tools such as Charon/Aeneas and Hax
+that consume Anodized specs, so runtime instrumentation is inactive.
+
+`anodized_embed_specs` cannot be combined with `anodized_discard_specs`, `anodized_panic`,
+`anodized_print`, or `anodized_try`.
+
+### `anodized_charon`
+
+Enable marking embedded specifications with [Charon](https://github.com/AeneasVerif/charon) contract
+attributes. Generated precondition and postcondition items are marked with
+`#[charon::contract(...)]` so that Charon and Aeneas can associate them with the annotated function.
+
+Use this setting with a nightly Rust toolchain. Like `anodized_embed_specs`, it cannot be combined
+with `anodized_discard_specs` or any runtime-check setting.
+
+`anodized_charon` selects spec embedding by itself; `anodized_embed_specs` is optional when using it.
+Crates containing annotated items must register the Charon tool at the crate root:
+
+```rust,ignore
+#![cfg_attr(anodized_charon, feature(register_tool))]
+#![cfg_attr(anodized_charon, register_tool(charon))]
+```
 
 ## Runtime Checks
 
@@ -67,12 +95,12 @@ use anodized::spec;
 
     // Runtime checks only in debug builds (like `debug_assert!`)
     #[cfg(debug_assertions)]
-    ensures: output.is_ok(),
+    ensures: |output| output.is_ok(),
 )]
 fn perform_complex_operation(input: i32) -> Result<i32, String> { todo!() }
 ```
 
-The `#[cfg]` attribute follows standard Rust semantics: when the configuration predicate is false, the runtime check for the condition is completely omitted.
+The `#[cfg]` attribute follows standard Rust semantics: when the configuration predicate is false, the runtime check for the condition is completely omitted. This holds in every build configuration that runs checks, whether or not `anodized_print` is enabled.
 
 **Important:** Anodized guarantees that each condition remains syntactically valid and type-correct regardless of its `#[cfg]` settings. This prevents conditions from becoming invalid between different build configurations, and keeps the entire spec always visible to analysis tools.
 
@@ -126,6 +154,7 @@ Sometimes postconditions need to compare the function's final state with its ini
 use anodized::spec;
 
 #[spec(
+    requires: !items.is_empty(),
     captures: [
         // Copy types: captured directly
         orig_len = items.len(),
@@ -250,9 +279,10 @@ Loop specs support the following fields:
 use anodized::spec;
 
 #[spec(
-    ensures: [
-        seq.iter().any(|elem| elem == output),
-        seq.iter().all(|elem| elem <= output),
+    requires: !seq.is_empty(),
+    ensures: |output| [
+        seq.iter().any(|elem| *elem == output),
+        seq.iter().all(|elem| *elem <= output),
     ],
 )]
 fn find_maximum(seq: &[u8]) -> u8 {
@@ -278,10 +308,10 @@ use anodized::spec;
 
 #[spec(
     requires: seq.is_sorted(),
-    ensures: [
-        *output <= seq.len(),
-        seq[0..*output].iter().all(|item| item < value),
-        seq[*output..].iter().all(|item| item >= value),
+    ensures: |output| [
+        output <= seq.len(),
+        seq[0..output].iter().all(|item| item < value),
+        seq[output..].iter().all(|item| item >= value),
     ],
 )]
 fn find_insert_position<T: Ord>(seq: &[T], value: &T) -> usize {
@@ -323,6 +353,7 @@ trait MonotonicGenerator {
     fn current(&self) -> i32;
 
     #[spec(
+        requires: self.current() < i32::MAX,
         captures: old_val = self.current(),
         ensures: self.current() > old_val,
     )]
@@ -352,9 +383,10 @@ Important restrictions:
   - Static analyzers **must validate** narrowing as part of verification.
 - Names prefixed with `__anodized_` are internal and must not be implemented directly.
 
-### Data Specs
+### Type Specs (a.k.a. Type Refinements)
 
-Anodized supports specs on data types, meant to constrain all instances. This capability is equivalent to refinement types.
+Anodized supports type specs on `struct`s and `enum`s to constrain all their instances. This
+capability is equivalent to refinement types.
 
 **On a Struct**
 
@@ -386,7 +418,6 @@ use anodized::spec;
         Descending(vec) => vec.iter().rev().is_sorted(),
     }
 )]
-#[allow(unused)]
 enum MonotonicVec<T: Ord> {
     Ascending(Vec<T>),
     Descending(Vec<T>),
@@ -397,3 +428,35 @@ Important restrictions:
 
 - Runtime checks are **not implemented** yet.
 - Only the `maintains` spec field is supported.
+
+### Type Spec Enforcement
+
+Type specs are not enforced at `#[spec]` boundaries unless a type is explicitly marked with the
+`Spec!(...)` macro.
+
+```rust, no_run
+use anodized::spec;
+
+#[spec]
+struct TypeWithSpec;
+
+#[spec]
+fn update(
+    input: Spec!(TypeWithSpec),
+    output: Spec!(&mut TypeWithSpec, out),
+) -> Spec!(TypeWithSpec) {
+    todo!()
+}
+
+#[spec]
+struct Container {
+    enforced: Spec!(TypeWithSpec),
+    unenforced: TypeWithSpec,
+}
+```
+
+- `Spec!(T)`: Enforce a function input's type spec on entry, a function output's type spec on
+  exit, or a field's type spec as part of its containing type's spec.
+- `Spec!(T, out)`: Enforce a function input's spec only on exit (not on entry).
+- `Spec!(T, inout)`: Enforce a function input's spec on both entry and exit.
+- Modes `out` and `inout` are only valid for function inputs.

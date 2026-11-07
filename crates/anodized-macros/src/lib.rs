@@ -7,50 +7,31 @@ use syn::{Expr, Item, TraitItemFn, parse_macro_input};
 
 use anodized_core::{
     annotate::Specified as _,
-    instrument::{CheckSettings, Mode, PanicSettings, fns::make_try_call, make_item_error},
+    instrument::{Mode, RawCfg, fns::make_try_call, make_item_error},
     syntax::SpecFields,
 };
 
-const CONFIG: Mode = if cfg!(anodized_discard_specs) {
-    Mode::ChangeNothing
-} else {
-    Mode::InjectChecks(CheckSettings {
-        does_print: cfg!(anodized_print),
-        does_panic: if cfg!(anodized_panic) {
-            Some(PanicSettings {
-                has_try_fn: cfg!(anodized_try),
-            })
-        } else {
-            None
-        },
-    })
-};
-
-/// **Must** be inside a `#[spec]` attribute's item. May be applied to a `fn`, its inputs, and
-/// fields of a `struct` or `enum`.
-///
-/// - `#[unspec]`: The input or field may *not* satisfy its type spec.
-/// - `#[unspec(in)]`: The input may *not* satisfy its type spec at entry.
-/// - `#[unspec(out)]`: The input or output may *not* satisfy its type spec at exit.
-///
-/// This macro exists *only* to carry this documentation. It will never be invoked, because
-/// `anodized-core` removes it as part of processing `#[spec]` attributes. Note that Rust does
-/// *not* support macro attributes on inputs of a `fn` or fields of a `struct` or `enum`.
-#[proc_macro_attribute]
-pub fn unspec(_: TokenStream, _: TokenStream) -> TokenStream {
-    syn::Error::new(
-        Span::call_site(),
-        "must be on or inside the item of a `#[spec]` attribute",
-    )
-    .to_compile_error()
-    .into()
-}
+const CONFIG: Mode = Mode::from_raw_cfg(RawCfg {
+    anodized_discard_specs: cfg!(anodized_discard_specs),
+    anodized_embed_specs: cfg!(anodized_embed_specs),
+    anodized_charon: cfg!(anodized_charon),
+    anodized_hax: cfg!(anodized_hax),
+    anodized_panic: cfg!(anodized_panic),
+    anodized_print: cfg!(anodized_print),
+    anodized_try: cfg!(anodized_try),
+});
 
 /// Attaches a specification to supported program elements.
 ///
-/// This macro parses the spec and transforms the item's code to provide the following features:
-/// - compile-time validation: the spec's syntax, scope, and types
-/// - runtime checks: for supported items, configured by `cfg` settings
+/// Compiler `cfg` settings select how the specification is processed:
+/// - `anodized_discard_specs` discards it after parsing.
+/// - `anodized_embed_specs` encodes it as hidden items for static analysis.
+/// - `anodized_charon` selects static encoding with Charon contract attributes.
+/// - `anodized_hax` selects static encoding with Hax attributes.
+/// - Otherwise, dynamic mode validates specification expressions and adds runtime checks
+///   controlled by `anodized_panic`, `anodized_print`, and `anodized_try`.
+///
+/// With no settings, runtime failure actions are disabled, but captures still execute.
 #[proc_macro_attribute]
 pub fn spec(args: TokenStream, input: TokenStream) -> TokenStream {
     // Parse the `#[spec]` attribute's arguments.
@@ -125,4 +106,28 @@ pub fn try_call(args: TokenStream) -> TokenStream {
         Ok(call) => call.into_token_stream().into(),
         Err(error) => error.to_compile_error().into(),
     }
+}
+
+/// Control enforcement of the type's spec (a.k.a. refinement). May be applied to a type in a `fn`
+/// signature, or a `struct` or `enum` definition. The enclosing item **must** have a `#[spec]`
+/// attribute.
+///
+/// - `Spec!(T)`:
+///     - The input's type spec holds on entry.
+///     - The output's type spec holds on exit.
+///     - The field's type spec holds in a structurally recursive way.
+/// - `Spec!(T, out)`: The input's type spec holds only on exit (not on entry).
+/// - `Spec!(T, inout)`: The input's type spec holds on both entry and exit.
+///
+/// This macro exists *only* to carry this documentation. It should not be invoked, because
+/// `anodized-core` removes it as part of processing `#[spec]` attributes.
+#[proc_macro]
+#[allow(non_snake_case)]
+pub fn Spec(_: TokenStream) -> TokenStream {
+    syn::Error::new(
+        Span::call_site(),
+        "`Spec!` must appear inside an item annotated with `#[spec]`",
+    )
+    .to_compile_error()
+    .into()
 }

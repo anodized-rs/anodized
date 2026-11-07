@@ -1,5 +1,5 @@
 use crate::{
-    Capture, Condition, DataSpec, EmptySpec, FnSpec, PostCondition, annotate::Specified,
+    Capture, Condition, EmptySpec, FnSpec, PostCondition, TypeSpec, annotate::Specified,
     instrument::patterns::TamePat,
 };
 use pretty_assertions::assert_eq;
@@ -16,10 +16,10 @@ pub type SpecItemImpl = NodeWithSpec<EmptySpec, syn::ItemImpl>;
 pub type SpecItemTrait = NodeWithSpec<EmptySpec, syn::ItemTrait>;
 
 /// Specified `struct`.
-pub type SpecItemStruct = NodeWithSpec<DataSpec, syn::ItemStruct>;
+pub type SpecItemStruct = NodeWithSpec<TypeSpec, syn::ItemStruct>;
 
 /// Specified `enum`.
-pub type SpecItemEnum = NodeWithSpec<DataSpec, syn::ItemEnum>;
+pub type SpecItemEnum = NodeWithSpec<TypeSpec, syn::ItemEnum>;
 
 /// An AST node with a spec attached.
 pub struct NodeWithSpec<Spec, AstNode> {
@@ -90,15 +90,16 @@ pub fn assert_spec_eq(left: &FnSpec, right: &FnSpec) {
         left_input_specs,
         right_input_specs,
         "input specs",
-        |left, right, message| {
-            assert_eq!(
-                left.on_entry, right.on_entry,
-                "{message} entry flags do not match"
-            );
-            assert_eq!(
-                left.on_exit, right.on_exit,
-                "{message} exit flags do not match"
-            );
+        |left, right, message| match (left, right) {
+            (crate::InputSpecFlags::Neither, crate::InputSpecFlags::Neither) => {}
+            (crate::InputSpecFlags::In(left), crate::InputSpecFlags::In(right)) => {
+                assert_tokens_eq(left, right);
+            }
+            (crate::InputSpecFlags::Out(left), crate::InputSpecFlags::Out(right))
+            | (crate::InputSpecFlags::Both(left), crate::InputSpecFlags::Both(right)) => {
+                assert_eq!(left, right, "{message} exit patterns do not match");
+            }
+            _ => panic!("{message} flags do not match"),
         },
     );
 

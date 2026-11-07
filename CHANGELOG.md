@@ -7,11 +7,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.8.0 (2026 Oct 29)
+
+### Breaking Changes
+
+- **[anodized-core] Explicit analysis modes and spec encodings** - Renamed `Mode::ChangeNothing`,
+  `Mode::EmbedSpecs`, and `Mode::InjectChecks` to `Mode::Off`, `Mode::Static`, and `Mode::Dynamic`.
+  Replaced the `SpecEmbedding` struct and its `uses_charon` flag with the `SpecEncoding` enum,
+  whose variants are `Default`, `Charon`, and `Hax` (#236, #128).
+
+### Added
+
+- **[anodized] Hax integration** - `--cfg anodized_hax` translates specifications into
+  `hax_lib` annotations for static verification, including function contracts, loop invariants,
+  and loop decreases clauses (#128).
+  For more information on Hax, see: https://github.com/pereq-dev/hax.
+- **[anodized-logic] Logical values for static analysis** - `Logical<T>` and allows using `==` and
+  duplicating values in specifications without requiring `T: Eq` or `T: Copy`.
+  Logical equality cannot be evaluated at runtime (#242).
+- **[cargo-anodized] Optional Z3 wrapper** - Enable the `z3` feature to use
+  `cargo anodized z3-smt2-in`, which emulates `z3 -smt2 -in` (#228, #229).
+
+### Changed
+
+- **[workspace] Lowered the minimum supported Rust version to 1.93** (#238).
+
+## 0.7.0 (2026 Sep 27)
+
+### Breaking Changes
+
+- **[anodized-core] Revised the public specification AST** - `Spec` is now `FnSpec`, `DataSpec`
+  is now `TypeSpec`, and postcondition patterns are represented by `TamePat`. Parsing is now
+  contextual through `Specified`, replacing direct parsing of a standalone function spec (#207,
+  #209, #219).
+- **[anodized] Simplified `try_call!` failure values** - `anodized::result::Error::{Pre, Post}`
+  no longer carry a formatted diagnostic-message payload; `Post` retains the function output
+  (#186).
+
+### Added
+
+- **[anodized] Opt-in, enforceable type refinements with `Spec!(...)`** - Mark function inputs,
+  outputs, and fields to enforce their type specifications at their relevant boundaries.
+  Input markers support the `out` and `inout` modes, and refinements compose recursively through
+  references, slices, arrays, `Option`, `Result`, `Box`, `Vec`, and tuples (#191, #217, #219).
+- **[anodized] More expressive postcondition output patterns** - `ensures:` bindings can now use
+  irrefutable destructuring and move patterns, while preserving the value returned to the caller
+  (#196, #199, #205).
+- **[anodized-core] Trait methods support input patterns** - Trait function specifications now
+  handle supported argument patterns when forwarding calls to their implementation shims (#162).
+- **[cargo-anodized] `cargo anodized fmt`** - Added a Cargo plugin that runs `rustfmt` and
+  `anodized-fmt`, with package, manifest, workspace, check, and verbose options (#215).
+- **[anodized-core] Charon/Aeneas spec embedding** - `--cfg anodized_embed_specs` emits embedded
+  specification items, and `--cfg anodized_charon` additionally marks supported preconditions
+  and postconditions with Charon contract attributes (#212).
+
 ### Fixed
 
 - **[anodized-core] `#[cfg]` on a condition is honored in every check mode** - The guard was
   emitted only alongside the printing path, so a condition gated off by its `#[cfg]` was still
-  checked under `--cfg anodized_panic` without `--cfg anodized_print`.
+  checked under `--cfg anodized_panic` without `--cfg anodized_print` (#192).
+- **[anodized-core] Robust pattern handling in postconditions** - Fixed edge cases involving
+  wildcards, `mut`, `@`, type ascriptions, references, and boxed values, with clearer compiler
+  diagnostics for unsupported patterns (#199, #205).
+- **[anodized-core] Function bodies and captures use the appropriate closure traits** - Bodies
+  that require `FnOnce` compile correctly, while capture expressions remain mutation-free (#187,
+  #202).
+
+### Changed
+
+- **[anodized-core] Invalid `anodized_*` configuration combinations now fail early** -
+  `anodized_try` requires `anodized_panic`; spec embedding and discarding cannot be combined with
+  runtime-check settings (#214).
+- **[anodized-core] Runtime-check diagnostics again identify pre- and post-invariant failures**
+  (#197).
 
 ## 0.6.0 (2026 Aug 08)
 
