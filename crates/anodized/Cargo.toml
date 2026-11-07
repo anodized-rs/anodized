@@ -17,6 +17,7 @@ check-cfg = [
     "cfg(anodized_charon)",
     "cfg(anodized_discard_specs)",
     "cfg(anodized_embed_specs)",
+    "cfg(anodized_hax)",
     "cfg(anodized_panic)",
     "cfg(anodized_print)",
     "cfg(anodized_try)",
@@ -27,5 +28,6 @@ anodized-logic.workspace = true
 anodized-macros.workspace = true
 
 [dev-dependencies]
+hax-lib = "0.4.2"
 pollster = "0.4"
 trybuild = "1.0"

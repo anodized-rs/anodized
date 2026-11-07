@@ -32,6 +32,7 @@ pub fn halve_palindrome(input: &str) -> (&str, Option<char>) {
     (prefix, middle)
 }
 
+#[cfg_attr(anodized_hax, allow(dead_code))]
 trait Palindromeness: AsRef<str> {
     fn is_palindrome(&self) -> bool {
         self.as_ref().chars().eq(self.as_ref().chars().rev())

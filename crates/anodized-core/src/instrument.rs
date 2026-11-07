@@ -8,26 +8,34 @@ use syn::{
 use crate::{EmptySpec, FnSpec, instrument::fns::sanitize_input_patterns};
 
 pub mod fns;
+pub mod hax;
 pub mod impls;
 pub mod loops;
 pub mod patterns;
 pub mod traits;
 pub mod types;
 
+/// Selects whether specifications are discarded, encoded for static analysis, or checked dynamically.
 #[derive(Debug, Clone)]
 pub enum Mode {
-    /// Make no changes to the code.
-    ChangeNothing,
-    /// Embed spec elements as new items without changing existing code.
-    EmbedSpecs(SpecEmbedding),
-    /// Inject code to enable compile-time and/or runtime checks.
-    InjectChecks(CheckSettings),
+    /// Discard specs and leave implementation code unaltered.
+    Off,
+    /// Enable static analysis: encode specs as new items and leave implementation code unaltered.
+    Static(SpecEncoding),
+    /// Enable dynamic analysis (e.g. testing, fuzzing): add runtime checks to implementation code.
+    /// With printing and panicking disabled, conditions are type-checked and captures still execute.
+    Dynamic(CheckSettings),
 }
 
-#[derive(Debug, Clone)]
-pub struct SpecEmbedding {
-    /// Emit Charon's `contract` attributes on spec elements.
-    pub uses_charon: bool,
+/// Selects the representation of specifications emitted by [`Mode::Static`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SpecEncoding {
+    /// The default encoding, i.e. items named `__anodized_*`.
+    Default,
+    /// The default encoding with Charon contract attributes.
+    Charon,
+    /// Encode specs into Hax attributes.
+    Hax,
 }
 
 #[derive(Debug, Clone)]
@@ -44,11 +52,13 @@ pub struct PanicSettings {
     pub has_try_fn: bool,
 }
 
+/// Compiler configuration settings interpreted by [`Mode::from_raw_cfg`].
 #[derive(Debug, Clone)]
 pub struct RawCfg {
     pub anodized_discard_specs: bool,
     pub anodized_embed_specs: bool,
     pub anodized_charon: bool,
+    pub anodized_hax: bool,
     pub anodized_panic: bool,
     pub anodized_print: bool,
     pub anodized_try: bool,
@@ -60,18 +70,31 @@ impl RawCfg {
             anodized_discard_specs: _,
             anodized_embed_specs,
             anodized_charon,
+            anodized_hax,
             anodized_panic,
             anodized_print,
             anodized_try,
         } = *self;
         (
-            anodized_embed_specs || anodized_charon,
+            anodized_embed_specs || anodized_charon || anodized_hax,
             anodized_panic || anodized_print || anodized_try,
         )
     }
 }
 
 impl Mode {
+    /// Selects an analysis mode from compiler configuration settings.
+    ///
+    /// `anodized_charon` selects [`SpecEncoding::Charon`] and implies static mode.
+    /// `anodized_hax` selects [`SpecEncoding::Hax`] and implies static mode.
+    /// `anodized_embed_specs` alone selects [`SpecEncoding::Default`]. With no settings,
+    /// selects dynamic mode with printing and panicking disabled.
+    ///
+    /// # Panics
+    ///
+    /// Panics if discarding specs is combined with any other setting, static and dynamic
+    /// settings are combined, both Hax and Charon encodings are selected, or
+    /// `anodized_try` is enabled without `anodized_panic`.
     pub const fn from_raw_cfg(raw_cfg: RawCfg) -> Self {
         let (any_static, any_runtime) = raw_cfg.get_any_static_any_runtime();
 
@@ -81,21 +104,28 @@ impl Mode {
                     "`anodized_discard_specs` is incompatible with all other `anodized_*` settings"
                 );
             }
-            Self::ChangeNothing
+            Self::Off
         } else if any_static {
             if any_runtime {
                 panic!(
-                    "`anodized_embed_specs` is incompatible with `anodized_panic/print/try` settings"
+                    "`anodized_*` static settings `embed_specs`, `charon`, and `hax` are incompatible with dynamic settings `panic`, `print`, and `try`"
                 );
             }
-            Self::EmbedSpecs(SpecEmbedding {
-                uses_charon: raw_cfg.anodized_charon,
+            if raw_cfg.anodized_hax && raw_cfg.anodized_charon {
+                panic!("`anodized_hax` and `anodized_charon` select incompatible spec encodings");
+            }
+            Self::Static(if raw_cfg.anodized_hax {
+                SpecEncoding::Hax
+            } else if raw_cfg.anodized_charon {
+                SpecEncoding::Charon
+            } else {
+                SpecEncoding::Default
             })
         } else {
             if raw_cfg.anodized_try && !raw_cfg.anodized_panic {
                 panic!("`anodized_try` requires `anodized_panic`");
             }
-            Self::InjectChecks(CheckSettings {
+            Self::Dynamic(CheckSettings {
                 does_print: raw_cfg.anodized_print,
                 does_panic: if raw_cfg.anodized_panic {
                     Some(PanicSettings {
@@ -108,12 +138,40 @@ impl Mode {
         }
     }
 
-    pub fn changes_anything(&self) -> bool {
-        !matches!(self, Mode::ChangeNothing)
+    /// Whether to emit function specification items.
+    pub(crate) fn emits_fn_spec_items(&self) -> bool {
+        matches!(
+            self,
+            Mode::Static(SpecEncoding::Default | SpecEncoding::Charon)
+        )
+    }
+
+    /// Whether to emit function qualifier constants (needed to enforce trait narrowing).
+    pub(crate) fn emits_fn_qualifier_items(&self) -> bool {
+        matches!(
+            self,
+            Mode::Static(SpecEncoding::Default | SpecEncoding::Charon) | Mode::Dynamic(_)
+        )
+    }
+
+    /// Whether to emit type specification predicates.
+    pub(crate) fn emits_type_spec_items(&self) -> bool {
+        matches!(
+            self,
+            Mode::Static(SpecEncoding::Default | SpecEncoding::Charon) | Mode::Dynamic(_)
+        )
+    }
+
+    /// Whether to emit loop invariant and variant bindings.
+    pub(crate) fn emits_loop_spec_items(&self) -> bool {
+        matches!(
+            self,
+            Mode::Static(SpecEncoding::Default | SpecEncoding::Charon)
+        )
     }
 
     pub fn emits_try_fn(&self) -> bool {
-        if let Self::InjectChecks(check_settings) = self
+        if let Self::Dynamic(check_settings) = self
             && let Some(panic_settings) = &check_settings.does_panic
         {
             panic_settings.has_try_fn
@@ -124,15 +182,15 @@ impl Mode {
 
     pub fn with_try_fn(&self, value: bool) -> Self {
         match self {
-            Mode::ChangeNothing => Mode::ChangeNothing,
-            Mode::InjectChecks(check_settings) => {
+            Mode::Off => Mode::Off,
+            Mode::Static(spec_encoding) => Mode::Static(*spec_encoding),
+            Mode::Dynamic(check_settings) => {
                 let mut check_settings = check_settings.clone();
                 if let Some(panic_settings) = &mut check_settings.does_panic {
                     panic_settings.has_try_fn = value;
                 };
-                Mode::InjectChecks(check_settings)
+                Mode::Dynamic(check_settings)
             }
-            Mode::EmbedSpecs(spec_embedding) => Mode::EmbedSpecs(spec_embedding.clone()),
         }
     }
 
@@ -147,7 +205,7 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
             ));
         }
 
-        if let Self::EmbedSpecs(_) = self {
+        if self.emits_fn_spec_items() {
             // Embed `spec` elements as `__anodized_fn_*` items.
             let attrs: [Attribute; 2] = [
                 parse_quote!(#[doc(hidden)]),
@@ -206,8 +264,11 @@ Instead, you likely need to place a `#[spec]` attribute on an enclosing trait or
 
         // Instrument function body.
         self.instrument_fn(&spec, &mut item_fn.sig, &mut item_fn.block)?;
+        if let Self::Static(SpecEncoding::Hax) = self {
+            hax::haxify_fn(&spec, &mut item_fn.attrs);
+        }
 
-        if let Self::InjectChecks(check_settings) = self
+        if let Self::Dynamic(check_settings) = self
             && let Some(ref panic_settings) = check_settings.does_panic
             && panic_settings.has_try_fn
         {
@@ -316,6 +377,7 @@ impl Mode {
         anodized_discard_specs: false,
         anodized_embed_specs: false,
         anodized_charon: false,
+        anodized_hax: false,
         anodized_panic: false,
         anodized_print: false,
         anodized_try: false,
@@ -325,6 +387,7 @@ impl Mode {
         anodized_discard_specs: false,
         anodized_embed_specs: true,
         anodized_charon: false,
+        anodized_hax: false,
         anodized_panic: false,
         anodized_print: false,
         anodized_try: false,
@@ -334,6 +397,7 @@ impl Mode {
         anodized_discard_specs: false,
         anodized_embed_specs: false,
         anodized_charon: true,
+        anodized_hax: false,
         anodized_panic: false,
         anodized_print: false,
         anodized_try: false,

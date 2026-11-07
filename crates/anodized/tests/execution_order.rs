@@ -169,6 +169,7 @@ fn async_execution_order() {
 }
 
 #[spec(maintains: { self.log.push(self.label); true })]
+#[cfg_attr(anodized_hax, allow(dead_code))]
 pub struct TypeWithSpec<'a> {
     label: &'static str,
     log: &'a ExecLog,
@@ -178,6 +179,7 @@ pub struct TypeWithSpec<'a> {
     requires: { i2.log.push("pre"); true },
     ensures: { i2.log.push("post"); true },
 )]
+#[cfg_attr(anodized_hax, allow(unused_variables))]
 pub fn func_io<'a>(
     i1: Spec!(TypeWithSpec<'a>),
     i2: Spec!(&mut TypeWithSpec, inout),

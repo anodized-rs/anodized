@@ -220,7 +220,7 @@ fn type_spec_enforcement_instrument_item_impl() {
         }
     };
 
-    let observed = Mode::InjectChecks(CheckSettings::DEFAULT)
+    let observed = Mode::Dynamic(CheckSettings::DEFAULT)
         .instrument_item_impl(spec_item_impl.spec, spec_item_impl.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);
@@ -287,7 +287,7 @@ fn emit_try_fn_instrument_item_impl() {
         }
     };
 
-    let observed = Mode::InjectChecks(CheckSettings::PRINT_AND_TRY)
+    let observed = Mode::Dynamic(CheckSettings::PRINT_AND_TRY)
         .instrument_item_impl(spec_item_impl.spec, spec_item_impl.node)
         .unwrap();
     assert_tokens_eq(&observed, &expected);

@@ -11,12 +11,20 @@ use syn::{
 use crate::{
     EmptySpec,
     annotate::Specified as _,
-    instrument::{Mode, fns::sanitize_input_patterns, make_item_error},
+    instrument::{
+        Mode, SpecEncoding,
+        fns::sanitize_input_patterns,
+        hax::{haxify_fn, haxify_impl_or_trait},
+        make_item_error,
+    },
     syntax::remove_unique_attr,
 };
 
 impl Mode {
-    /// Expand trait items by mangling each method and adding a wrapper default impl.
+    /// Process trait specifications according to the selected analysis mode.
+    ///
+    /// Static mode emits specification items using the selected encoding. Dynamic mode
+    /// mangles each method and adds a wrapper default implementation as described below.
     ///
     /// Mangling a function involves the following:
     /// 1. Rename the function following the pattern: `fn add` -> `fn __anodized_add`.
@@ -45,7 +53,7 @@ impl Mode {
                         parse_quote!(#[allow(warnings)]),
                     ];
 
-                    if let Self::EmbedSpecs(_) = self {
+                    if self.emits_fn_spec_items() {
                         // Embed `spec` elements as `__anodized_fn_*` items.
                         let mut spec_requires_attrs = attrs.to_vec();
                         let mut spec_requires_sig = self.build_precondition_fn_sig(
@@ -110,7 +118,7 @@ impl Mode {
                         new_trait_items.push(TraitItem::Fn(spec_ensures_fn));
                     }
 
-                    if self.changes_anything() {
+                    if self.emits_fn_qualifier_items() {
                         let spec_trait_qualifiers_const = Self::build_qualifier_const_item(
                             &attrs,
                             "__anodized_fn_qualifiers_trait",
@@ -132,7 +140,7 @@ impl Mode {
                         self.instrument_loops_in_fn_body(default_body)?;
                     }
 
-                    if let Mode::InjectChecks(_) = self {
+                    if let Mode::Dynamic(_) = self {
                         let mangled_ident = mangle_ident(&func.sig.ident);
 
                         let mut mangled_fn = func.clone();
@@ -152,7 +160,7 @@ impl Mode {
                         func.semi_token = None;
                     }
 
-                    if let Self::InjectChecks(check_settings) = self
+                    if let Self::Dynamic(check_settings) = self
                         && let Some(ref panic_settings) = check_settings.does_panic
                         && panic_settings.has_try_fn
                     {
@@ -180,6 +188,9 @@ impl Mode {
                         func.attrs = vec![parse_quote!(#[doc(hidden)]), parse_quote!(#[inline])];
                     }
 
+                    if let Self::Static(SpecEncoding::Hax) = self {
+                        haxify_fn(&fn_spec, &mut func.attrs);
+                    }
                     new_trait_items.push(TraitItem::Fn(func));
                 }
                 TraitItem::Const(mut const_item) => {
@@ -207,10 +218,16 @@ impl Mode {
             }
         }
         the_trait.items = new_trait_items;
+        if let Self::Static(SpecEncoding::Hax) = self {
+            haxify_impl_or_trait(&mut the_trait.attrs);
+        }
         Ok(the_trait)
     }
 
-    /// Expand impl items by mangling methods for trait impls.
+    /// Process trait implementation specifications according to the selected analysis mode.
+    ///
+    /// Static mode emits specification items using the selected encoding. Dynamic mode
+    /// mangles methods and inserts qualifier checks and runtime checks.
     ///
     /// The `#[spec]` attribute on an impl `fn` must narrow the `#[spec]` of the trait `fn`:
     /// - The impl's preconditions must follow from the trait's preconditions.
@@ -248,7 +265,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         parse_quote!(#[allow(warnings)]),
                     ];
 
-                    if let Self::EmbedSpecs(_) = self {
+                    if self.emits_fn_spec_items() {
                         // Embed `spec` elements as `__anodized_fn_*` items.
                         let mut spec_requires_attrs = attrs.to_vec();
                         let mut spec_requires_sig = self.build_precondition_fn_sig(
@@ -315,7 +332,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         new_items.push(ImplItem::Fn(spec_ensures_fn));
                     }
 
-                    if self.changes_anything() {
+                    if self.emits_fn_qualifier_items() {
                         let spec_qualifiers_const = Self::build_qualifier_const_item(
                             &attrs,
                             "__anodized_fn_qualifiers",
@@ -325,7 +342,7 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         new_items.push(ImplItem::Const(spec_qualifiers_const));
                     }
 
-                    if let Mode::InjectChecks(_) = self {
+                    if let Mode::Dynamic(_) = self {
                         self.with_try_fn(false).instrument_fn(
                             &fn_spec,
                             &mut func.sig,
@@ -351,6 +368,9 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
                         }
                     }
 
+                    if let Self::Static(SpecEncoding::Hax) = self {
+                        haxify_fn(&fn_spec, &mut func.attrs);
+                    }
                     new_items.push(ImplItem::Fn(func));
                 }
                 ImplItem::Const(mut const_item) => {
@@ -379,6 +399,9 @@ Instead, ensure that both the trait and the impl fn have a `#[spec]` annotation.
         }
 
         the_impl.items = new_items;
+        if let Self::Static(SpecEncoding::Hax) = self {
+            haxify_impl_or_trait(&mut the_impl.attrs);
+        }
         Ok(the_impl)
     }
 }

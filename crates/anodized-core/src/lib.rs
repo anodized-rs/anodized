@@ -126,6 +126,8 @@ impl TypeSpec {
 #[derive(Debug)]
 pub struct LoopSpec {
     /// Loop invariants: conditions that must hold both before and after the loop's body runs.
+    // TODO: Change this to a structure similar to `PostCondition`, to explicitly support
+    //       writing the invariant of a `for` loop as a closure, which Hax currently needs.
     pub maintains: Vec<Condition>,
     /// Loop variant: an expression that decreases with each run of the loop's body.
     pub decreases: Option<LoopVariant>,
