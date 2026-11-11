@@ -11,8 +11,6 @@ struct Cli {
 enum Command {
     /// Format a Cargo project.
     Fmt(command::fmt::Options),
-    /// Verify a Cargo project with Aeneas and Lean.
-    VerifyAeneas(command::verify_aeneas::Options),
     #[cfg(feature = "z3")]
     /// Emulates `z3 -smt2 -in`.
     Z3Smt2In(command::z3::Options),
@@ -30,7 +28,6 @@ fn run() -> Result<(), Error> {
 
     match cli.command {
         Command::Fmt(options) => command::fmt::fmt(options)?,
-        Command::VerifyAeneas(options) => command::verify_aeneas::run(options)?,
         #[cfg(feature = "z3")]
         Command::Z3Smt2In(options) => command::z3::emulate_smt2_in(options)?,
     }
@@ -42,9 +39,6 @@ fn run() -> Result<(), Error> {
 enum Error {
     #[error(transparent)]
     Fmt(#[from] command::fmt::Error),
-
-    #[error(transparent)]
-    VerifyAeneas(#[from] command::verify_aeneas::Error),
 
     #[cfg(feature = "z3")]
     #[error(transparent)]
