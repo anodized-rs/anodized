@@ -13,6 +13,8 @@ pub struct Cli {
 pub enum Command {
     /// Format a Cargo project.
     Fmt(FmtOptions),
+    /// Verify a Cargo project with Aeneas and Lean.
+    VerifyAeneas(VerifyAeneasOptions),
     #[cfg(feature = "z3")]
     /// Emulates `z3 -smt2 -in`.
     Z3Smt2In(Z3Options),
@@ -39,6 +41,21 @@ pub struct FmtOptions {
     /// Check formatting without modifying files.
     #[arg(long)]
     pub check: bool,
+}
+
+#[derive(Args)]
+pub struct VerifyAeneasOptions {
+    /// Specify packages to format.
+    #[arg(short, long = "package", value_name = "PACKAGE")]
+    pub packages: Vec<String>,
+
+    /// Specify the path to Cargo.toml.
+    #[arg(long, value_name = "PATH")]
+    pub manifest_path: Option<PathBuf>,
+
+    /// Use verbose output.
+    #[arg(short, long)]
+    pub verbose: bool,
 }
 
 #[derive(Args)]
