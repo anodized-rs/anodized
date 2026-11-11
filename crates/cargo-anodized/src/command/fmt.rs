@@ -1,4 +1,3 @@
-use anodized_fmt::{Config, check_file, format_file};
 use std::{
     collections::BTreeSet as Set,
     fs,
@@ -82,7 +81,7 @@ pub fn fmt(options: Options) -> Result<()> {
         println!("Running `anodized-fmt`");
     }
 
-    let config = Config::load()?;
+    let config = anodized_fmt::Config::load()?;
     if check {
         let mut all_formatted = true;
         for path in paths {
@@ -90,7 +89,7 @@ pub fn fmt(options: Options) -> Result<()> {
                 println!("check {}", path.display());
             }
             let source = fs::read_to_string(&path)?;
-            let is_formatted = check_file(&source, &config)?;
+            let is_formatted = anodized_fmt::check_file(&source, &config)?;
             if verbose && !is_formatted {
                 println!("needs formatting");
             }
@@ -106,7 +105,7 @@ pub fn fmt(options: Options) -> Result<()> {
                 println!("format {}", path.display());
             }
             let source = fs::read_to_string(&path)?;
-            let formatted = format_file(&source, &config)?;
+            let formatted = anodized_fmt::format_file(&source, &config)?;
 
             if formatted != source {
                 if verbose {

@@ -1,9 +1,22 @@
-use clap::Parser;
-
-use crate::cli::{Cli, Command};
-
-mod cli;
 mod command;
+
+#[derive(clap::Parser)]
+#[command(version, about)]
+struct Cli {
+    #[command(subcommand)]
+    pub command: Command,
+}
+
+#[derive(clap::Subcommand)]
+enum Command {
+    /// Format a Cargo project.
+    Fmt(command::fmt::Options),
+    /// Verify a Cargo project with Aeneas and Lean.
+    VerifyAeneas(command::verify_aeneas::Options),
+    #[cfg(feature = "z3")]
+    /// Emulates `z3 -smt2 -in`.
+    Z3Smt2In(command::z3::Options),
+}
 
 fn main() {
     if let Err(error) = run() {
@@ -13,7 +26,7 @@ fn main() {
 }
 
 fn run() -> Result<(), Error> {
-    let cli = Cli::parse();
+    let cli: Cli = clap::Parser::parse();
 
     match cli.command {
         Command::Fmt(options) => command::fmt::fmt(options)?,
