@@ -3,7 +3,7 @@ use clap::Parser;
 use crate::cli::{Cli, Command};
 
 mod cli;
-mod commands;
+mod command;
 
 fn main() {
     if let Err(error) = run() {
@@ -16,10 +16,10 @@ fn run() -> Result<(), Error> {
     let cli = Cli::parse();
 
     match cli.command {
-        Command::Fmt(options) => commands::fmt::fmt(options)?,
-        Command::VerifyAeneas(options) => commands::verify_aeneas::run(options)?,
+        Command::Fmt(options) => command::fmt::fmt(options)?,
+        Command::VerifyAeneas(options) => command::verify_aeneas::run(options)?,
         #[cfg(feature = "z3")]
-        Command::Z3Smt2In(options) => commands::z3::emulate_smt2_in(options)?,
+        Command::Z3Smt2In(options) => command::z3::emulate_smt2_in(options)?,
     }
 
     Ok(())
@@ -28,12 +28,12 @@ fn run() -> Result<(), Error> {
 #[derive(Debug, thiserror::Error)]
 enum Error {
     #[error(transparent)]
-    Fmt(#[from] commands::fmt::Error),
+    Fmt(#[from] command::fmt::Error),
 
     #[error(transparent)]
-    VerifyAeneas(#[from] commands::verify_aeneas::Error),
+    VerifyAeneas(#[from] command::verify_aeneas::Error),
 
     #[cfg(feature = "z3")]
     #[error(transparent)]
-    Z3Smt2In(#[from] commands::z3::Error),
+    Z3Smt2In(#[from] command::z3::Error),
 }
