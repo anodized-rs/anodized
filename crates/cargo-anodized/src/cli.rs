@@ -1,6 +1,4 @@
-use std::path::PathBuf;
-
-use clap::{Args, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(version, about)]
@@ -12,51 +10,10 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Command {
     /// Format a Cargo project.
-    Fmt(FmtOptions),
+    Fmt(crate::commands::fmt::Options),
     /// Verify a Cargo project with Aeneas and Lean.
-    VerifyAeneas(VerifyAeneasOptions),
+    VerifyAeneas(crate::commands::verify_aeneas::Options),
     #[cfg(feature = "z3")]
     /// Emulates `z3 -smt2 -in`.
-    Z3Smt2In(Z3Options),
+    Z3Smt2In(crate::commands::z3::Options),
 }
-
-#[derive(Args)]
-pub struct FmtOptions {
-    /// Specify packages to format.
-    #[arg(short, long = "package", value_name = "PACKAGE")]
-    pub packages: Vec<String>,
-
-    /// Specify the path to Cargo.toml.
-    #[arg(long, value_name = "PATH")]
-    pub manifest_path: Option<PathBuf>,
-
-    /// Format all packages in the workspace.
-    #[arg(long)]
-    pub all: bool,
-
-    /// Use verbose output.
-    #[arg(short, long)]
-    pub verbose: bool,
-
-    /// Check formatting without modifying files.
-    #[arg(long)]
-    pub check: bool,
-}
-
-#[derive(Args)]
-pub struct VerifyAeneasOptions {
-    /// Specify packages to format.
-    #[arg(short, long = "package", value_name = "PACKAGE")]
-    pub packages: Vec<String>,
-
-    /// Specify the path to Cargo.toml.
-    #[arg(long, value_name = "PATH")]
-    pub manifest_path: Option<PathBuf>,
-
-    /// Use verbose output.
-    #[arg(short, long)]
-    pub verbose: bool,
-}
-
-#[derive(Args)]
-pub struct Z3Options {}

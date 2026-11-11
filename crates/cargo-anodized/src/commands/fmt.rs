@@ -7,12 +7,33 @@ use std::{
     process::{Command, ExitStatus},
 };
 
-use crate::cli::FmtOptions;
+#[derive(clap::Args)]
+pub struct Options {
+    /// Specify packages to format.
+    #[arg(short, long = "package", value_name = "PACKAGE")]
+    pub packages: Vec<String>,
+
+    /// Specify the path to Cargo.toml.
+    #[arg(long, value_name = "PATH")]
+    pub manifest_path: Option<PathBuf>,
+
+    /// Format all packages in the workspace.
+    #[arg(long)]
+    pub all: bool,
+
+    /// Use verbose output.
+    #[arg(short, long)]
+    pub verbose: bool,
+
+    /// Check formatting without modifying files.
+    #[arg(long)]
+    pub check: bool,
+}
 
 type Result<T> = std::result::Result<T, Error>;
 
-pub fn fmt(options: FmtOptions) -> Result<()> {
-    let FmtOptions {
+pub fn fmt(options: Options) -> Result<()> {
+    let Options {
         packages,
         manifest_path,
         all,
