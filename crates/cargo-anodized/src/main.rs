@@ -1,9 +1,20 @@
-use clap::Parser;
+mod command;
 
-use crate::cli::{Cli, Command};
+#[derive(clap::Parser)]
+#[command(version, about)]
+struct Cli {
+    #[command(subcommand)]
+    pub command: Command,
+}
 
-mod cli;
-mod commands;
+#[derive(clap::Subcommand)]
+enum Command {
+    /// Format a Cargo project.
+    Fmt(command::fmt::Options),
+    #[cfg(feature = "z3")]
+    /// Emulates `z3 -smt2 -in`.
+    Z3Smt2In(command::z3::Options),
+}
 
 fn main() {
     if let Err(error) = run() {
@@ -13,12 +24,12 @@ fn main() {
 }
 
 fn run() -> Result<(), Error> {
-    let cli = Cli::parse();
+    let cli: Cli = clap::Parser::parse();
 
     match cli.command {
-        Command::Fmt(options) => commands::fmt::fmt(options)?,
+        Command::Fmt(options) => command::fmt::fmt(options)?,
         #[cfg(feature = "z3")]
-        Command::Z3Smt2In(options) => commands::z3::emulate_smt2_in(options)?,
+        Command::Z3Smt2In(options) => command::z3::emulate_smt2_in(options)?,
     }
 
     Ok(())
@@ -27,9 +38,9 @@ fn run() -> Result<(), Error> {
 #[derive(Debug, thiserror::Error)]
 enum Error {
     #[error(transparent)]
-    Fmt(#[from] commands::fmt::Error),
+    Fmt(#[from] command::fmt::Error),
 
     #[cfg(feature = "z3")]
     #[error(transparent)]
-    Z3Smt2In(#[from] commands::z3::Error),
+    Z3Smt2In(#[from] command::z3::Error),
 }

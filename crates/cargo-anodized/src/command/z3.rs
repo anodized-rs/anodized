@@ -8,7 +8,8 @@ use z3_sys::{
     Z3_set_error_handler,
 };
 
-use crate::cli::Z3Options;
+#[derive(clap::Args)]
+pub struct Options {}
 
 type Result<T> = std::result::Result<T, Error>;
 
@@ -21,7 +22,7 @@ pub enum Error {
     Nul(#[from] std::ffi::c_str::NulError),
 }
 
-pub fn emulate_smt2_in(_: Z3Options) -> Result<()> {
+pub fn emulate_smt2_in(_: Options) -> Result<()> {
     let ctx = unsafe {
         let cfg = Z3_mk_config().expect("Z3_mk_config failed");
         let ctx = Z3_mk_context(cfg).expect("Z3_mk_context failed");

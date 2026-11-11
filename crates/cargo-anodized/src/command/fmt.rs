@@ -1,4 +1,3 @@
-use anodized_fmt::{Config, check_file, format_file};
 use std::{
     collections::BTreeSet as Set,
     fs,
@@ -7,12 +6,33 @@ use std::{
     process::{Command, ExitStatus},
 };
 
-use crate::cli::FmtOptions;
+#[derive(clap::Args)]
+pub struct Options {
+    /// Specify packages to format.
+    #[arg(short, long = "package", value_name = "PACKAGE")]
+    pub packages: Vec<String>,
+
+    /// Specify the path to Cargo.toml.
+    #[arg(long, value_name = "PATH")]
+    pub manifest_path: Option<PathBuf>,
+
+    /// Format all packages in the workspace.
+    #[arg(long)]
+    pub all: bool,
+
+    /// Use verbose output.
+    #[arg(short, long)]
+    pub verbose: bool,
+
+    /// Check formatting without modifying files.
+    #[arg(long)]
+    pub check: bool,
+}
 
 type Result<T> = std::result::Result<T, Error>;
 
-pub fn fmt(options: FmtOptions) -> Result<()> {
-    let FmtOptions {
+pub fn fmt(options: Options) -> Result<()> {
+    let Options {
         packages,
         manifest_path,
         all,
@@ -61,7 +81,7 @@ pub fn fmt(options: FmtOptions) -> Result<()> {
         println!("Running `anodized-fmt`");
     }
 
-    let config = Config::load()?;
+    let config = anodized_fmt::Config::load()?;
     if check {
         let mut all_formatted = true;
         for path in paths {
@@ -69,7 +89,7 @@ pub fn fmt(options: FmtOptions) -> Result<()> {
                 println!("check {}", path.display());
             }
             let source = fs::read_to_string(&path)?;
-            let is_formatted = check_file(&source, &config)?;
+            let is_formatted = anodized_fmt::check_file(&source, &config)?;
             if verbose && !is_formatted {
                 println!("needs formatting");
             }
@@ -85,7 +105,7 @@ pub fn fmt(options: FmtOptions) -> Result<()> {
                 println!("format {}", path.display());
             }
             let source = fs::read_to_string(&path)?;
-            let formatted = format_file(&source, &config)?;
+            let formatted = anodized_fmt::format_file(&source, &config)?;
 
             if formatted != source {
                 if verbose {
